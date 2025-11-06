@@ -10,7 +10,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">
-                    {% if switchboard %}Editace rozváděče{% else %}Nový rozváděč{% endif %}
+                    {% if is_duplicate %}Duplikace rozváděče{% elif switchboard %}Editace rozváděče{% else %}Nový rozváděč{% endif %}
                 </h2>
                 <p class="text-gray-600 mt-1">
                     Revize: {{ revision.revision_name or 'Revize #' ~ revision.revision_id }}
@@ -25,7 +25,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{% if switchboard %}/switchboard/{{ switchboard.switchboard_id }}/update{% else %}/revision/{{ revision.revision_id }}/switchboard/create{% endif %}" class="bg-white rounded-lg shadow p-6">
+    <form method="POST" action="{% if is_duplicate %}/switchboard/{{ switchboard.switchboard_id }}/duplicate{% elif switchboard %}/switchboard/{{ switchboard.switchboard_id }}/update{% else %}/revision/{{ revision.revision_id }}/switchboard/create{% endif %}" class="bg-white rounded-lg shadow p-6">
         
         <!-- Základní informace -->
         <div class="mb-8">

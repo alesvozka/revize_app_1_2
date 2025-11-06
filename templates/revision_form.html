@@ -9,10 +9,10 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">
-                    {% if revision %}Editace revize{% else %}Nová revize{% endif %}
+                    {% if is_duplicate %}Duplikace revize{% elif revision %}Editace revize{% else %}Nová revize{% endif %}
                 </h2>
                 <p class="text-gray-600 mt-1">
-                    {% if revision %}Upravte detaily revize{% else %}Vyplňte informace o nové revizi{% endif %}
+                    {% if is_duplicate %}Upravte detaily nové revize{% elif revision %}Upravte detaily revize{% else %}Vyplňte informace o nové revizi{% endif %}
                 </p>
             </div>
             <a href="/" class="text-gray-600 hover:text-gray-800">
@@ -24,7 +24,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{% if revision %}/revision/{{ revision.revision_id }}/update{% else %}/revision/create{% endif %}" class="bg-white rounded-lg shadow p-6">
+    <form method="POST" action="{% if is_duplicate %}/revision/{{ revision.revision_id }}/duplicate{% elif revision %}/revision/{{ revision.revision_id }}/update{% else %}/revision/create{% endif %}" class="bg-white rounded-lg shadow p-6">
         
         <!-- Základní informace -->
         <div class="mb-8">

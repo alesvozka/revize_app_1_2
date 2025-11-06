@@ -37,11 +37,15 @@
                 </p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ url_for('circuit_edit_form', circuit_id=circuit.circuit_id) }}" 
+                <a href="/circuit/{{ circuit.circuit_id }}/duplicate" 
+                   class="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
+                    📋 Duplikovat
+                </a>
+                <a href="/circuit/{{ circuit.circuit_id }}/edit" 
                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                     ✏️ Editovat
                 </a>
-                <form method="POST" action="{{ url_for('circuit_delete', circuit_id=circuit.circuit_id) }}" 
+                <form method="POST" action="/circuit/{{ circuit.circuit_id }}/delete" 
                       onsubmit="return confirm('Opravdu chcete smazat tento obvod{% if terminal_devices %} a všechna koncová zařízení ({{ terminal_devices|length }}){% endif %}?')" 
                       class="inline">
                     <button type="submit" 
@@ -51,7 +55,7 @@
                 </form>
             </div>
         </div>
-        <a href="{{ url_for('device_detail', device_id=circuit.device.device_id) }}" 
+        <a href="/device/{{ circuit.device.device_id }}" 
            class="inline-block text-sm text-blue-600 hover:text-blue-800">
             ← Zpět na přístroj
         </a>

@@ -65,23 +65,6 @@
                         </a>
                     </li>
                     
-                    <!-- Revize (with submenu) -->
-                    <li>
-                        <div class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span class="sidebar-text">Revize</span>
-                        </div>
-                        <ul class="ml-8 mt-2 space-y-1 sidebar-text">
-                            <li><a href="#" class="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Aktuální revize</a></li>
-                            <li><a href="#" class="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Rozváděče</a></li>
-                            <li><a href="#" class="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Přístroje</a></li>
-                            <li><a href="#" class="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Obvody</a></li>
-                            <li><a href="#" class="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900">Koncová zařízení</a></li>
-                        </ul>
-                    </li>
-                    
                     <!-- Nastavení -->
                     <li>
                         <a href="/settings" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900">
@@ -103,6 +86,26 @@
         
         <!-- MAIN CONTENT AREA (shared for both desktop and mobile) -->
         <main class="flex-1 overflow-y-auto pb-16 md:pb-0">
+            <!-- Breadcrumbs Navigation -->
+            {% if breadcrumbs and breadcrumbs|length > 1 %}
+            <div class="bg-white border-b border-gray-200">
+                <div class="container mx-auto px-4 md:px-6 py-3">
+                    <nav class="flex items-center space-x-2 text-sm overflow-x-auto">
+                        {% for crumb in breadcrumbs %}
+                            {% if loop.last %}
+                                <span class="text-gray-900 font-medium whitespace-nowrap">{{ crumb.name }}</span>
+                            {% else %}
+                                <a href="{{ crumb.url }}" class="text-gray-500 hover:text-gray-700 whitespace-nowrap">{{ crumb.name }}</a>
+                                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            {% endif %}
+                        {% endfor %}
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="container mx-auto p-4 md:p-6">
                 {% block content %}{% endblock %}
             </div>

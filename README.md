@@ -55,19 +55,22 @@ http://localhost:8000
 
 ```
 revize-app/
-├── main.py                    # FastAPI aplikace + CRUD endpointy
-├── models.py                  # SQLAlchemy modely (10 tabulek)
-├── database.py                # Database setup
-├── requirements.txt           # Python dependencies
-├── railway.toml               # Railway konfigurace
-├── .env.example               # Template pro environment variables
+├── main.py                           # FastAPI aplikace + CRUD endpointy
+├── models.py                         # SQLAlchemy modely (10 tabulek)
+├── database.py                       # Database setup
+├── requirements.txt                  # Python dependencies
+├── railway.toml                      # Railway konfigurace
+├── .env.example                      # Template pro environment variables
 ├── templates/
-│   ├── base.html             # Základní template (sidebar, navigace)
-│   ├── dashboard.html        # Dashboard s přehledem revizí
-│   ├── revision_form.html    # Formulář pro CREATE/UPDATE revize
-│   └── revision_detail.html  # Detail revize (READ)
-├── static/                    # Statické soubory (prázdné)
-└── README.md                  # Tento soubor
+│   ├── base.html                    # Základní template (sidebar, navigace)
+│   ├── dashboard.html               # Dashboard s přehledem revizí
+│   ├── revision_form.html           # Formulář pro CREATE/UPDATE revize
+│   ├── revision_detail.html         # Detail revize (READ) + seznam switchboardů
+│   ├── switchboard_form.html        # Formulář pro CREATE/UPDATE switchboard
+│   └── switchboard_detail.html      # Detail switchboardu (READ)
+├── static/                           # Statické soubory (prázdné)
+├── seed_data.py                      # Skript pro testovací data
+└── README.md                         # Tento soubor
 ```
 
 ---
@@ -118,6 +121,18 @@ revize-app/
 - Responzivní formuláře s logickým seskupením polí
 - Validace (povinné pole: revision_name)
 
+### ✅ HOTOVO - FÁZE 5:
+- **CRUD pro Switchboards (Rozváděče)** - kompletní implementace:
+  - ✅ CREATE: Formulář pro vytvoření nového rozváděče (všech 28 atributů)
+  - ✅ READ: Zobrazení detailu rozváděče s přehledným zobrazením všech sekcí
+  - ✅ UPDATE: Editace rozváděče (stejný formulář jako CREATE)
+  - ✅ DELETE: Smazání rozváděče s potvrzením
+- Seznam rozváděčů v detailu revize
+- Vazba Revision 1:N Switchboard
+- Klikatelné karty rozváděčů vedoucí na detail
+- Navigace: Dashboard → Revize → Switchboard
+- Testovací data (3 switchboardy v první revizi)
+
 ### 📋 TODO - Další fáze:
 - [ ] FÁZE 9: Dropdown systém (3 režimy)
 - [ ] FÁZE 10: Settings (správa dropdownů)
@@ -143,6 +158,14 @@ revize-app/
 - `POST /revision/{id}/update` - Uložení změn revize
 - `POST /revision/{id}/delete` - Smazání revize
 
+### Switchboard CRUD endpointy:
+- `GET /revision/{revision_id}/switchboard/create` - Formulář pro nový rozváděč
+- `POST /revision/{revision_id}/switchboard/create` - Uložení nového rozváděče
+- `GET /switchboard/{id}` - Detail rozváděče
+- `GET /switchboard/{id}/edit` - Formulář pro editaci rozváděče
+- `POST /switchboard/{id}/update` - Uložení změn rozváděče
+- `POST /switchboard/{id}/delete` - Smazání rozváděče
+
 ---
 
 ## 📞 Support
@@ -151,4 +174,4 @@ Pro detailní zadání projektu viz: `ZADANI_REVIZE_APP.md`
 
 ---
 
-**Status:** ✅ FÁZE 1 + 2 + 3 + 4 HOTOVO - Plně funkční CRUD pro Revize připraven
+**Status:** ✅ FÁZE 1-5 HOTOVO - Plně funkční CRUD pro Revize + Switchboards připraven

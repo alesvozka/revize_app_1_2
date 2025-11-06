@@ -4,7 +4,7 @@ Spusťte: python seed_data.py
 """
 from datetime import date, timedelta
 from database import SessionLocal, Base, engine
-from models import User, Revision
+from models import User, Revision, Switchboard
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -141,6 +141,84 @@ def seed_database():
             print(f"✅ Vytvořeno {len(revisions)} ukázkových revizí")
         else:
             print(f"ℹ️  Databáze již obsahuje {existing_revisions} revizí")
+        
+        # Create sample switchboards for first revision
+        existing_switchboards = db.query(Switchboard).count()
+        
+        if existing_switchboards == 0:
+            # Get first revision
+            first_revision = db.query(Revision).filter(Revision.user_id == 1).first()
+            
+            if first_revision:
+                switchboards = [
+                    Switchboard(
+                        revision_id=first_revision.revision_id,
+                        switchboard_name="Hlavní rozváděč přízemí",
+                        switchboard_location="Chodba u vchodu",
+                        switchboard_order=1,
+                        switchboard_type="Přístrojová skříň",
+                        switchboard_serial_number="HR-2024-001",
+                        switchboard_production_date=date(2023, 5, 15),
+                        switchboard_ip_rating="IP40",
+                        switchboard_impact_protection="IK07",
+                        switchboard_protection_class="I",
+                        switchboard_rated_current=63.0,
+                        switchboard_rated_voltage=400.0,
+                        switchboard_manufacturer="ABB s.r.o.",
+                        switchboard_standards="ČSN EN 61439-1, ČSN EN 61439-2",
+                        switchboard_enclosure_type="Nástěnná",
+                        switchboard_enclosure_manufacturer="ABB",
+                        switchboard_enclosure_installation_method="Nástěnná montáž",
+                        switchboard_superior_switchboard="Hlavní jistič objektu",
+                        switchboard_superior_circuit_breaker_rated_current=80.0,
+                        switchboard_superior_circuit_breaker_trip_characteristic="C",
+                        switchboard_superior_circuit_breaker_manufacturer="ABB",
+                        switchboard_superior_circuit_breaker_model="S203-C80",
+                        switchboard_main_switch="Hlavní vypínač 63A",
+                        switchboard_cable="CYKY 5x16",
+                        switchboard_cable_installation_method="V zemi"
+                    ),
+                    Switchboard(
+                        revision_id=first_revision.revision_id,
+                        switchboard_name="Podružný rozváděč 1.NP",
+                        switchboard_location="Technická místnost 1.NP",
+                        switchboard_order=2,
+                        switchboard_type="Podružný rozváděč",
+                        switchboard_serial_number="PR1-2024-002",
+                        switchboard_ip_rating="IP30",
+                        switchboard_protection_class="I",
+                        switchboard_rated_current=40.0,
+                        switchboard_rated_voltage=230.0,
+                        switchboard_manufacturer="Siemens",
+                        switchboard_enclosure_type="Vestavěná",
+                        switchboard_superior_switchboard="Hlavní rozváděč přízemí",
+                        switchboard_superior_circuit_breaker_rated_current=50.0,
+                        switchboard_superior_circuit_breaker_trip_characteristic="B",
+                        switchboard_cable="CYKY 5x10"
+                    ),
+                    Switchboard(
+                        revision_id=first_revision.revision_id,
+                        switchboard_name="Rozváděč suterén",
+                        switchboard_location="Sklep - společné prostory",
+                        switchboard_order=3,
+                        switchboard_type="Přístrojová skříň",
+                        switchboard_ip_rating="IP44",
+                        switchboard_rated_current=32.0,
+                        switchboard_rated_voltage=230.0,
+                        switchboard_manufacturer="Schneider Electric",
+                        switchboard_note="Vlhké prostředí - zvýšené krytí IP44"
+                    )
+                ]
+                
+                for switchboard in switchboards:
+                    db.add(switchboard)
+                
+                db.commit()
+                print(f"✅ Vytvořeno {len(switchboards)} ukázkových rozváděčů")
+            else:
+                print("⚠️  Nelze vytvořit switchboardy - revize neexistuje")
+        else:
+            print(f"ℹ️  Databáze již obsahuje {existing_switchboards} rozváděčů")
         
         print("\n🎉 Databáze je připravena k použití!")
         print("   Přihlaste se jako uživatel: admin")

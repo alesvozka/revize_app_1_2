@@ -257,6 +257,219 @@ async def revision_delete(revision_id: int, request: Request, db: Session = Depe
     return RedirectResponse(url="/", status_code=303)
 
 
+# SWITCHBOARD CRUD ENDPOINTS
+
+# Create - Show form
+@app.get("/revision/{revision_id}/switchboard/create", response_class=HTMLResponse)
+async def switchboard_create_form(revision_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("switchboard_form.html", {
+        "request": request,
+        "user_id": user_id,
+        "revision": revision,
+        "switchboard": None
+    })
+
+
+# Create - Save new switchboard
+@app.post("/revision/{revision_id}/switchboard/create")
+async def switchboard_create(revision_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    # Helper function
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Create new switchboard
+    new_switchboard = Switchboard(
+        revision_id=revision_id,
+        switchboard_name=get_value("switchboard_name"),
+        switchboard_description=get_value("switchboard_description"),
+        switchboard_location=get_value("switchboard_location"),
+        switchboard_order=get_value("switchboard_order", int),
+        switchboard_type=get_value("switchboard_type"),
+        switchboard_serial_number=get_value("switchboard_serial_number"),
+        switchboard_production_date=get_value("switchboard_production_date"),
+        switchboard_ip_rating=get_value("switchboard_ip_rating"),
+        switchboard_impact_protection=get_value("switchboard_impact_protection"),
+        switchboard_protection_class=get_value("switchboard_protection_class"),
+        switchboard_rated_current=get_value("switchboard_rated_current", float),
+        switchboard_rated_voltage=get_value("switchboard_rated_voltage", float),
+        switchboard_manufacturer=get_value("switchboard_manufacturer"),
+        switchboard_manufacturer_address=get_value("switchboard_manufacturer_address"),
+        switchboard_standards=get_value("switchboard_standards"),
+        switchboard_enclosure_type=get_value("switchboard_enclosure_type"),
+        switchboard_enclosure_manufacturer=get_value("switchboard_enclosure_manufacturer"),
+        switchboard_enclosure_installation_method=get_value("switchboard_enclosure_installation_method"),
+        switchboard_superior_switchboard=get_value("switchboard_superior_switchboard"),
+        switchboard_superior_circuit_breaker_rated_current=get_value("switchboard_superior_circuit_breaker_rated_current", float),
+        switchboard_superior_circuit_breaker_trip_characteristic=get_value("switchboard_superior_circuit_breaker_trip_characteristic"),
+        switchboard_superior_circuit_breaker_manufacturer=get_value("switchboard_superior_circuit_breaker_manufacturer"),
+        switchboard_superior_circuit_breaker_model=get_value("switchboard_superior_circuit_breaker_model"),
+        switchboard_main_switch=get_value("switchboard_main_switch"),
+        switchboard_note=get_value("switchboard_note"),
+        switchboard_cable=get_value("switchboard_cable"),
+        switchboard_cable_installation_method=get_value("switchboard_cable_installation_method")
+    )
+    
+    db.add(new_switchboard)
+    db.commit()
+    db.refresh(new_switchboard)
+    
+    # Redirect to switchboard detail
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/switchboard/{new_switchboard.switchboard_id}", status_code=303)
+
+
+# Read - Show detail
+@app.get("/switchboard/{switchboard_id}", response_class=HTMLResponse)
+async def switchboard_detail(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("switchboard_detail.html", {
+        "request": request,
+        "user_id": user_id,
+        "switchboard": switchboard
+    })
+
+
+# Update - Show edit form
+@app.get("/switchboard/{switchboard_id}/edit", response_class=HTMLResponse)
+async def switchboard_edit_form(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("switchboard_form.html", {
+        "request": request,
+        "user_id": user_id,
+        "revision": switchboard.revision,
+        "switchboard": switchboard
+    })
+
+
+# Update - Save changes
+@app.post("/switchboard/{switchboard_id}/update")
+async def switchboard_update(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    # Helper function
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Update switchboard fields
+    switchboard.switchboard_name = get_value("switchboard_name")
+    switchboard.switchboard_description = get_value("switchboard_description")
+    switchboard.switchboard_location = get_value("switchboard_location")
+    switchboard.switchboard_order = get_value("switchboard_order", int)
+    switchboard.switchboard_type = get_value("switchboard_type")
+    switchboard.switchboard_serial_number = get_value("switchboard_serial_number")
+    switchboard.switchboard_production_date = get_value("switchboard_production_date")
+    switchboard.switchboard_ip_rating = get_value("switchboard_ip_rating")
+    switchboard.switchboard_impact_protection = get_value("switchboard_impact_protection")
+    switchboard.switchboard_protection_class = get_value("switchboard_protection_class")
+    switchboard.switchboard_rated_current = get_value("switchboard_rated_current", float)
+    switchboard.switchboard_rated_voltage = get_value("switchboard_rated_voltage", float)
+    switchboard.switchboard_manufacturer = get_value("switchboard_manufacturer")
+    switchboard.switchboard_manufacturer_address = get_value("switchboard_manufacturer_address")
+    switchboard.switchboard_standards = get_value("switchboard_standards")
+    switchboard.switchboard_enclosure_type = get_value("switchboard_enclosure_type")
+    switchboard.switchboard_enclosure_manufacturer = get_value("switchboard_enclosure_manufacturer")
+    switchboard.switchboard_enclosure_installation_method = get_value("switchboard_enclosure_installation_method")
+    switchboard.switchboard_superior_switchboard = get_value("switchboard_superior_switchboard")
+    switchboard.switchboard_superior_circuit_breaker_rated_current = get_value("switchboard_superior_circuit_breaker_rated_current", float)
+    switchboard.switchboard_superior_circuit_breaker_trip_characteristic = get_value("switchboard_superior_circuit_breaker_trip_characteristic")
+    switchboard.switchboard_superior_circuit_breaker_manufacturer = get_value("switchboard_superior_circuit_breaker_manufacturer")
+    switchboard.switchboard_superior_circuit_breaker_model = get_value("switchboard_superior_circuit_breaker_model")
+    switchboard.switchboard_main_switch = get_value("switchboard_main_switch")
+    switchboard.switchboard_note = get_value("switchboard_note")
+    switchboard.switchboard_cable = get_value("switchboard_cable")
+    switchboard.switchboard_cable_installation_method = get_value("switchboard_cable_installation_method")
+    
+    db.commit()
+    
+    # Redirect to switchboard detail
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+
+
+# Delete
+@app.post("/switchboard/{switchboard_id}/delete")
+async def switchboard_delete(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if switchboard:
+        revision_id = switchboard.revision_id
+        db.delete(switchboard)
+        db.commit()
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/revision/{revision_id}", status_code=303)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=303)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1444,6 +1444,239 @@ async def terminal_device_delete(terminal_device_id: int, request: Request, db: 
     return RedirectResponse(url="/", status_code=303)
 
 
+# ============================================================================
+# DROPDOWN SYSTEM & SETTINGS
+# ============================================================================
+
+# Settings page - Dropdown management
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get all dropdown categories (distinct)
+    categories = db.query(DropdownSource.category).distinct().order_by(DropdownSource.category).all()
+    categories = [cat[0] for cat in categories]
+    
+    # Get all dropdown sources grouped by category
+    dropdown_sources = {}
+    for category in categories:
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
+    # Get dropdown configurations
+    dropdown_configs = db.query(DropdownConfig).order_by(
+        DropdownConfig.entity_type, DropdownConfig.field_name
+    ).all()
+    
+    return templates.TemplateResponse("settings.html", {
+        "request": request,
+        "categories": categories,
+        "dropdown_sources": dropdown_sources,
+        "dropdown_configs": dropdown_configs
+    })
+
+
+# Add new dropdown category
+@app.post("/settings/dropdown/category/create")
+async def dropdown_category_create(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    category = form_data.get("category", "").strip()
+    
+    if category:
+        # Check if category already exists
+        existing = db.query(DropdownSource).filter(DropdownSource.category == category).first()
+        if not existing:
+            # Create first item in new category
+            new_source = DropdownSource(
+                category=category,
+                value="Nová hodnota",
+                display_order=0
+            )
+            db.add(new_source)
+            db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+# Add new dropdown value to existing category
+@app.post("/settings/dropdown/value/create")
+async def dropdown_value_create(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    category = form_data.get("category", "").strip()
+    value = form_data.get("value", "").strip()
+    
+    if category and value:
+        # Get max display_order for this category
+        max_order = db.query(func.max(DropdownSource.display_order)).filter(
+            DropdownSource.category == category
+        ).scalar() or 0
+        
+        new_source = DropdownSource(
+            category=category,
+            value=value,
+            display_order=max_order + 1
+        )
+        db.add(new_source)
+        db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+# Update dropdown value
+@app.post("/settings/dropdown/value/{value_id}/update")
+async def dropdown_value_update(value_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    source = db.query(DropdownSource).filter(DropdownSource.id == value_id).first()
+    if source:
+        new_value = form_data.get("value", "").strip()
+        if new_value:
+            source.value = new_value
+            db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+# Delete dropdown value
+@app.post("/settings/dropdown/value/{value_id}/delete")
+async def dropdown_value_delete(value_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    source = db.query(DropdownSource).filter(DropdownSource.id == value_id).first()
+    if source:
+        db.delete(source)
+        db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+# Move dropdown value up
+@app.post("/settings/dropdown/value/{value_id}/move-up")
+async def dropdown_value_move_up(value_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    source = db.query(DropdownSource).filter(DropdownSource.id == value_id).first()
+    if source and source.display_order > 0:
+        # Find item with previous order
+        prev_source = db.query(DropdownSource).filter(
+            DropdownSource.category == source.category,
+            DropdownSource.display_order == source.display_order - 1
+        ).first()
+        
+        if prev_source:
+            # Swap orders
+            source.display_order, prev_source.display_order = prev_source.display_order, source.display_order
+            db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+# Move dropdown value down
+@app.post("/settings/dropdown/value/{value_id}/move-down")
+async def dropdown_value_move_down(value_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    source = db.query(DropdownSource).filter(DropdownSource.id == value_id).first()
+    if source:
+        # Find item with next order
+        next_source = db.query(DropdownSource).filter(
+            DropdownSource.category == source.category,
+            DropdownSource.display_order == source.display_order + 1
+        ).first()
+        
+        if next_source:
+            # Swap orders
+            source.display_order, next_source.display_order = next_source.display_order, source.display_order
+            db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+# HTMX endpoint - Get dropdown values for a category (for inline widget)
+@app.get("/api/dropdown/{category}")
+async def get_dropdown_values(category: str, db: Session = Depends(get_db)):
+    sources = db.query(DropdownSource).filter(
+        DropdownSource.category == category
+    ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+    
+    return {"values": [{"id": s.id, "value": s.value} for s in sources]}
+
+
+# HTMX endpoint - Add new value to dropdown (inline from form)
+@app.post("/api/dropdown/{category}/add")
+async def add_dropdown_value_inline(category: str, request: Request, db: Session = Depends(get_db)):
+    form_data = await request.form()
+    value = form_data.get("value", "").strip()
+    
+    if value:
+        # Get max display_order for this category
+        max_order = db.query(func.max(DropdownSource.display_order)).filter(
+            DropdownSource.category == category
+        ).scalar() or 0
+        
+        new_source = DropdownSource(
+            category=category,
+            value=value,
+            display_order=max_order + 1
+        )
+        db.add(new_source)
+        db.commit()
+        db.refresh(new_source)
+        
+        return {"success": True, "id": new_source.id, "value": new_source.value}
+    
+    return {"success": False, "error": "Value is required"}
+
+
+# Update dropdown configuration
+@app.post("/settings/dropdown-config/update")
+async def dropdown_config_update(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    entity_type = form_data.get("entity_type", "").strip()
+    field_name = form_data.get("field_name", "").strip()
+    dropdown_enabled = form_data.get("dropdown_enabled") == "on"
+    dropdown_category = form_data.get("dropdown_category", "").strip() or None
+    
+    if entity_type and field_name:
+        # Check if config exists
+        config = db.query(DropdownConfig).filter(
+            DropdownConfig.entity_type == entity_type,
+            DropdownConfig.field_name == field_name
+        ).first()
+        
+        if config:
+            config.dropdown_enabled = dropdown_enabled
+            config.dropdown_category = dropdown_category
+        else:
+            config = DropdownConfig(
+                entity_type=entity_type,
+                field_name=field_name,
+                dropdown_enabled=dropdown_enabled,
+                dropdown_category=dropdown_category
+            )
+            db.add(config)
+        
+        db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings", status_code=303)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

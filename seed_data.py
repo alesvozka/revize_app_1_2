@@ -4,7 +4,7 @@ Spusťte: python seed_data.py
 """
 from datetime import date, timedelta
 from database import SessionLocal, Base, engine
-from models import User, Revision, Switchboard, SwitchboardMeasurement, SwitchboardDevice, Circuit, CircuitMeasurement, TerminalDevice
+from models import User, Revision, Switchboard, SwitchboardMeasurement, SwitchboardDevice, Circuit, CircuitMeasurement, TerminalDevice, DropdownSource, DropdownConfig
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -622,6 +622,116 @@ def seed_database():
                         print(f"✅ Vytvořeno 7 ukázkových koncových zařízení (světla, spotřebiče, motor)")
                     else:
                         print(f"ℹ️  Databáze již obsahuje {existing_terminals} koncových zařízení")
+                    
+                    # ============================================================================
+                    # CREATE SAMPLE DROPDOWN DATA
+                    # ============================================================================
+                    
+                    existing_dropdowns = db.query(DropdownSource).count()
+                    
+                    if existing_dropdowns == 0:
+                        # Category: Manufacturers (Výrobci)
+                        manufacturers = [
+                            "ABB", "Schneider Electric", "Siemens", "Legrand", "Eaton",
+                            "Hager", "OEZ", "Moeller", "Phoenix Contact", "WAGO"
+                        ]
+                        for i, name in enumerate(manufacturers):
+                            db.add(DropdownSource(
+                                category="vyrobci",
+                                value=name,
+                                display_order=i
+                            ))
+                        
+                        # Category: Cable Types (Typy kabelů)
+                        cables = [
+                            "CYKY 3×1,5", "CYKY 3×2,5", "CYKY 3×4", "CYKY 3×6",
+                            "CYKY 5×1,5", "CYKY 5×2,5", "CYKY 5×4",
+                            "NYM 3×1,5", "NYM 3×2,5", "NYM 5×1,5", "NYM 5×2,5",
+                            "CYKY-J 3×1,5", "CYKY-J 3×2,5", "CYKY-J 5×2,5"
+                        ]
+                        for i, cable in enumerate(cables):
+                            db.add(DropdownSource(
+                                category="typy_kabelu",
+                                value=cable,
+                                display_order=i
+                            ))
+                        
+                        # Category: Installation Methods (Způsoby uložení)
+                        methods = [
+                            "Pod omítkou", "Na omítce", "V elektroinstalační liště",
+                            "V chráničce", "Volně vedeném", "Na kabelových žlabech",
+                            "V instalační trubce", "Na cable trays"
+                        ]
+                        for i, method in enumerate(methods):
+                            db.add(DropdownSource(
+                                category="zpusoby_ulozeni",
+                                value=method,
+                                display_order=i
+                            ))
+                        
+                        # Category: Device Types (Typy přístrojů)
+                        device_types = [
+                            "RCD (Proudový chránič)", "MCB (Jistič)", "RCBO (Kombinovaný jistič)",
+                            "Stykač", "Motorový spouštěč", "Pojistkový odpínač",
+                            "Hlavní vypínač", "Přepěťová ochrana", "Kontrolka"
+                        ]
+                        for i, dtype in enumerate(device_types):
+                            db.add(DropdownSource(
+                                category="typy_pristroju",
+                                value=dtype,
+                                display_order=i
+                            ))
+                        
+                        # Category: Trip Characteristics (Vypínací charakteristiky)
+                        characteristics = ["B", "C", "D", "K", "Z"]
+                        for i, char in enumerate(characteristics):
+                            db.add(DropdownSource(
+                                category="vypinaci_charakteristiky",
+                                value=char,
+                                display_order=i
+                            ))
+                        
+                        # Category: IP Ratings (Stupně krytí)
+                        ip_ratings = [
+                            "IP20", "IP21", "IP22", "IP23", "IP24",
+                            "IP44", "IP54", "IP55", "IP65", "IP66", "IP67", "IP68",
+                            "IPX4", "IPX5"
+                        ]
+                        for i, ip in enumerate(ip_ratings):
+                            db.add(DropdownSource(
+                                category="stupen_kryti",
+                                value=ip,
+                                display_order=i
+                            ))
+                        
+                        # Category: Protection Classes (Třídy ochrany)
+                        protection_classes = ["I", "II", "III"]
+                        for i, pclass in enumerate(protection_classes):
+                            db.add(DropdownSource(
+                                category="tridy_ochrany",
+                                value=pclass,
+                                display_order=i
+                            ))
+                        
+                        # Category: Terminal Device Types (Typy koncových zařízení)
+                        terminal_types = [
+                            "Světlo LED", "Světlo žárovkové", "Světlo zářivkové",
+                            "Zásuvka", "Vypínač", "Spínač",
+                            "Lednice", "Pračka", "Bojler", "Myčka",
+                            "Televize", "Počítač",
+                            "Motor", "Ventilátor", "Čerpadlo"
+                        ]
+                        for i, ttype in enumerate(terminal_types):
+                            db.add(DropdownSource(
+                                category="typy_konc_zarizeni",
+                                value=ttype,
+                                display_order=i
+                            ))
+                        
+                        db.commit()
+                        print(f"✅ Vytvořeno 8 kategorií dropdownů s cca 80 hodnotami")
+                    else:
+                        print(f"ℹ️  Databáze již obsahuje {existing_dropdowns} dropdown hodnot")
                     
                 else:
                     print(f"ℹ️  Databáze již obsahuje {existing_circuits} obvodů")

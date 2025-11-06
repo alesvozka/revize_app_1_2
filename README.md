@@ -42,7 +42,7 @@ Webová aplikace pro správu a zpracování revizí elektrických instalací v t
 - 8 parametrů obvodu + 8 měřených hodnot
 - Připraveno pro koncová zařízení (FÁZE 9)
 
-### FÁZE 9: CRUD Koncová zařízení 🆕 ✅
+### FÁZE 9: CRUD Koncová zařízení ✅
 - Kompletní CRUD operace pro koncová zařízení
 - **Terminal Device Detail stránka**
 - Vztah N:1 s obvodem (circuit_id)
@@ -50,6 +50,17 @@ Webová aplikace pro správu a zpracování revizí elektrických instalací v t
 - **Kaskádové mazání** při smazání obvodu
 - 10 parametrů (typ, výrobce, model, výkon, IP, atd.)
 - Integrace do Circuit Detail
+
+### FÁZE 10: Dropdown systém 🆕 ✅
+- **Settings stránka** pro správu dropdownů
+- CRUD pro dropdown kategorie a hodnoty
+- **Univerzální dropdown widget** se 3 režimy:
+  - 📋 Vybrat z databáze
+  - ➕ Přidat nový (inline, HTMX)
+  - ✎ Volný text (bez uložení do DB)
+- **8 kategorií dropdownů** (~80 hodnot)
+- Změna pořadí hodnot (↑↓)
+- API endpointy pro HTMX
 
 ### 📊 Aktuální pokrytí:
 - ✅ Users (základní struktura, fake auth)
@@ -59,8 +70,8 @@ Webová aplikace pro správu a zpracování revizí elektrických instalací v t
 - ✅ SwitchboardDevice (kompletní CRUD + hierarchie)
 - ✅ Circuits (kompletní CRUD)
 - ✅ CircuitMeasurement (kompletní CRUD)
-- ✅ TerminalDevices (kompletní CRUD) **← NOVĚ!**
-- ⏳ Dropdowns (připraveno v modelu)
+- ✅ TerminalDevices (kompletní CRUD)
+- ✅ Dropdowns (základní infrastruktura) **← NOVĚ!**
 
 ## 🚀 Quick Start
 
@@ -98,7 +109,8 @@ Vytvoří:
 - 2 měření pro první dva rozváděče
 - 7 přístrojů s hierarchií (2 RCD → 3 MCB → 1 Stykač)
 - 5 obvodů s měřeními (4 obvody s měřením, 1 bez)
-- **7 koncových zařízení** (světla, spotřebiče, motor) 🆕
+- 7 koncových zařízení (světla, spotřebiče, motor)
+- **8 kategorií dropdownů s ~80 hodnotami** 🆕
 
 ---
 
@@ -137,20 +149,23 @@ revize-app/
 ├── railway.toml                      # Railway konfigurace
 ├── .env.example                      # Template pro environment variables
 ├── templates/
-│   ├── base.html                     # Základní template (sidebar, navigace)
-│   ├── dashboard.html                # Dashboard s přehledem revizí
-│   ├── revision_form.html            # Formulář pro CREATE/UPDATE revize
-│   ├── revision_detail.html          # Detail revize (READ) + seznam switchboardů
-│   ├── switchboard_form.html         # Formulář pro CREATE/UPDATE switchboard
-│   ├── switchboard_detail.html       # Detail switchboardu (READ) + měření + přístroje
-│   ├── measurement_form.html         # Formulář pro CREATE/UPDATE měření switchboardu
-│   ├── device_form.html              # Formulář pro CREATE/UPDATE přístroje
-│   ├── device_detail.html            # Detail přístroje (READ) + seznam obvodů
-│   ├── circuit_form.html             # Formulář pro CREATE/UPDATE obvodu
-│   ├── circuit_detail.html           # Detail obvodu (READ) + měření + koncová zařízení
-│   ├── circuit_measurement_form.html # Formulář pro CREATE/UPDATE měření obvodu
-│   ├── terminal_device_form.html     # Formulář pro CREATE/UPDATE koncového zařízení 🆕
-│   └── terminal_device_detail.html   # Detail koncového zařízení (READ) 🆕
+│   ├── base.html                      # Základní template (sidebar, navigace)
+│   ├── dashboard.html                 # Dashboard s přehledem revizí
+│   ├── revision_form.html             # Formulář pro CREATE/UPDATE revize
+│   ├── revision_detail.html           # Detail revize (READ) + seznam switchboardů
+│   ├── switchboard_form.html          # Formulář pro CREATE/UPDATE switchboard
+│   ├── switchboard_detail.html        # Detail switchboardu (READ) + měření + přístroje
+│   ├── measurement_form.html          # Formulář pro CREATE/UPDATE měření switchboardu
+│   ├── device_form.html               # Formulář pro CREATE/UPDATE přístroje
+│   ├── device_detail.html             # Detail přístroje (READ) + seznam obvodů
+│   ├── circuit_form.html              # Formulář pro CREATE/UPDATE obvodu
+│   ├── circuit_detail.html            # Detail obvodu (READ) + měření + koncová zařízení
+│   ├── circuit_measurement_form.html  # Formulář pro CREATE/UPDATE měření obvodu
+│   ├── terminal_device_form.html      # Formulář pro CREATE/UPDATE koncového zařízení
+│   ├── terminal_device_detail.html    # Detail koncového zařízení (READ)
+│   ├── settings.html                  # Správa dropdownů 🆕
+│   └── components/
+│       └── dropdown_widget.html       # Univerzální dropdown widget (3 režimy) 🆕
 ├── static/                           # Statické soubory (prázdné)
 ├── seed_data.py                      # Skript pro testovací data
 └── README.md                         # Tento soubor
@@ -272,10 +287,27 @@ revize-app/
 - Integrace do Circuit Detail s plně funkčním CRUD rozhraním
 - Testovací data (7 koncových zařízení - světla, spotřebiče, motor)
 
+### FÁZE 10: Dropdown systém ✅ 🆕
+- **Settings stránka** (`/settings`) - správa dropdownů:
+  - ✅ CRUD pro dropdown kategorie
+  - ✅ CRUD pro dropdown hodnoty
+  - ✅ Změna pořadí hodnot (↑↓)
+  - ✅ Inline editace
+  - ✅ Tab navigace (Editor hodnot | Konfigurace polí)
+- **Univerzální dropdown widget** (`components/dropdown_widget.html`):
+  - ✅ Režim 1: Vybrat z databáze (select)
+  - ✅ Režim 2: Přidat nový inline (HTMX API)
+  - ✅ Režim 3: Volný text (bez uložení do DB)
+  - ✅ JavaScript funkce pro přepínání režimů
+- **API endpointy pro HTMX:**
+  - ✅ GET `/api/dropdown/{category}` - načtení hodnot
+  - ✅ POST `/api/dropdown/{category}/add` - přidání hodnoty
+- **8 kategorií testovacích dat** (~80 hodnot):
+  - vyrobci, typy_kabelu, zpusoby_ulozeni, typy_pristroju, vypinaci_charakteristiky, stupen_kryti, tridy_ochrany, typy_konc_zarizeni
+
 ### 📋 TODO - Další fáze:
-- [ ] FÁZE 10: Dropdown systém (3 režimy)
-- [ ] FÁZE 11: Settings (správa dropdownů)
-- [ ] FÁZE 12: Duplikace funkcionalita
+- [ ] FÁZE 11: Integrace dropdownů do formulářů + konfigurace polí
+- [ ] FÁZE 12: Duplikace funkcionalita (hierarchická duplikace)
 
 ---
 
@@ -320,4 +352,4 @@ Pro detailní zadání projektu viz: `ZADANI_REVIZE_APP.md`
 
 ---
 
-**Status:** ✅ FÁZE 1-9 HOTOVO - Plně funkční CRUD pro celou hierarchii revizí (Revize → Rozváděče → Přístroje → Obvody → Koncová zařízení + všechna měření)
+**Status:** ✅ FÁZE 1-10 HOTOVO - Plně funkční CRUD pro celou hierarchii revizí + Dropdown systém pro správu hodnot

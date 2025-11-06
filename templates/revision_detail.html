@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}{{ revision.revision_name or 'Revize #' ~ revision.revision_id }} - Revize App{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="flex items-center space-x-3">
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        {{ revision.revision_name or 'Revize #' ~ revision.revision_id }}
+                    </h2>
+                    {% if revision.revision_end_date %}
+                        <span class="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-700">
+                            Dokončeno
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700">
+                            Aktivní
+                        </span>
+                    {% endif %}
+                </div>
+                {% if revision.revision_code %}
+                    <p class="text-gray-600 mt-1">Kód: {{ revision.revision_code }}</p>
+                {% endif %}
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="/revision/{{ revision.revision_id }}/edit" 
+                   class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    Editovat
+                </a>
+                <button onclick="if(confirm('Opravdu chcete smazat tuto revizi?')) { document.getElementById('delete-form').submit(); }" 
+                        class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                    Smazat
+                </button>
+                <a href="/" class="text-gray-600 hover:text-gray-800 p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden delete form -->
+    <form id="delete-form" method="POST" action="/revision/{{ revision.revision_id }}/delete" style="display: none;">
+    </form>
+
+    <!-- Content -->
+    <div class="space-y-6">
+        
+        <!-- Základní informace -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Základní informace</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if revision.revision_owner %}
+                <div>
+                    <p class="text-sm text-gray-500">Vlastník</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_owner }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_client %}
+                <div>
+                    <p class="text-sm text-gray-500">Klient</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_client }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_address %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Adresa</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_address }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_type %}
+                <div>
+                    <p class="text-sm text-gray-500">Typ revize</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_type }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_description %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Popis</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_description }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_short_description %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Stručný popis</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_short_description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Data -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Data</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if revision.revision_date_of_creation %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum vytvoření</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_date_of_creation.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_start_date %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum zahájení</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_start_date.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_end_date %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum ukončení</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_end_date.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_date_of_previous_revision %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum předchozí revize</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_date_of_previous_revision.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_recommended_date_for_next_revision %}
+                <div>
+                    <p class="text-sm text-gray-500">Doporučené datum příští revize</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_recommended_date_for_next_revision.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Osoby -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Osoby</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if revision.revision_technician %}
+                <div>
+                    <p class="text-sm text-gray-500">Technik</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_technician }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_contractor %}
+                <div>
+                    <p class="text-sm text-gray-500">Dodavatel</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_contractor }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_certificate_number %}
+                <div>
+                    <p class="text-sm text-gray-500">Číslo osvědčení</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_certificate_number }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_authorization_number %}
+                <div>
+                    <p class="text-sm text-gray-500">Číslo oprávnění</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_authorization_number }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Počty kopií -->
+        {% if revision.revision_number_of_copies_technician or revision.revision_number_of_copies_owner or revision.revision_number_of_copies_contractor or revision.revision_number_of_copies_client %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Počty kopií</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% if revision.revision_number_of_copies_technician is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Technik</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_number_of_copies_technician }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_number_of_copies_owner is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Vlastník</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_number_of_copies_owner }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_number_of_copies_contractor is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Dodavatel</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_number_of_copies_contractor }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_number_of_copies_client is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Klient</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_number_of_copies_client }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Přílohy -->
+        {% if revision.revision_attachment or revision.revision_attachment_submitter or revision.revision_attachment_producer or revision.revision_attachment_date_of_creation %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Přílohy</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if revision.revision_attachment %}
+                <div>
+                    <p class="text-sm text-gray-500">Příloha</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_attachment }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_attachment_submitter %}
+                <div>
+                    <p class="text-sm text-gray-500">Předkladatel přílohy</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_attachment_submitter }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_attachment_producer %}
+                <div>
+                    <p class="text-sm text-gray-500">Zhotovitel přílohy</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_attachment_producer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_attachment_date_of_creation %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum vytvoření přílohy</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_attachment_date_of_creation.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Měřicí přístroj -->
+        {% if revision.revision_measuring_instrument_manufacturer_type or revision.revision_measuring_instrument_serial_number or revision.revision_measuring_instrument_calibration or revision.revision_measuring_instrument_calibration_validity %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Měřicí přístroj</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if revision.revision_measuring_instrument_manufacturer_type %}
+                <div>
+                    <p class="text-sm text-gray-500">Výrobce / Typ</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_measuring_instrument_manufacturer_type }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_measuring_instrument_serial_number %}
+                <div>
+                    <p class="text-sm text-gray-500">Sériové číslo</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_measuring_instrument_serial_number }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_measuring_instrument_calibration %}
+                <div>
+                    <p class="text-sm text-gray-500">Kalibrace</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_measuring_instrument_calibration }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_measuring_instrument_calibration_validity %}
+                <div>
+                    <p class="text-sm text-gray-500">Platnost kalibrace</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_measuring_instrument_calibration_validity.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Další informace -->
+        {% if revision.revision_project_documentation or revision.revision_overall_assessment %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Další informace</h3>
+            <div class="space-y-4">
+                {% if revision.revision_project_documentation %}
+                <div>
+                    <p class="text-sm text-gray-500">Projektová dokumentace</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_project_documentation }}</p>
+                </div>
+                {% endif %}
+                
+                {% if revision.revision_overall_assessment %}
+                <div>
+                    <p class="text-sm text-gray-500">Celkové zhodnocení</p>
+                    <p class="font-medium text-gray-800">{{ revision.revision_overall_assessment }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

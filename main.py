@@ -12,8 +12,37 @@ from models import *
 # Create all tables
 Base.metadata.create_all(bind=engine)
 
+# Initialize default user if not exists
+def init_default_user():
+    """Vytvoří defaultního uživatele pokud neexistuje"""
+    db = next(get_db())
+    try:
+        existing_user = db.query(User).filter(User.user_id == 1).first()
+        if not existing_user:
+            user = User(
+                user_id=1,
+                username="admin",
+                email="admin@revize-app.cz",
+                password_hash="placeholder_hash"
+            )
+            db.add(user)
+            db.commit()
+            print("✅ Vytvořen defaultní uživatel: admin (ID=1)")
+        else:
+            print("ℹ️  Defaultní uživatel již existuje")
+    except Exception as e:
+        print(f"⚠️  Chyba při vytváření defaultního uživatele: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 # Initialize FastAPI app
 app = FastAPI(title="Revize App")
+
+# Create default user on startup
+@app.on_event("startup")
+async def startup_event():
+    init_default_user()
 
 # Add session middleware
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")

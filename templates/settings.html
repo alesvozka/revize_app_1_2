@@ -150,14 +150,83 @@
     <div id="content-dropdown-config" class="tab-content hidden">
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Konfigurace dropdownů pro formuláře</h3>
-            <p class="text-sm text-gray-600 mb-6">Zatím není implementováno - připraveno pro FÁZI 11</p>
+            <p class="text-sm text-gray-600 mb-6">
+                Pro každé pole můžete zapnout dropdown a přiřadit mu kategorii hodnot. 
+                Pole s vypnutým dropdownem se zobrazí jako běžné textové inputy.
+            </p>
             
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <!-- Configuration by Entity -->
+            {% for entity_type, fields in configurable_fields.items() %}
+            <div class="mb-8">
+                <h4 class="text-md font-semibold text-gray-700 mb-4 pb-2 border-b">
+                    {% if entity_type == 'switchboard' %}📦 Rozváděč
+                    {% elif entity_type == 'device' %}🔌 Přístroj
+                    {% elif entity_type == 'circuit' %}⚡ Obvod
+                    {% elif entity_type == 'terminal_device' %}💡 Koncové zařízení
+                    {% endif %}
+                </h4>
+                
+                <div class="space-y-3">
+                    {% for field_name, field_label in fields.items() %}
+                    {% set config_key = entity_type ~ '_' ~ field_name %}
+                    {% set config = configs_dict.get(config_key) %}
+                    
+                    <form method="POST" action="{{ url_for('dropdown_config_update') }}" 
+                          class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <input type="hidden" name="entity_type" value="{{ entity_type }}">
+                        <input type="hidden" name="field_name" value="{{ field_name }}">
+                        
+                        <div class="flex items-start gap-4">
+                            <!-- Enable/Disable Checkbox -->
+                            <div class="flex items-center pt-1">
+                                <input type="checkbox" 
+                                       name="dropdown_enabled" 
+                                       id="enable_{{ config_key }}"
+                                       onchange="toggleDropdownConfig('{{ config_key }}')"
+                                       {% if config and config.dropdown_enabled %}checked{% endif %}
+                                       class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            </div>
+                            
+                            <!-- Field Info -->
+                            <div class="flex-1">
+                                <label for="enable_{{ config_key }}" class="block text-sm font-medium text-gray-700 cursor-pointer">
+                                    {{ field_label }}
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">Pole: <code class="bg-gray-100 px-1 rounded">{{ field_name }}</code></p>
+                            </div>
+                            
+                            <!-- Category Selection -->
+                            <div class="flex-1">
+                                <select name="dropdown_category" 
+                                        id="category_{{ config_key }}"
+                                        {% if not config or not config.dropdown_enabled %}disabled{% endif %}
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400">
+                                    <option value="">-- Vyberte kategorii --</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category }}" 
+                                            {% if config and config.dropdown_category == category %}selected{% endif %}>
+                                        {{ category }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Save Button -->
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                💾 Uložit
+                            </button>
+                        </div>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-blue-800">
-                    <strong>Plánované funkce:</strong><br>
-                    • Zapnutí/vypnutí dropdownu pro konkrétní pole formuláře<br>
-                    • Přiřazení kategorie k poli<br>
-                    • Konfigurace pro jednotlivé entity (Switchboard, Device, Circuit, atd.)
+                    <strong>💡 Tip:</strong> Pokud zaškrtnete checkbox, dropdown se zapne pro dané pole. 
+                    Nezapomeňte vybrat kategorii a uložit konfiguraci. Změny se projeví při dalším otevření formuláře.
                 </p>
             </div>
         </div>
@@ -184,6 +253,19 @@ function showTab(tabName) {
     const activeTab = document.getElementById('tab-' + tabName);
     activeTab.classList.add('active', 'border-blue-600', 'text-blue-600');
     activeTab.classList.remove('border-transparent', 'text-gray-500');
+}
+
+function toggleDropdownConfig(configKey) {
+    const checkbox = document.getElementById('enable_' + configKey);
+    const categorySelect = document.getElementById('category_' + configKey);
+    
+    if (checkbox.checked) {
+        categorySelect.disabled = false;
+        categorySelect.classList.remove('bg-gray-100', 'text-gray-400');
+    } else {
+        categorySelect.disabled = true;
+        categorySelect.classList.add('bg-gray-100', 'text-gray-400');
+    }
 }
 </script>
 

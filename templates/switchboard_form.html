@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/form_field.html" import render_field %}
 
 {% block title %}{% if switchboard %}Editace rozváděče{% else %}Nový rozváděč{% endif %} - Revize App{% endblock %}
 
@@ -49,11 +50,14 @@
                            min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Typ rozváděče</label>
-                    <input type="text" name="switchboard_type" value="{% if switchboard %}{{ switchboard.switchboard_type or '' }}{% endif %}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_type',
+                    'Typ rozváděče',
+                    current_value=(switchboard.switchboard_type if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources
+                ) }}
                 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Popis</label>
@@ -92,23 +96,35 @@
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Krytí IP</label>
-                    <input type="text" name="switchboard_ip_rating" value="{% if switchboard %}{{ switchboard.switchboard_ip_rating or '' }}{% endif %}" 
-                           placeholder="např. IP44" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_ip_rating',
+                    'Krytí IP',
+                    current_value=(switchboard.switchboard_ip_rating if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. IP44'
+                ) }}
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ochrana proti nárazu</label>
-                    <input type="text" name="switchboard_impact_protection" value="{% if switchboard %}{{ switchboard.switchboard_impact_protection or '' }}{% endif %}" 
-                           placeholder="např. IK08" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_impact_protection',
+                    'Ochrana proti nárazu',
+                    current_value=(switchboard.switchboard_impact_protection if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. IK08'
+                ) }}
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Třída ochrany</label>
-                    <input type="text" name="switchboard_protection_class" value="{% if switchboard %}{{ switchboard.switchboard_protection_class or '' }}{% endif %}" 
-                           placeholder="např. I, II" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_protection_class',
+                    'Třída ochrany',
+                    current_value=(switchboard.switchboard_protection_class if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. I, II'
+                ) }}
             </div>
         </div>
 
@@ -117,11 +133,14 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Výrobce</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Výrobce rozváděče</label>
-                    <input type="text" name="switchboard_manufacturer" value="{% if switchboard %}{{ switchboard.switchboard_manufacturer or '' }}{% endif %}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_manufacturer',
+                    'Výrobce rozváděče',
+                    current_value=(switchboard.switchboard_manufacturer if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources
+                ) }}
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Adresa výrobce</label>
@@ -149,17 +168,25 @@
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Výrobce skříně</label>
-                    <input type="text" name="switchboard_enclosure_manufacturer" value="{% if switchboard %}{{ switchboard.switchboard_enclosure_manufacturer or '' }}{% endif %}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_enclosure_manufacturer',
+                    'Výrobce skříně',
+                    current_value=(switchboard.switchboard_enclosure_manufacturer if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources
+                ) }}
                 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Způsob instalace skříně</label>
-                    <input type="text" name="switchboard_enclosure_installation_method" value="{% if switchboard %}{{ switchboard.switchboard_enclosure_installation_method or '' }}{% endif %}" 
-                           placeholder="např. nástěnná, vestavěná"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    {{ render_field(
+                        'switchboard_enclosure_installation_method',
+                        'Způsob instalace skříně',
+                        current_value=(switchboard.switchboard_enclosure_installation_method if switchboard else ''),
+                        entity_type='switchboard',
+                        dropdown_config=dropdown_config,
+                        dropdown_sources=dropdown_sources,
+                        placeholder='např. nástěnná, vestavěná'
+                    ) }}
                 </div>
             </div>
         </div>
@@ -181,17 +208,24 @@
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Jistič - charakteristika</label>
-                    <input type="text" name="switchboard_superior_circuit_breaker_trip_characteristic" value="{% if switchboard %}{{ switchboard.switchboard_superior_circuit_breaker_trip_characteristic or '' }}{% endif %}" 
-                           placeholder="např. B, C, D" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_superior_circuit_breaker_trip_characteristic',
+                    'Jistič - charakteristika',
+                    current_value=(switchboard.switchboard_superior_circuit_breaker_trip_characteristic if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. B, C, D'
+                ) }}
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Jistič - výrobce</label>
-                    <input type="text" name="switchboard_superior_circuit_breaker_manufacturer" value="{% if switchboard %}{{ switchboard.switchboard_superior_circuit_breaker_manufacturer or '' }}{% endif %}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_superior_circuit_breaker_manufacturer',
+                    'Jistič - výrobce',
+                    current_value=(switchboard.switchboard_superior_circuit_breaker_manufacturer if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources
+                ) }}
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Jistič - model</label>
@@ -212,17 +246,26 @@
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Kabel</label>
-                    <input type="text" name="switchboard_cable" value="{% if switchboard %}{{ switchboard.switchboard_cable or '' }}{% endif %}" 
-                           placeholder="např. CYKY 5x10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                </div>
+                {{ render_field(
+                    'switchboard_cable',
+                    'Kabel',
+                    current_value=(switchboard.switchboard_cable if switchboard else ''),
+                    entity_type='switchboard',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. CYKY 5x10'
+                ) }}
                 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Způsob instalace kabelu</label>
-                    <input type="text" name="switchboard_cable_installation_method" value="{% if switchboard %}{{ switchboard.switchboard_cable_installation_method or '' }}{% endif %}" 
-                           placeholder="např. v zemi, na zdi, v lištách"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    {{ render_field(
+                        'switchboard_cable_installation_method',
+                        'Způsob instalace kabelu',
+                        current_value=(switchboard.switchboard_cable_installation_method if switchboard else ''),
+                        entity_type='switchboard',
+                        dropdown_config=dropdown_config,
+                        dropdown_sources=dropdown_sources,
+                        placeholder='např. v zemi, na zdi, v lištách'
+                    ) }}
                 </div>
             </div>
         </div>
@@ -249,4 +292,118 @@
         </div>
     </form>
 </div>
+
+<script>
+// Switch between dropdown modes
+function switchDropdownMode(fieldName, mode) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    
+    // Hide all mode contents
+    container.querySelectorAll('.mode-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active state from all buttons
+    container.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+    });
+    
+    // Show selected mode content
+    const selectedContent = container.querySelector(`.mode-${mode}[data-field="${fieldName}"]`);
+    selectedContent.classList.remove('hidden');
+    
+    // Add active state to selected button
+    const selectedBtn = container.querySelector(`.mode-btn-${mode}[data-field="${fieldName}"]`);
+    selectedBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+    selectedBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+    
+    // Disable/enable form fields based on mode
+    const selectField = container.querySelector(`select#${fieldName}`);
+    const textField = container.querySelector(`input#${fieldName}_text`);
+    
+    if (mode === 'select') {
+        selectField.disabled = false;
+        if (textField) textField.disabled = true;
+    } else if (mode === 'text') {
+        selectField.disabled = true;
+        if (textField) textField.disabled = false;
+    } else {
+        selectField.disabled = true;
+        if (textField) textField.disabled = true;
+    }
+}
+
+// Add new value to dropdown and select it
+async function addNewDropdownValue(fieldName, category) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    const newValueInput = container.querySelector(`#${fieldName}_new`);
+    const value = newValueInput.value.trim();
+    
+    if (!value) {
+        alert('Zadejte hodnotu');
+        return;
+    }
+    
+    try {
+        // Send request to add new value
+        const formData = new FormData();
+        formData.append('value', value);
+        
+        const response = await fetch(`/api/dropdown/${category}/add`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add new option to select
+            const selectField = container.querySelector(`select#${fieldName}`);
+            const newOption = document.createElement('option');
+            newOption.value = data.value;
+            newOption.text = data.value;
+            newOption.selected = true;
+            selectField.appendChild(newOption);
+            
+            // Switch back to select mode
+            switchDropdownMode(fieldName, 'select');
+            
+            // Clear input
+            newValueInput.value = '';
+            
+            // Show success message
+            alert(`Hodnota "${data.value}" byla přidána a vybrána`);
+        } else {
+            alert('Chyba při přidávání hodnoty: ' + (data.error || 'Neznámá chyba'));
+        }
+    } catch (error) {
+        console.error('Error adding dropdown value:', error);
+        alert('Chyba při přidávání hodnoty');
+    }
+}
+
+// Initialize dropdown widgets on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.dropdown-widget-container').forEach(container => {
+        const fieldName = container.getAttribute('data-field');
+        // Start with select mode by default
+        switchDropdownMode(fieldName, 'select');
+    });
+});
+</script>
+
+<style>
+.dropdown-widget-container {
+    position: relative;
+}
+
+.mode-btn {
+    cursor: pointer;
+}
+
+.mode-btn:hover {
+    opacity: 0.8;
+}
+</style>
 {% endblock %}

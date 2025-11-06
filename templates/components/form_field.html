@@ -1,0 +1,102 @@
+{% macro render_field(field_name, field_label, current_value='', entity_type='', dropdown_config={}, dropdown_sources={}, input_type='text', required=false, placeholder='', help_text='', extra_attrs='') %}
+    {% set config = dropdown_config.get(field_name, {}) %}
+    {% set dropdown_enabled = config.get('enabled', false) %}
+    {% set dropdown_category = config.get('category', '') %}
+    
+    {% if dropdown_enabled and dropdown_category %}
+        <!-- Use Dropdown Widget -->
+        <div class="dropdown-widget-container" data-field="{{ field_name }}">
+            <label for="{{ field_name }}" class="block text-sm font-medium text-gray-700 mb-2">
+                {{ field_label }}{% if required %} *{% endif %}
+            </label>
+            
+            <!-- Mode Selector Buttons -->
+            <div class="flex gap-2 mb-2">
+                <button type="button" 
+                        onclick="switchDropdownMode('{{ field_name }}', 'select')"
+                        class="mode-btn mode-btn-select px-3 py-1 text-xs font-medium border rounded transition-colors"
+                        data-field="{{ field_name }}">
+                    📋 Z databáze
+                </button>
+                <button type="button" 
+                        onclick="switchDropdownMode('{{ field_name }}', 'add')"
+                        class="mode-btn mode-btn-add px-3 py-1 text-xs font-medium border rounded transition-colors"
+                        data-field="{{ field_name }}">
+                    ➕ Přidat nový
+                </button>
+                <button type="button" 
+                        onclick="switchDropdownMode('{{ field_name }}', 'text')"
+                        class="mode-btn mode-btn-text px-3 py-1 text-xs font-medium border rounded transition-colors"
+                        data-field="{{ field_name }}">
+                    ✎ Volný text
+                </button>
+            </div>
+
+            <!-- Mode 1: Select from database -->
+            <div class="mode-content mode-select" data-field="{{ field_name }}">
+                <select id="{{ field_name }}" 
+                        name="{{ field_name }}"
+                        {% if required %}required{% endif %}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">-- Vyberte hodnotu --</option>
+                    {% for source in dropdown_sources.get(dropdown_category, []) %}
+                    <option value="{{ source.value }}" {% if current_value == source.value %}selected{% endif %}>
+                        {{ source.value }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Mode 2: Add new value -->
+            <div class="mode-content mode-add hidden" data-field="{{ field_name }}">
+                <div class="flex gap-2">
+                    <input type="text" 
+                           id="{{ field_name }}_new"
+                           placeholder="Zadejte novou hodnotu..."
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <button type="button"
+                            onclick="addNewDropdownValue('{{ field_name }}', '{{ dropdown_category }}')"
+                            class="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700">
+                        Přidat a vybrat
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Hodnota bude uložena do databáze a bude k dispozici i pro další použití</p>
+            </div>
+
+            <!-- Mode 3: Free text -->
+            <div class="mode-content mode-text hidden" data-field="{{ field_name }}">
+                <input type="{{ input_type }}" 
+                       id="{{ field_name }}_text"
+                       name="{{ field_name }}"
+                       value="{{ current_value }}"
+                       {% if required %}required{% endif %}
+                       placeholder="{{ placeholder }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       {{ extra_attrs|safe }}>
+                <p class="text-xs text-gray-500 mt-1">Hodnota se uloží pouze do tohoto záznamu, nebude přidána do databáze hodnot</p>
+            </div>
+
+            {% if help_text %}
+            <p class="mt-1 text-xs text-gray-500">{{ help_text }}</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- Standard Input Field -->
+        <div>
+            <label for="{{ field_name }}" class="block text-sm font-medium text-gray-700 mb-1">
+                {{ field_label }}{% if required %} *{% endif %}
+            </label>
+            <input type="{{ input_type }}" 
+                   id="{{ field_name }}"
+                   name="{{ field_name }}" 
+                   value="{{ current_value }}"
+                   {% if required %}required{% endif %}
+                   placeholder="{{ placeholder }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                   {{ extra_attrs|safe }}>
+            {% if help_text %}
+            <p class="mt-1 text-xs text-gray-500">{{ help_text }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endmacro %}

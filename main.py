@@ -59,6 +59,62 @@ def get_current_user(request: Request):
     return user_id
 
 
+# Define which fields can have dropdowns for each entity
+def get_dropdown_configurable_fields():
+    """Returns dictionary of entities and their dropdown-configurable fields"""
+    return {
+        "switchboard": {
+            "switchboard_type": "Typ rozváděče",
+            "switchboard_ip_rating": "Stupeň krytí (IP)",
+            "switchboard_impact_protection": "Mechanická odolnost (IK)",
+            "switchboard_protection_class": "Třída ochrany",
+            "switchboard_manufacturer": "Výrobce rozváděče",
+            "switchboard_enclosure_manufacturer": "Výrobce skříně",
+            "switchboard_enclosure_installation_method": "Způsob instalace skříně",
+            "switchboard_superior_circuit_breaker_trip_characteristic": "Vypínací charakteristika nadřazeného jističe",
+            "switchboard_superior_circuit_breaker_manufacturer": "Výrobce nadřazeného jističe",
+            "switchboard_cable": "Typ kabelu",
+            "switchboard_cable_installation_method": "Způsob uložení kabelu",
+        },
+        "device": {
+            "switchboard_device_type": "Typ přístroje",
+            "switchboard_device_manufacturer": "Výrobce přístroje",
+            "switchboard_device_trip_characteristic": "Vypínací charakteristika",
+        },
+        "circuit": {
+            "circuit_cable": "Typ kabelu",
+            "circuit_cable_installation_method": "Způsob uložení kabelu",
+        },
+        "terminal_device": {
+            "terminal_device_type": "Typ koncového zařízení",
+            "terminal_device_manufacturer": "Výrobce koncového zařízení",
+            "terminal_device_ip_rating": "Stupeň krytí (IP)",
+            "terminal_device_protection_class": "Třída ochrany",
+            "terminal_device_installation_method": "Způsob instalace",
+        },
+    }
+
+
+def get_field_dropdown_config(entity_type: str, db: Session):
+    """Get dropdown configuration for all fields of an entity type
+    
+    Returns:
+        dict: {field_name: {'enabled': bool, 'category': str or None}}
+    """
+    configs = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == entity_type
+    ).all()
+    
+    result = {}
+    for config in configs:
+        result[config.field_name] = {
+            'enabled': config.dropdown_enabled,
+            'category': config.dropdown_category
+        }
+    
+    return result
+
+
 # Root endpoint - Dashboard
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, db: Session = Depends(get_db)):
@@ -301,11 +357,26 @@ async def switchboard_create_form(revision_id: int, request: Request, db: Sessio
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for switchboard
+    dropdown_config = get_field_dropdown_config("switchboard", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("switchboard_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": revision,
-        "switchboard": None
+        "switchboard": None,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -409,11 +480,26 @@ async def switchboard_edit_form(switchboard_id: int, request: Request, db: Sessi
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for switchboard
+    dropdown_config = get_field_dropdown_config("switchboard", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("switchboard_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": switchboard.revision,
-        "switchboard": switchboard
+        "switchboard": switchboard,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -677,12 +763,27 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
         SwitchboardDevice.switchboard_id == switchboard_id
     ).order_by(SwitchboardDevice.switchboard_device_position).all()
     
+    # Get dropdown configuration for device
+    dropdown_config = get_field_dropdown_config("device", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("device_form.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": switchboard,
         "device": None,
-        "devices": devices
+        "devices": devices,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -756,12 +857,27 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
         SwitchboardDevice.device_id != device_id
     ).order_by(SwitchboardDevice.switchboard_device_position).all()
     
+    # Get dropdown configuration for device
+    dropdown_config = get_field_dropdown_config("device", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("device_form.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": device.switchboard,
         "device": device,
-        "devices": devices
+        "devices": devices,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -852,11 +968,26 @@ async def circuit_create_form(device_id: int, request: Request, db: Session = De
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for circuit
+    dropdown_config = get_field_dropdown_config("circuit", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("circuit_form.html", {
         "request": request,
         "device": device,
         "circuit": None,
-        "is_edit": False
+        "is_edit": False,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -962,11 +1093,26 @@ async def circuit_edit_form(circuit_id: int, request: Request, db: Session = Dep
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for circuit
+    dropdown_config = get_field_dropdown_config("circuit", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("circuit_form.html", {
         "request": request,
         "device": circuit.device,
         "circuit": circuit,
-        "is_edit": True
+        "is_edit": True,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1273,11 +1419,26 @@ async def terminal_device_create_form(circuit_id: int, request: Request, db: Ses
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for terminal_device
+    dropdown_config = get_field_dropdown_config("terminal_device", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("terminal_device_form.html", {
         "request": request,
         "circuit": circuit,
         "terminal_device": None,
-        "is_edit": False
+        "is_edit": False,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1368,11 +1529,26 @@ async def terminal_device_edit_form(terminal_device_id: int, request: Request, d
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for terminal_device
+    dropdown_config = get_field_dropdown_config("terminal_device", db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("terminal_device_form.html", {
         "request": request,
         "circuit": terminal.circuit,
         "terminal_device": terminal,
-        "is_edit": True
+        "is_edit": True,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1466,15 +1642,24 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
         dropdown_sources[category] = sources
     
     # Get dropdown configurations
-    dropdown_configs = db.query(DropdownConfig).order_by(
-        DropdownConfig.entity_type, DropdownConfig.field_name
-    ).all()
+    dropdown_configs = db.query(DropdownConfig).all()
+    
+    # Create dict for easy lookup of existing configs
+    configs_dict = {}
+    for config in dropdown_configs:
+        key = f"{config.entity_type}_{config.field_name}"
+        configs_dict[key] = config
+    
+    # Get configurable fields
+    configurable_fields = get_dropdown_configurable_fields()
     
     return templates.TemplateResponse("settings.html", {
         "request": request,
         "categories": categories,
         "dropdown_sources": dropdown_sources,
-        "dropdown_configs": dropdown_configs
+        "dropdown_configs": dropdown_configs,
+        "configs_dict": configs_dict,
+        "configurable_fields": configurable_fields
     })
 
 

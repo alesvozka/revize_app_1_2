@@ -4,7 +4,7 @@ Spusťte: python seed_data.py
 """
 from datetime import date, timedelta
 from database import SessionLocal, Base, engine
-from models import User, Revision, Switchboard, SwitchboardMeasurement, SwitchboardDevice
+from models import User, Revision, Switchboard, SwitchboardMeasurement, SwitchboardDevice, Circuit, CircuitMeasurement, TerminalDevice
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -361,6 +361,271 @@ def seed_database():
                 
                 db.commit()
                 print(f"✅ Vytvořeno 7 ukázkových přístrojů s hierarchií (2 RCD → 3 MCB → 1 Stykač)")
+                
+                # ============================================================================
+                # CREATE SAMPLE CIRCUITS (OBVODY)
+                # ============================================================================
+                
+                existing_circuits = db.query(Circuit).count()
+                
+                if existing_circuits == 0:
+                    # Circuit 1: Connected to MCB1 (B16)
+                    circuit1 = Circuit(
+                        device_id=mcb1.device_id,
+                        circuit_number="1",
+                        circuit_room="Kuchyně",
+                        circuit_description="Zásuvkový obvod kuchyně - lednice, mikrovlnka, el. trouba",
+                        circuit_description_from_switchboard="Kuchyně zásuvky",
+                        circuit_number_of_outlets=4,
+                        circuit_cable="CYKY 3×2,5",
+                        circuit_cable_installation_method="Pod omítkou",
+                        circuit_cable_termination="Zásuvky"
+                    )
+                    db.add(circuit1)
+                    db.flush()  # Get circuit_id for measurement
+                    
+                    # Add measurement for circuit1
+                    meas1 = CircuitMeasurement(
+                        circuit_id=circuit1.circuit_id,
+                        measurements_circuit_insulation_resistance=520.5,
+                        measurements_circuit_loop_impedance_min=0.215,
+                        measurements_circuit_loop_impedance_max=0.285,
+                        measurements_circuit_rcd_trip_time_ms=24.5,
+                        measurements_circuit_rcd_test_current_ma=30.0,
+                        measurements_circuit_earth_resistance=0.125,
+                        measurements_circuit_continuity=0.045,
+                        measurements_circuit_order_of_phases="L1-L2-L3"
+                    )
+                    db.add(meas1)
+                    
+                    # Circuit 2: Connected to MCB1 (same device, different circuit)
+                    circuit2 = Circuit(
+                        device_id=mcb1.device_id,
+                        circuit_number="2",
+                        circuit_room="Obývací pokoj",
+                        circuit_description="Zásuvkový obvod obýváku - TV, audio systém, osvětlení",
+                        circuit_description_from_switchboard="Obývák zásuvky",
+                        circuit_number_of_outlets=6,
+                        circuit_cable="CYKY 3×2,5",
+                        circuit_cable_installation_method="Pod omítkou",
+                        circuit_cable_termination="Zásuvky"
+                    )
+                    db.add(circuit2)
+                    db.flush()
+                    
+                    # Add measurement for circuit2
+                    meas2 = CircuitMeasurement(
+                        circuit_id=circuit2.circuit_id,
+                        measurements_circuit_insulation_resistance=485.2,
+                        measurements_circuit_loop_impedance_min=0.198,
+                        measurements_circuit_loop_impedance_max=0.267,
+                        measurements_circuit_rcd_trip_time_ms=26.8,
+                        measurements_circuit_rcd_test_current_ma=30.0,
+                        measurements_circuit_earth_resistance=0.118,
+                        measurements_circuit_continuity=0.038,
+                        measurements_circuit_order_of_phases="L1-L2-L3"
+                    )
+                    db.add(meas2)
+                    
+                    # Circuit 3: Connected to MCB2 (C20)
+                    circuit3 = Circuit(
+                        device_id=mcb2.device_id,
+                        circuit_number="3",
+                        circuit_room="Koupelna",
+                        circuit_description="Koupelna - bojler, pračka, osvětlení",
+                        circuit_description_from_switchboard="Koupelna",
+                        circuit_number_of_outlets=2,
+                        circuit_cable="CYKY 3×2,5",
+                        circuit_cable_installation_method="Pod omítkou",
+                        circuit_cable_termination="Zásuvky + bojler"
+                    )
+                    db.add(circuit3)
+                    db.flush()
+                    
+                    # Add measurement for circuit3
+                    meas3 = CircuitMeasurement(
+                        circuit_id=circuit3.circuit_id,
+                        measurements_circuit_insulation_resistance=395.8,
+                        measurements_circuit_loop_impedance_min=0.245,
+                        measurements_circuit_loop_impedance_max=0.315,
+                        measurements_circuit_rcd_trip_time_ms=22.1,
+                        measurements_circuit_rcd_test_current_ma=30.0,
+                        measurements_circuit_earth_resistance=0.142,
+                        measurements_circuit_continuity=0.052,
+                        measurements_circuit_order_of_phases="L1-L2-L3"
+                    )
+                    db.add(meas3)
+                    
+                    # Circuit 4: Connected to MCB3 (B10) - before contactor
+                    circuit4 = Circuit(
+                        device_id=mcb3.device_id,
+                        circuit_number="4",
+                        circuit_room="Chodba",
+                        circuit_description="Osvětlení společných prostor - chodba, schodiště",
+                        circuit_description_from_switchboard="Osvětlení chodba",
+                        circuit_number_of_outlets=0,
+                        circuit_cable="CYKY 3×1,5",
+                        circuit_cable_installation_method="V elektroinstalační liště",
+                        circuit_cable_termination="Svítidla LED"
+                    )
+                    db.add(circuit4)
+                    # No measurement for this one - to show empty state
+                    
+                    # Circuit 5: Connected to Contactor (Motor circuit)
+                    circuit5 = Circuit(
+                        device_id=contactor.device_id,
+                        circuit_number="M1",
+                        circuit_room="Technická místnost",
+                        circuit_description="Elektromotor čerpadla - TUV ohřev",
+                        circuit_description_from_switchboard="Motor čerpadlo TUV",
+                        circuit_number_of_outlets=0,
+                        circuit_cable="CYKY 5×2,5",
+                        circuit_cable_installation_method="V chráničce",
+                        circuit_cable_termination="Motor 2.2kW"
+                    )
+                    db.add(circuit5)
+                    db.flush()
+                    
+                    # Add measurement for circuit5
+                    meas5 = CircuitMeasurement(
+                        circuit_id=circuit5.circuit_id,
+                        measurements_circuit_insulation_resistance=625.3,
+                        measurements_circuit_loop_impedance_min=0.185,
+                        measurements_circuit_loop_impedance_max=0.225,
+                        measurements_circuit_earth_resistance=0.095,
+                        measurements_circuit_continuity=0.028,
+                        measurements_circuit_order_of_phases="L1-L2-L3"
+                    )
+                    db.add(meas5)
+                    
+                    db.commit()
+                    print(f"✅ Vytvořeno 5 ukázkových obvodů s měřeními (4 obvody s měřením, 1 bez)")
+                    
+                    # ============================================================================
+                    # CREATE SAMPLE TERMINAL DEVICES (KONCOVÁ ZAŘÍZENÍ)
+                    # ============================================================================
+                    
+                    existing_terminals = db.query(TerminalDevice).count()
+                    
+                    if existing_terminals == 0:
+                        # Terminal 1: LED světlo v kuchyni (Circuit 1)
+                        terminal1 = TerminalDevice(
+                            circuit_id=circuit1.circuit_id,
+                            terminal_device_type="Světlo LED",
+                            terminal_device_manufacturer="Philips",
+                            terminal_device_model="LED Panel 600x600",
+                            terminal_device_marking="L1",
+                            terminal_device_power=40.0,
+                            terminal_device_ip_rating="IP20",
+                            terminal_device_protection_class="I",
+                            terminal_device_supply_type="230V AC",
+                            terminal_device_installation_method="Stropní vestavné"
+                        )
+                        db.add(terminal1)
+                        
+                        # Terminal 2: Lednice v kuchyni (Circuit 1)
+                        terminal2 = TerminalDevice(
+                            circuit_id=circuit1.circuit_id,
+                            terminal_device_type="Lednice",
+                            terminal_device_manufacturer="Samsung",
+                            terminal_device_model="RB34T632ESA",
+                            terminal_device_marking="Z1",
+                            terminal_device_power=150.0,
+                            terminal_device_ip_rating="IP20",
+                            terminal_device_protection_class="I",
+                            terminal_device_serial_number="2024-KR-78945",
+                            terminal_device_supply_type="230V AC",
+                            terminal_device_installation_method="Volně stojící"
+                        )
+                        db.add(terminal2)
+                        
+                        # Terminal 3: TV v obýváku (Circuit 2)
+                        terminal3 = TerminalDevice(
+                            circuit_id=circuit2.circuit_id,
+                            terminal_device_type="Televize",
+                            terminal_device_manufacturer="LG",
+                            terminal_device_model="OLED55C3",
+                            terminal_device_marking="TV1",
+                            terminal_device_power=120.0,
+                            terminal_device_ip_rating="IP20",
+                            terminal_device_protection_class="II",
+                            terminal_device_serial_number="2024-LG-55432",
+                            terminal_device_supply_type="230V AC",
+                            terminal_device_installation_method="Nástěnné"
+                        )
+                        db.add(terminal3)
+                        
+                        # Terminal 4: Bojler v koupelně (Circuit 3)
+                        terminal4 = TerminalDevice(
+                            circuit_id=circuit3.circuit_id,
+                            terminal_device_type="Bojler",
+                            terminal_device_manufacturer="Dražice",
+                            terminal_device_model="OKCE 80",
+                            terminal_device_marking="B1",
+                            terminal_device_power=2000.0,
+                            terminal_device_ip_rating="IP24",
+                            terminal_device_protection_class="I",
+                            terminal_device_serial_number="2023-DR-12389",
+                            terminal_device_supply_type="230V AC",
+                            terminal_device_installation_method="Nástěnné"
+                        )
+                        db.add(terminal4)
+                        
+                        # Terminal 5: Pračka v koupelně (Circuit 3)
+                        terminal5 = TerminalDevice(
+                            circuit_id=circuit3.circuit_id,
+                            terminal_device_type="Pračka",
+                            terminal_device_manufacturer="Bosch",
+                            terminal_device_model="WAU28T64BY",
+                            terminal_device_marking="P1",
+                            terminal_device_power=1400.0,
+                            terminal_device_ip_rating="IPX4",
+                            terminal_device_protection_class="I",
+                            terminal_device_serial_number="2024-BS-98765",
+                            terminal_device_supply_type="230V AC",
+                            terminal_device_installation_method="Volně stojící"
+                        )
+                        db.add(terminal5)
+                        
+                        # Terminal 6: LED panel v chodbě (Circuit 4)
+                        terminal6 = TerminalDevice(
+                            circuit_id=circuit4.circuit_id,
+                            terminal_device_type="Světlo LED",
+                            terminal_device_manufacturer="ABB",
+                            terminal_device_model="LED Panel 300x1200",
+                            terminal_device_marking="L2",
+                            terminal_device_power=36.0,
+                            terminal_device_ip_rating="IP20",
+                            terminal_device_protection_class="II",
+                            terminal_device_supply_type="230V AC",
+                            terminal_device_installation_method="Stropní vestavné"
+                        )
+                        db.add(terminal6)
+                        
+                        # Terminal 7: Motor čerpadla (Circuit 5)
+                        terminal7 = TerminalDevice(
+                            circuit_id=circuit5.circuit_id,
+                            terminal_device_type="Elektromotor",
+                            terminal_device_manufacturer="Siemens",
+                            terminal_device_model="1LE1001-1CA23-4AA4",
+                            terminal_device_marking="M1",
+                            terminal_device_power=2200.0,
+                            terminal_device_ip_rating="IP55",
+                            terminal_device_protection_class="I",
+                            terminal_device_serial_number="2024-SI-45678",
+                            terminal_device_supply_type="3×400V AC",
+                            terminal_device_installation_method="Nožkové"
+                        )
+                        db.add(terminal7)
+                        
+                        db.commit()
+                        print(f"✅ Vytvořeno 7 ukázkových koncových zařízení (světla, spotřebiče, motor)")
+                    else:
+                        print(f"ℹ️  Databáze již obsahuje {existing_terminals} koncových zařízení")
+                    
+                else:
+                    print(f"ℹ️  Databáze již obsahuje {existing_circuits} obvodů")
+                
             else:
                 print("⚠️  Nelze vytvořit přístroje - switchboard neexistuje")
         else:

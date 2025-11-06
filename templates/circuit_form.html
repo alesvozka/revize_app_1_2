@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Editovat obvod" if is_edit else "Nový obvod" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {{ "Editovat obvod" if is_edit else "Nový obvod" }}
+                </h1>
+                <p class="text-sm text-gray-600 mt-1">
+                    Přístroj: <span class="font-medium">{{ device.switchboard_device_position or "—" }}</span>
+                    {% if device.switchboard_device_type %}
+                        ({{ device.switchboard_device_type }})
+                    {% endif %}
+                </p>
+                <p class="text-sm text-gray-600">
+                    Rozváděč: <span class="font-medium">{{ device.switchboard.switchboard_name or "—" }}</span>
+                </p>
+            </div>
+            <a href="{{ url_for('device_detail', device_id=device.device_id) }}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                ← Zpět na přístroj
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <div class="text-sm text-blue-800">
+                <p class="font-medium mb-1">Popis obvodu</p>
+                <ul class="list-disc list-inside space-y-1 text-blue-700">
+                    <li>Obvod představuje elektrický okruh napájený z přístroje (jističe, stykače)</li>
+                    <li>Uveďte číslo obvodu, místnost a popis koncových spotřebičů</li>
+                    <li>Specifikujte parametry kabelu a způsob instalace</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{{ url_for('circuit_update', circuit_id=circuit.circuit_id) if is_edit else url_for('circuit_create', device_id=device.device_id) }}" 
+          class="bg-white rounded-lg shadow-sm p-6">
+        
+        <!-- Circuit Info Section -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Základní informace
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Circuit Number -->
+                <div>
+                    <label for="circuit_number" class="block text-sm font-medium text-gray-700 mb-2">
+                        Číslo obvodu
+                    </label>
+                    <input type="text" 
+                           id="circuit_number" 
+                           name="circuit_number" 
+                           value="{{ circuit.circuit_number or '' }}"
+                           placeholder="např. 1, 1.1, A1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Označení obvodu v rozváděči</p>
+                </div>
+
+                <!-- Room -->
+                <div>
+                    <label for="circuit_room" class="block text-sm font-medium text-gray-700 mb-2">
+                        Místnost / Oblast
+                    </label>
+                    <input type="text" 
+                           id="circuit_room" 
+                           name="circuit_room" 
+                           value="{{ circuit.circuit_room or '' }}"
+                           placeholder="např. Kuchyně, Obývák, Chodba"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Prostor, který obvod obsluhuje</p>
+                </div>
+
+                <!-- Number of Outlets -->
+                <div>
+                    <label for="circuit_number_of_outlets" class="block text-sm font-medium text-gray-700 mb-2">
+                        Počet zásuvek
+                    </label>
+                    <input type="number" 
+                           id="circuit_number_of_outlets" 
+                           name="circuit_number_of_outlets" 
+                           value="{{ circuit.circuit_number_of_outlets or '' }}"
+                           min="0"
+                           placeholder="např. 4"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Celkový počet zásuvek na obvodu</p>
+                </div>
+
+                <!-- Cable Termination -->
+                <div>
+                    <label for="circuit_cable_termination" class="block text-sm font-medium text-gray-700 mb-2">
+                        Zakončení kabelu
+                    </label>
+                    <input type="text" 
+                           id="circuit_cable_termination" 
+                           name="circuit_cable_termination" 
+                           value="{{ circuit.circuit_cable_termination or '' }}"
+                           placeholder="např. Koncová zásuvka, Svítidlo, Motor"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Typ koncového zařízení</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description Section -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Popis
+            </h3>
+            <div class="space-y-6">
+                <!-- Description -->
+                <div>
+                    <label for="circuit_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        Popis obvodu
+                    </label>
+                    <textarea id="circuit_description" 
+                              name="circuit_description" 
+                              rows="3"
+                              placeholder="Detailní popis obvodu, koncových spotřebičů a jejich umístění"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ circuit.circuit_description or '' }}</textarea>
+                    <p class="mt-1 text-xs text-gray-500">Podrobný popis pro instalatéra</p>
+                </div>
+
+                <!-- Description from Switchboard -->
+                <div>
+                    <label for="circuit_description_from_switchboard" class="block text-sm font-medium text-gray-700 mb-2">
+                        Popis z rozváděče
+                    </label>
+                    <textarea id="circuit_description_from_switchboard" 
+                              name="circuit_description_from_switchboard" 
+                              rows="2"
+                              placeholder="Popis uvedený na štítku v rozváděči"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ circuit.circuit_description_from_switchboard or '' }}</textarea>
+                    <p class="mt-1 text-xs text-gray-500">Text ze štítku v rozváděči</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cable Section -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Kabel
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Cable -->
+                <div>
+                    <label for="circuit_cable" class="block text-sm font-medium text-gray-700 mb-2">
+                        Typ kabelu
+                    </label>
+                    <input type="text" 
+                           id="circuit_cable" 
+                           name="circuit_cable" 
+                           value="{{ circuit.circuit_cable or '' }}"
+                           placeholder="např. CYKY 3×2,5, NYM 5×1,5"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Označení typu a průřezu kabelu</p>
+                </div>
+
+                <!-- Installation Method -->
+                <div>
+                    <label for="circuit_cable_installation_method" class="block text-sm font-medium text-gray-700 mb-2">
+                        Způsob uložení
+                    </label>
+                    <input type="text" 
+                           id="circuit_cable_installation_method" 
+                           name="circuit_cable_installation_method" 
+                           value="{{ circuit.circuit_cable_installation_method or '' }}"
+                           placeholder="např. Pod omítkou, V liště, Na zdi"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Způsob instalace kabelu</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-6 border-t border-gray-200">
+            <button type="submit" 
+                    class="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                {{ "Uložit změny" if is_edit else "Vytvořit obvod" }}
+            </button>
+            <a href="{{ url_for('device_detail', device_id=device.device_id) }}" 
+               class="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                Zrušit
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

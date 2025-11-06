@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Editovat koncové zařízení" if is_edit else "Nové koncové zařízení" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {{ "Editovat koncové zařízení" if is_edit else "Nové koncové zařízení" }}
+                </h1>
+                <p class="text-sm text-gray-600 mt-1">
+                    Obvod: <span class="font-medium">{{ circuit.circuit_number or "—" }}</span>
+                    {% if circuit.circuit_room %}
+                        ({{ circuit.circuit_room }})
+                    {% endif %}
+                </p>
+                <p class="text-sm text-gray-600">
+                    Přístroj: <span class="font-medium">{{ circuit.device.switchboard_device_position or "—" }}</span>
+                </p>
+            </div>
+            <a href="{{ url_for('circuit_detail', circuit_id=circuit.circuit_id) }}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                ← Zpět na obvod
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <div class="text-sm text-blue-800">
+                <p class="font-medium mb-1">Koncové zařízení</p>
+                <ul class="list-disc list-inside space-y-1 text-blue-700">
+                    <li>Koncové zařízení je elektrický spotřebič napájený z obvodu</li>
+                    <li>Může to být světlo, zásuvka, motor, bojler, pračka, atd.</li>
+                    <li>Zadejte typ, výrobce, výkon a další parametry zařízení</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{{ url_for('terminal_device_update', terminal_device_id=terminal_device.terminal_device_id) if is_edit else url_for('terminal_device_create', circuit_id=circuit.circuit_id) }}" 
+          class="bg-white rounded-lg shadow-sm p-6">
+        
+        <!-- Basic Info Section -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Základní informace
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Type -->
+                <div>
+                    <label for="terminal_device_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        Typ zařízení
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_type" 
+                           name="terminal_device_type" 
+                           value="{{ terminal_device.terminal_device_type or '' }}"
+                           placeholder="např. Světlo LED, Zásuvka, Motor, Bojler"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Typ elektrického zařízení</p>
+                </div>
+
+                <!-- Manufacturer -->
+                <div>
+                    <label for="terminal_device_manufacturer" class="block text-sm font-medium text-gray-700 mb-2">
+                        Výrobce
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_manufacturer" 
+                           name="terminal_device_manufacturer" 
+                           value="{{ terminal_device.terminal_device_manufacturer or '' }}"
+                           placeholder="např. Philips, ABB, Siemens"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Značka výrobce</p>
+                </div>
+
+                <!-- Model -->
+                <div>
+                    <label for="terminal_device_model" class="block text-sm font-medium text-gray-700 mb-2">
+                        Model
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_model" 
+                           name="terminal_device_model" 
+                           value="{{ terminal_device.terminal_device_model or '' }}"
+                           placeholder="např. LED Panel 600x600, TUV 50L"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Označení modelu</p>
+                </div>
+
+                <!-- Marking -->
+                <div>
+                    <label for="terminal_device_marking" class="block text-sm font-medium text-gray-700 mb-2">
+                        Označení / Štítek
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_marking" 
+                           name="terminal_device_marking" 
+                           value="{{ terminal_device.terminal_device_marking or '' }}"
+                           placeholder="např. L1, S1, M1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Označení na zařízení nebo v dokumentaci</p>
+                </div>
+
+                <!-- Serial Number -->
+                <div>
+                    <label for="terminal_device_serial_number" class="block text-sm font-medium text-gray-700 mb-2">
+                        Sériové číslo
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_serial_number" 
+                           name="terminal_device_serial_number" 
+                           value="{{ terminal_device.terminal_device_serial_number or '' }}"
+                           placeholder="např. 2025-ABC-12345"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Výrobní číslo zařízení</p>
+                </div>
+
+                <!-- Power -->
+                <div>
+                    <label for="terminal_device_power" class="block text-sm font-medium text-gray-700 mb-2">
+                        Výkon (W)
+                    </label>
+                    <input type="number" 
+                           id="terminal_device_power" 
+                           name="terminal_device_power" 
+                           value="{{ terminal_device.terminal_device_power or '' }}"
+                           step="0.1"
+                           min="0"
+                           placeholder="např. 40.0, 2200.0"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Příkon zařízení ve wattech</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Parameters Section -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Technické parametry
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- IP Rating -->
+                <div>
+                    <label for="terminal_device_ip_rating" class="block text-sm font-medium text-gray-700 mb-2">
+                        Krytí (IP)
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_ip_rating" 
+                           name="terminal_device_ip_rating" 
+                           value="{{ terminal_device.terminal_device_ip_rating or '' }}"
+                           placeholder="např. IP20, IP44, IP65"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Stupeň krytí proti vniknutí cizích těles a vody</p>
+                </div>
+
+                <!-- Protection Class -->
+                <div>
+                    <label for="terminal_device_protection_class" class="block text-sm font-medium text-gray-700 mb-2">
+                        Třída ochrany
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_protection_class" 
+                           name="terminal_device_protection_class" 
+                           value="{{ terminal_device.terminal_device_protection_class or '' }}"
+                           placeholder="např. I, II, III"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Třída ochrany proti úrazu elektrickým proudem</p>
+                </div>
+
+                <!-- Supply Type -->
+                <div>
+                    <label for="terminal_device_supply_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        Typ napájení
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_supply_type" 
+                           name="terminal_device_supply_type" 
+                           value="{{ terminal_device.terminal_device_supply_type or '' }}"
+                           placeholder="např. 230V AC, 12V DC, 3×400V"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Napájecí napětí a typ proudu</p>
+                </div>
+
+                <!-- Installation Method -->
+                <div>
+                    <label for="terminal_device_installation_method" class="block text-sm font-medium text-gray-700 mb-2">
+                        Způsob instalace
+                    </label>
+                    <input type="text" 
+                           id="terminal_device_installation_method" 
+                           name="terminal_device_installation_method" 
+                           value="{{ terminal_device.terminal_device_installation_method or '' }}"
+                           placeholder="např. Vestavné, Nástěnné, Stropní, Na DIN lištu"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Způsob montáže zařízení</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-6 border-t border-gray-200">
+            <button type="submit" 
+                    class="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                {{ "Uložit změny" if is_edit else "Vytvořit zařízení" }}
+            </button>
+            <a href="{{ url_for('circuit_detail', circuit_id=circuit.circuit_id) }}" 
+               class="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                Zrušit
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

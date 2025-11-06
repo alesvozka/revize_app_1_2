@@ -12,34 +12,37 @@ from models import *
 # Create all tables
 Base.metadata.create_all(bind=engine)
 
-# Create default user if not exists
-def create_default_user():
-    """Create default user for development/demo purposes"""
-    from database import SessionLocal
-    db = SessionLocal()
+# Initialize default user if not exists
+def init_default_user():
+    """Vytvoří defaultního uživatele pokud neexistuje"""
+    db = next(get_db())
     try:
         existing_user = db.query(User).filter(User.user_id == 1).first()
         if not existing_user:
-            default_user = User(
+            user = User(
                 user_id=1,
                 username="admin",
                 email="admin@revize-app.cz",
                 password_hash="placeholder_hash"
             )
-            db.add(default_user)
+            db.add(user)
             db.commit()
-            print("✅ Vytvořen výchozí uživatel: admin")
+            print("✅ Vytvořen defaultní uživatel: admin (ID=1)")
+        else:
+            print("ℹ️  Defaultní uživatel již existuje")
     except Exception as e:
-        print(f"⚠️  Chyba při vytváření výchozího uživatele: {e}")
+        print(f"⚠️  Chyba při vytváření defaultního uživatele: {e}")
         db.rollback()
     finally:
         db.close()
 
-# Create default user on startup
-create_default_user()
-
 # Initialize FastAPI app
 app = FastAPI(title="Revize App")
+
+# Create default user on startup
+@app.on_event("startup")
+async def startup_event():
+    init_default_user()
 
 # Add session middleware
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
@@ -825,6 +828,617 @@ async def device_delete(device_id: int, request: Request, db: Session = Depends(
         db.commit()
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=303)
+
+
+# ============================================================================
+# CIRCUIT CRUD
+# ============================================================================
+
+# CREATE - Show form
+@app.get("/device/{device_id}/circuit/create", response_class=HTMLResponse)
+async def circuit_create_form(device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify device ownership through switchboard → revision
+    device = db.query(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        SwitchboardDevice.device_id == device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not device:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("circuit_form.html", {
+        "request": request,
+        "device": device,
+        "circuit": None,
+        "is_edit": False
+    })
+
+
+# CREATE - Process form
+@app.post("/device/{device_id}/circuit/create")
+async def circuit_create(device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify device ownership
+    device = db.query(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        SwitchboardDevice.device_id == device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not device:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    def get_value(key, type_cast=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if type_cast == int:
+            try:
+                return int(value)
+            except ValueError:
+                return None
+        elif type_cast == float:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    
+    # Create circuit
+    new_circuit = Circuit(
+        device_id=device_id,
+        circuit_number=get_value("circuit_number"),
+        circuit_room=get_value("circuit_room"),
+        circuit_description=get_value("circuit_description"),
+        circuit_description_from_switchboard=get_value("circuit_description_from_switchboard"),
+        circuit_number_of_outlets=get_value("circuit_number_of_outlets", int),
+        circuit_cable_termination=get_value("circuit_cable_termination"),
+        circuit_cable=get_value("circuit_cable"),
+        circuit_cable_installation_method=get_value("circuit_cable_installation_method")
+    )
+    
+    db.add(new_circuit)
+    db.commit()
+    db.refresh(new_circuit)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/circuit/{new_circuit.circuit_id}", status_code=303)
+
+
+# READ - Circuit detail
+@app.get("/circuit/{circuit_id}", response_class=HTMLResponse)
+async def circuit_detail(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get circuit with device, switchboard, and revision
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Get measurement if exists (1:1 relationship)
+    measurement = db.query(CircuitMeasurement).filter(
+        CircuitMeasurement.circuit_id == circuit_id
+    ).first()
+    
+    # Get terminal devices (1:N relationship)
+    terminal_devices = db.query(TerminalDevice).filter(
+        TerminalDevice.circuit_id == circuit_id
+    ).all()
+    
+    return templates.TemplateResponse("circuit_detail.html", {
+        "request": request,
+        "circuit": circuit,
+        "measurement": measurement,
+        "terminal_devices": terminal_devices
+    })
+
+
+# UPDATE - Show edit form
+@app.get("/circuit/{circuit_id}/edit", response_class=HTMLResponse)
+async def circuit_edit_form(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get circuit with verification
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("circuit_form.html", {
+        "request": request,
+        "device": circuit.device,
+        "circuit": circuit,
+        "is_edit": True
+    })
+
+
+# UPDATE - Process form
+@app.post("/circuit/{circuit_id}/update")
+async def circuit_update(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get circuit with verification
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    def get_value(key, type_cast=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if type_cast == int:
+            try:
+                return int(value)
+            except ValueError:
+                return None
+        elif type_cast == float:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    
+    # Update circuit fields
+    circuit.circuit_number = get_value("circuit_number")
+    circuit.circuit_room = get_value("circuit_room")
+    circuit.circuit_description = get_value("circuit_description")
+    circuit.circuit_description_from_switchboard = get_value("circuit_description_from_switchboard")
+    circuit.circuit_number_of_outlets = get_value("circuit_number_of_outlets", int)
+    circuit.circuit_cable_termination = get_value("circuit_cable_termination")
+    circuit.circuit_cable = get_value("circuit_cable")
+    circuit.circuit_cable_installation_method = get_value("circuit_cable_installation_method")
+    
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/circuit/{circuit_id}", status_code=303)
+
+
+# DELETE
+@app.post("/circuit/{circuit_id}/delete")
+async def circuit_delete(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify ownership
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if circuit:
+        device_id = circuit.device_id
+        # SQLAlchemy will handle cascade delete of measurements and terminal devices
+        db.delete(circuit)
+        db.commit()
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/device/{device_id}", status_code=303)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=303)
+
+
+# ============================================================================
+# CIRCUIT MEASUREMENT CRUD
+# ============================================================================
+
+# CREATE - Show form
+@app.get("/circuit/{circuit_id}/measurement/create", response_class=HTMLResponse)
+async def circuit_measurement_create_form(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify circuit ownership
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Check if measurement already exists (1:1)
+    existing = db.query(CircuitMeasurement).filter(
+        CircuitMeasurement.circuit_id == circuit_id
+    ).first()
+    
+    if existing:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/circuit/{circuit_id}/measurement/edit", status_code=303)
+    
+    return templates.TemplateResponse("circuit_measurement_form.html", {
+        "request": request,
+        "circuit": circuit,
+        "measurement": None,
+        "is_edit": False
+    })
+
+
+# CREATE - Process form
+@app.post("/circuit/{circuit_id}/measurement/create")
+async def circuit_measurement_create(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify circuit ownership
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    def get_value(key, type_cast=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if type_cast == float:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    
+    # Create measurement
+    new_measurement = CircuitMeasurement(
+        circuit_id=circuit_id,
+        measurements_circuit_insulation_resistance=get_value("measurements_circuit_insulation_resistance", float),
+        measurements_circuit_loop_impedance_min=get_value("measurements_circuit_loop_impedance_min", float),
+        measurements_circuit_loop_impedance_max=get_value("measurements_circuit_loop_impedance_max", float),
+        measurements_circuit_rcd_trip_time_ms=get_value("measurements_circuit_rcd_trip_time_ms", float),
+        measurements_circuit_rcd_test_current_ma=get_value("measurements_circuit_rcd_test_current_ma", float),
+        measurements_circuit_earth_resistance=get_value("measurements_circuit_earth_resistance", float),
+        measurements_circuit_continuity=get_value("measurements_circuit_continuity", float),
+        measurements_circuit_order_of_phases=get_value("measurements_circuit_order_of_phases")
+    )
+    
+    db.add(new_measurement)
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/circuit/{circuit_id}", status_code=303)
+
+
+# UPDATE - Show edit form
+@app.get("/circuit/{circuit_id}/measurement/edit", response_class=HTMLResponse)
+async def circuit_measurement_edit_form(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify circuit ownership
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Get measurement
+    measurement = db.query(CircuitMeasurement).filter(
+        CircuitMeasurement.circuit_id == circuit_id
+    ).first()
+    
+    if not measurement:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/circuit/{circuit_id}/measurement/create", status_code=303)
+    
+    return templates.TemplateResponse("circuit_measurement_form.html", {
+        "request": request,
+        "circuit": circuit,
+        "measurement": measurement,
+        "is_edit": True
+    })
+
+
+# UPDATE - Process form
+@app.post("/circuit_measurement/{measurement_id}/update")
+async def circuit_measurement_update(measurement_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify measurement ownership
+    measurement = db.query(CircuitMeasurement).join(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        CircuitMeasurement.measurement_id == measurement_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not measurement:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    def get_value(key, type_cast=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if type_cast == float:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    
+    # Update measurement fields
+    measurement.measurements_circuit_insulation_resistance = get_value("measurements_circuit_insulation_resistance", float)
+    measurement.measurements_circuit_loop_impedance_min = get_value("measurements_circuit_loop_impedance_min", float)
+    measurement.measurements_circuit_loop_impedance_max = get_value("measurements_circuit_loop_impedance_max", float)
+    measurement.measurements_circuit_rcd_trip_time_ms = get_value("measurements_circuit_rcd_trip_time_ms", float)
+    measurement.measurements_circuit_rcd_test_current_ma = get_value("measurements_circuit_rcd_test_current_ma", float)
+    measurement.measurements_circuit_earth_resistance = get_value("measurements_circuit_earth_resistance", float)
+    measurement.measurements_circuit_continuity = get_value("measurements_circuit_continuity", float)
+    measurement.measurements_circuit_order_of_phases = get_value("measurements_circuit_order_of_phases")
+    
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/circuit/{measurement.circuit_id}", status_code=303)
+
+
+# DELETE
+@app.post("/circuit_measurement/{measurement_id}/delete")
+async def circuit_measurement_delete(measurement_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify ownership
+    measurement = db.query(CircuitMeasurement).join(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        CircuitMeasurement.measurement_id == measurement_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if measurement:
+        circuit_id = measurement.circuit_id
+        db.delete(measurement)
+        db.commit()
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/circuit/{circuit_id}", status_code=303)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=303)
+
+
+# ============================================================================
+# DEVICE DETAIL (for showing circuits)
+# ============================================================================
+
+@app.get("/device/{device_id}", response_class=HTMLResponse)
+async def device_detail(device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get device with switchboard and revision
+    device = db.query(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        SwitchboardDevice.device_id == device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not device:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Get circuits for this device
+    circuits = db.query(Circuit).filter(
+        Circuit.device_id == device_id
+    ).all()
+    
+    return templates.TemplateResponse("device_detail.html", {
+        "request": request,
+        "device": device,
+        "circuits": circuits
+    })
+
+
+# ============================================================================
+# TERMINAL DEVICE CRUD
+# ============================================================================
+
+# CREATE - Show form
+@app.get("/circuit/{circuit_id}/terminal/create", response_class=HTMLResponse)
+async def terminal_device_create_form(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify circuit ownership through device → switchboard → revision
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("terminal_device_form.html", {
+        "request": request,
+        "circuit": circuit,
+        "terminal_device": None,
+        "is_edit": False
+    })
+
+
+# CREATE - Process form
+@app.post("/circuit/{circuit_id}/terminal/create")
+async def terminal_device_create(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify circuit ownership
+    circuit = db.query(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        Circuit.circuit_id == circuit_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not circuit:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    def get_value(key, type_cast=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if type_cast == float:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    
+    # Create terminal device
+    new_terminal = TerminalDevice(
+        circuit_id=circuit_id,
+        terminal_device_type=get_value("terminal_device_type"),
+        terminal_device_manufacturer=get_value("terminal_device_manufacturer"),
+        terminal_device_model=get_value("terminal_device_model"),
+        terminal_device_marking=get_value("terminal_device_marking"),
+        terminal_device_power=get_value("terminal_device_power", float),
+        terminal_device_ip_rating=get_value("terminal_device_ip_rating"),
+        terminal_device_protection_class=get_value("terminal_device_protection_class"),
+        terminal_device_serial_number=get_value("terminal_device_serial_number"),
+        terminal_device_supply_type=get_value("terminal_device_supply_type"),
+        terminal_device_installation_method=get_value("terminal_device_installation_method")
+    )
+    
+    db.add(new_terminal)
+    db.commit()
+    db.refresh(new_terminal)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/circuit/{circuit_id}", status_code=303)
+
+
+# READ - Terminal device detail
+@app.get("/terminal/{terminal_device_id}", response_class=HTMLResponse)
+async def terminal_device_detail(terminal_device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get terminal device with circuit, device, switchboard, and revision
+    terminal = db.query(TerminalDevice).join(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        TerminalDevice.terminal_device_id == terminal_device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not terminal:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("terminal_device_detail.html", {
+        "request": request,
+        "terminal": terminal
+    })
+
+
+# UPDATE - Show edit form
+@app.get("/terminal/{terminal_device_id}/edit", response_class=HTMLResponse)
+async def terminal_device_edit_form(terminal_device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get terminal device with verification
+    terminal = db.query(TerminalDevice).join(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        TerminalDevice.terminal_device_id == terminal_device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not terminal:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    return templates.TemplateResponse("terminal_device_form.html", {
+        "request": request,
+        "circuit": terminal.circuit,
+        "terminal_device": terminal,
+        "is_edit": True
+    })
+
+
+# UPDATE - Process form
+@app.post("/terminal/{terminal_device_id}/update")
+async def terminal_device_update(terminal_device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Get terminal device with verification
+    terminal = db.query(TerminalDevice).join(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        TerminalDevice.terminal_device_id == terminal_device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not terminal:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    def get_value(key, type_cast=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if type_cast == float:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    
+    # Update terminal device fields
+    terminal.terminal_device_type = get_value("terminal_device_type")
+    terminal.terminal_device_manufacturer = get_value("terminal_device_manufacturer")
+    terminal.terminal_device_model = get_value("terminal_device_model")
+    terminal.terminal_device_marking = get_value("terminal_device_marking")
+    terminal.terminal_device_power = get_value("terminal_device_power", float)
+    terminal.terminal_device_ip_rating = get_value("terminal_device_ip_rating")
+    terminal.terminal_device_protection_class = get_value("terminal_device_protection_class")
+    terminal.terminal_device_serial_number = get_value("terminal_device_serial_number")
+    terminal.terminal_device_supply_type = get_value("terminal_device_supply_type")
+    terminal.terminal_device_installation_method = get_value("terminal_device_installation_method")
+    
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/circuit/{terminal.circuit_id}", status_code=303)
+
+
+# DELETE
+@app.post("/terminal/{terminal_device_id}/delete")
+async def terminal_device_delete(terminal_device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify ownership
+    terminal = db.query(TerminalDevice).join(Circuit).join(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        TerminalDevice.terminal_device_id == terminal_device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if terminal:
+        circuit_id = terminal.circuit_id
+        db.delete(terminal)
+        db.commit()
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/circuit/{circuit_id}", status_code=303)
     
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/", status_code=303)

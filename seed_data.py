@@ -4,7 +4,7 @@ Spusťte: python seed_data.py
 """
 from datetime import date, timedelta
 from database import SessionLocal, Base, engine
-from models import User, Revision, Switchboard, SwitchboardMeasurement
+from models import User, Revision, Switchboard, SwitchboardMeasurement, SwitchboardDevice
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -258,6 +258,113 @@ def seed_database():
                 print("⚠️  Nelze vytvořit měření - nedostatek switchboardů")
         else:
             print(f"ℹ️  Databáze již obsahuje {existing_measurements} měření")
+        
+        # Create sample devices for first switchboard with hierarchy
+        existing_devices = db.query(SwitchboardDevice).count()
+        
+        if existing_devices == 0:
+            # Get first switchboard
+            first_switchboard = db.query(Switchboard).first()
+            
+            if first_switchboard:
+                # Create RCD (parent device)
+                rcd1 = SwitchboardDevice(
+                    switchboard_id=first_switchboard.switchboard_id,
+                    parent_device_id=None,  # Root device
+                    switchboard_device_position="1-4",
+                    switchboard_device_type="RCD",
+                    switchboard_device_manufacturer="ABB",
+                    switchboard_device_model="F204 AC-40/0.03",
+                    switchboard_device_rated_current=40.0,
+                    switchboard_device_residual_current_ma=30.0,
+                    switchboard_device_poles=4,
+                    switchboard_device_module_width=4.0
+                )
+                db.add(rcd1)
+                db.flush()  # Get ID for parent reference
+                
+                # Create MCBs under RCD
+                mcb1 = SwitchboardDevice(
+                    switchboard_id=first_switchboard.switchboard_id,
+                    parent_device_id=rcd1.device_id,
+                    switchboard_device_position="5",
+                    switchboard_device_type="MCB",
+                    switchboard_device_manufacturer="ABB",
+                    switchboard_device_model="S201-B16",
+                    switchboard_device_trip_characteristic="B",
+                    switchboard_device_rated_current=16.0,
+                    switchboard_device_poles=1,
+                    switchboard_device_module_width=1.0
+                )
+                db.add(mcb1)
+                
+                mcb2 = SwitchboardDevice(
+                    switchboard_id=first_switchboard.switchboard_id,
+                    parent_device_id=rcd1.device_id,
+                    switchboard_device_position="6",
+                    switchboard_device_type="MCB",
+                    switchboard_device_manufacturer="ABB",
+                    switchboard_device_model="S201-C20",
+                    switchboard_device_trip_characteristic="C",
+                    switchboard_device_rated_current=20.0,
+                    switchboard_device_poles=1,
+                    switchboard_device_module_width=1.0
+                )
+                db.add(mcb2)
+                
+                # Create another RCD
+                rcd2 = SwitchboardDevice(
+                    switchboard_id=first_switchboard.switchboard_id,
+                    parent_device_id=None,
+                    switchboard_device_position="7-10",
+                    switchboard_device_type="RCD",
+                    switchboard_device_manufacturer="Schneider Electric",
+                    switchboard_device_model="iID 40A 30mA AC",
+                    switchboard_device_rated_current=40.0,
+                    switchboard_device_residual_current_ma=30.0,
+                    switchboard_device_poles=4,
+                    switchboard_device_module_width=4.0
+                )
+                db.add(rcd2)
+                db.flush()
+                
+                # Create MCB under second RCD
+                mcb3 = SwitchboardDevice(
+                    switchboard_id=first_switchboard.switchboard_id,
+                    parent_device_id=rcd2.device_id,
+                    switchboard_device_position="11",
+                    switchboard_device_type="MCB",
+                    switchboard_device_manufacturer="Schneider Electric",
+                    switchboard_device_model="iC60N B10",
+                    switchboard_device_trip_characteristic="B",
+                    switchboard_device_rated_current=10.0,
+                    switchboard_device_poles=1,
+                    switchboard_device_module_width=1.0
+                )
+                db.add(mcb3)
+                db.flush()
+                
+                # Create sub-device (contactor) under MCB
+                contactor = SwitchboardDevice(
+                    switchboard_id=first_switchboard.switchboard_id,
+                    parent_device_id=mcb3.device_id,
+                    switchboard_device_position="12-13",
+                    switchboard_device_type="Stykač",
+                    switchboard_device_manufacturer="Schneider Electric",
+                    switchboard_device_model="LC1D09",
+                    switchboard_device_rated_current=9.0,
+                    switchboard_device_poles=3,
+                    switchboard_device_module_width=2.0,
+                    switchboard_device_sub_devices="Motor 2.2kW"
+                )
+                db.add(contactor)
+                
+                db.commit()
+                print(f"✅ Vytvořeno 7 ukázkových přístrojů s hierarchií (2 RCD → 3 MCB → 1 Stykač)")
+            else:
+                print("⚠️  Nelze vytvořit přístroje - switchboard neexistuje")
+        else:
+            print(f"ℹ️  Databáze již obsahuje {existing_devices} přístrojů")
         
         print("\n🎉 Databáze je připravena k použití!")
         print("   Přihlaste se jako uživatel: admin")

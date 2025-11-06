@@ -1,5 +1,52 @@
 # Revize App - Aplikace pro správu revizí elektrických instalací
 
+## 📋 O aplikaci
+Webová aplikace pro správu a zpracování revizí elektrických instalací v terénu. Postaveno na FastAPI + PostgreSQL + Tailwind CSS.
+
+## ✅ Implementované fáze
+
+### FÁZE 1-3: Database + Base Template + Dashboard ✅
+- PostgreSQL databáze s 10 tabulkami
+- Base template s responzivní navigací (mobile + desktop)
+- Dashboard se seznamem revizí a statistikami
+
+### FÁZE 4: CRUD Revize ✅
+- Kompletní CRUD operace pro revize
+- Formulář se všemi 32 parametry revize
+- Detail revize se seznamem rozváděčů
+
+### FÁZE 5: CRUD Rozváděče (Switchboards) ✅
+- Kompletní CRUD operace pro rozváděče
+- Vztah 1:N (Revision → Switchboards)
+- Detail s technickými parametry (22 polí)
+- Zobrazení v rámci revize
+
+### FÁZE 6: CRUD Měření Rozváděčů ✅
+- Kompletní CRUD operace pro měření
+- Vztah 1:1 (Switchboard → Measurement)
+- 6 měřených hodnot (izolační odpor, impedance smyčky, RCD parametry, uzemnění)
+- Zobrazení v detailu switchboardu
+
+### FÁZE 7: CRUD Přístroje v Rozváděči 🆕 ✅
+- Kompletní CRUD operace pro přístroje
+- **Self-referencing hierarchie** (parent_device_id)
+- **Stromové zobrazení** s 3 úrovněmi vnoření
+- Struktura: RCD → MCB → Sub-device (stykač, motorový spouštěč)
+- **Kaskádové mazání** potomků
+- 11 parametrů přístroje (pozice, typ, výrobce, elektrické parametry)
+- Vizuální hierarchie v UI (ikony, odsazení, barevné odlišení)
+
+### 📊 Aktuální pokrytí zadání:
+- ✅ Users (základní struktura, fake auth s user_id=1)
+- ✅ Revisions (kompletní CRUD)
+- ✅ Switchboards (kompletní CRUD)
+- ✅ SwitchboardMeasurement (kompletní CRUD, vztah 1:1)
+- ✅ SwitchboardDevice (kompletní CRUD, hierarchie) **← NOVĚ!**
+- ⏳ Circuits (připraveno v modelu, čeká na implementaci)
+- ⏳ CircuitMeasurement (připraveno v modelu, čeká na implementaci)
+- ⏳ TerminalDevices (připraveno v modelu, čeká na implementaci)
+- ⏳ DropdownSources + DropdownConfig (připraveno v modelu, čeká na implementaci)
+
 ## 🚀 Quick Start
 
 ### Lokální vývoj
@@ -24,6 +71,17 @@ uvicorn main:app --reload
 ```
 http://localhost:8000
 ```
+
+5. **Naplň databázi testovacími daty (volitelné):**
+```bash
+python seed_data.py
+```
+Vytvoří:
+- Výchozího uživatele (admin)
+- 5 ukázkových revizí
+- 3 rozváděče pro první revizi
+- 2 měření pro první dva rozváděče
+- **7 přístrojů s hierarchií** (2 RCD → 3 MCB → 1 Stykač) 🆕
 
 ---
 

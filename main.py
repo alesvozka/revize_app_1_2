@@ -12,37 +12,34 @@ from models import *
 # Create all tables
 Base.metadata.create_all(bind=engine)
 
-# Initialize default user if not exists
-def init_default_user():
-    """Vytvoří defaultního uživatele pokud neexistuje"""
-    db = next(get_db())
+# Create default user if not exists
+def create_default_user():
+    """Create default user for development/demo purposes"""
+    from database import SessionLocal
+    db = SessionLocal()
     try:
         existing_user = db.query(User).filter(User.user_id == 1).first()
         if not existing_user:
-            user = User(
+            default_user = User(
                 user_id=1,
                 username="admin",
                 email="admin@revize-app.cz",
                 password_hash="placeholder_hash"
             )
-            db.add(user)
+            db.add(default_user)
             db.commit()
-            print("✅ Vytvořen defaultní uživatel: admin (ID=1)")
-        else:
-            print("ℹ️  Defaultní uživatel již existuje")
+            print("✅ Vytvořen výchozí uživatel: admin")
     except Exception as e:
-        print(f"⚠️  Chyba při vytváření defaultního uživatele: {e}")
+        print(f"⚠️  Chyba při vytváření výchozího uživatele: {e}")
         db.rollback()
     finally:
         db.close()
 
+# Create default user on startup
+create_default_user()
+
 # Initialize FastAPI app
 app = FastAPI(title="Revize App")
-
-# Create default user on startup
-@app.on_event("startup")
-async def startup_event():
-    init_default_user()
 
 # Add session middleware
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
@@ -647,6 +644,184 @@ async def measurement_delete(measurement_id: int, request: Request, db: Session 
     if measurement:
         switchboard_id = measurement.switchboard_id
         db.delete(measurement)
+        db.commit()
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=303)
+
+
+# ===== SWITCHBOARD DEVICE (PŘÍSTROJE V ROZVÁDĚČI) =====
+
+# Create - Show form
+@app.get("/switchboard/{switchboard_id}/device/create", response_class=HTMLResponse)
+async def device_create_form(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify ownership through switchboard -> revision
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Get all devices in this switchboard for parent selection
+    devices = db.query(SwitchboardDevice).filter(
+        SwitchboardDevice.switchboard_id == switchboard_id
+    ).order_by(SwitchboardDevice.switchboard_device_position).all()
+    
+    return templates.TemplateResponse("device_form.html", {
+        "request": request,
+        "user_id": user_id,
+        "switchboard": switchboard,
+        "device": None,
+        "devices": devices
+    })
+
+
+# Create - Save new device
+@app.post("/switchboard/{switchboard_id}/device/create")
+async def device_create(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    # Verify ownership
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Create new device
+    new_device = SwitchboardDevice(
+        switchboard_id=switchboard_id,
+        parent_device_id=get_value("parent_device_id", int),
+        switchboard_device_position=get_value("switchboard_device_position"),
+        switchboard_device_type=get_value("switchboard_device_type"),
+        switchboard_device_manufacturer=get_value("switchboard_device_manufacturer"),
+        switchboard_device_model=get_value("switchboard_device_model"),
+        switchboard_device_trip_characteristic=get_value("switchboard_device_trip_characteristic"),
+        switchboard_device_rated_current=get_value("switchboard_device_rated_current", float),
+        switchboard_device_residual_current_ma=get_value("switchboard_device_residual_current_ma", float),
+        switchboard_device_sub_devices=get_value("switchboard_device_sub_devices"),
+        switchboard_device_poles=get_value("switchboard_device_poles", int),
+        switchboard_device_module_width=get_value("switchboard_device_module_width", float)
+    )
+    
+    db.add(new_device)
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+
+
+# Update - Show form
+@app.get("/device/{device_id}/edit", response_class=HTMLResponse)
+async def device_edit_form(device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify ownership through device -> switchboard -> revision
+    device = db.query(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        SwitchboardDevice.device_id == device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not device:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Get all devices in this switchboard for parent selection (exclude self and descendants)
+    devices = db.query(SwitchboardDevice).filter(
+        SwitchboardDevice.switchboard_id == device.switchboard_id,
+        SwitchboardDevice.device_id != device_id
+    ).order_by(SwitchboardDevice.switchboard_device_position).all()
+    
+    return templates.TemplateResponse("device_form.html", {
+        "request": request,
+        "user_id": user_id,
+        "switchboard": device.switchboard,
+        "device": device,
+        "devices": devices
+    })
+
+
+# Update - Save
+@app.post("/device/{device_id}/update")
+async def device_update(device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    # Verify ownership
+    device = db.query(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        SwitchboardDevice.device_id == device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not device:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Update device fields
+    device.parent_device_id = get_value("parent_device_id", int)
+    device.switchboard_device_position = get_value("switchboard_device_position")
+    device.switchboard_device_type = get_value("switchboard_device_type")
+    device.switchboard_device_manufacturer = get_value("switchboard_device_manufacturer")
+    device.switchboard_device_model = get_value("switchboard_device_model")
+    device.switchboard_device_trip_characteristic = get_value("switchboard_device_trip_characteristic")
+    device.switchboard_device_rated_current = get_value("switchboard_device_rated_current", float)
+    device.switchboard_device_residual_current_ma = get_value("switchboard_device_residual_current_ma", float)
+    device.switchboard_device_sub_devices = get_value("switchboard_device_sub_devices")
+    device.switchboard_device_poles = get_value("switchboard_device_poles", int)
+    device.switchboard_device_module_width = get_value("switchboard_device_module_width", float)
+    
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/switchboard/{device.switchboard_id}", status_code=303)
+
+
+# Delete
+@app.post("/device/{device_id}/delete")
+async def device_delete(device_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    
+    # Verify ownership
+    device = db.query(SwitchboardDevice).join(Switchboard).join(Revision).filter(
+        SwitchboardDevice.device_id == device_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if device:
+        switchboard_id = device.switchboard_id
+        # SQLAlchemy will handle cascade delete of child devices due to self-referencing relationship
+        db.delete(device)
         db.commit()
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)

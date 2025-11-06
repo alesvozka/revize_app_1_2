@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/form_field.html" import render_field %}
 
 {% block title %}{{ "Editovat koncové zařízení" if is_edit else "Nové koncové zařízení" }}{% endblock %}
 
@@ -56,32 +57,28 @@
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Type -->
-                <div>
-                    <label for="terminal_device_type" class="block text-sm font-medium text-gray-700 mb-2">
-                        Typ zařízení
-                    </label>
-                    <input type="text" 
-                           id="terminal_device_type" 
-                           name="terminal_device_type" 
-                           value="{{ terminal_device.terminal_device_type or '' }}"
-                           placeholder="např. Světlo LED, Zásuvka, Motor, Bojler"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Typ elektrického zařízení</p>
-                </div>
+                {{ render_field(
+                    'terminal_device_type',
+                    'Typ zařízení',
+                    current_value=(terminal_device.terminal_device_type if terminal_device else ''),
+                    entity_type='terminal_device',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. Světlo LED, Zásuvka, Motor, Bojler',
+                    help_text='Typ elektrického zařízení'
+                ) }}
 
                 <!-- Manufacturer -->
-                <div>
-                    <label for="terminal_device_manufacturer" class="block text-sm font-medium text-gray-700 mb-2">
-                        Výrobce
-                    </label>
-                    <input type="text" 
-                           id="terminal_device_manufacturer" 
-                           name="terminal_device_manufacturer" 
-                           value="{{ terminal_device.terminal_device_manufacturer or '' }}"
-                           placeholder="např. Philips, ABB, Siemens"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Značka výrobce</p>
-                </div>
+                {{ render_field(
+                    'terminal_device_manufacturer',
+                    'Výrobce',
+                    current_value=(terminal_device.terminal_device_manufacturer if terminal_device else ''),
+                    entity_type='terminal_device',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. Philips, ABB, Siemens',
+                    help_text='Značka výrobce'
+                ) }}
 
                 <!-- Model -->
                 <div>
@@ -150,32 +147,28 @@
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- IP Rating -->
-                <div>
-                    <label for="terminal_device_ip_rating" class="block text-sm font-medium text-gray-700 mb-2">
-                        Krytí (IP)
-                    </label>
-                    <input type="text" 
-                           id="terminal_device_ip_rating" 
-                           name="terminal_device_ip_rating" 
-                           value="{{ terminal_device.terminal_device_ip_rating or '' }}"
-                           placeholder="např. IP20, IP44, IP65"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Stupeň krytí proti vniknutí cizích těles a vody</p>
-                </div>
+                {{ render_field(
+                    'terminal_device_ip_rating',
+                    'Krytí (IP)',
+                    current_value=(terminal_device.terminal_device_ip_rating if terminal_device else ''),
+                    entity_type='terminal_device',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. IP20, IP44, IP65',
+                    help_text='Stupeň krytí proti vniknutí cizích těles a vody'
+                ) }}
 
                 <!-- Protection Class -->
-                <div>
-                    <label for="terminal_device_protection_class" class="block text-sm font-medium text-gray-700 mb-2">
-                        Třída ochrany
-                    </label>
-                    <input type="text" 
-                           id="terminal_device_protection_class" 
-                           name="terminal_device_protection_class" 
-                           value="{{ terminal_device.terminal_device_protection_class or '' }}"
-                           placeholder="např. I, II, III"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Třída ochrany proti úrazu elektrickým proudem</p>
-                </div>
+                {{ render_field(
+                    'terminal_device_protection_class',
+                    'Třída ochrany',
+                    current_value=(terminal_device.terminal_device_protection_class if terminal_device else ''),
+                    entity_type='terminal_device',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. I, II, III',
+                    help_text='Třída ochrany proti úrazu elektrickým proudem'
+                ) }}
 
                 <!-- Supply Type -->
                 <div>
@@ -192,18 +185,16 @@
                 </div>
 
                 <!-- Installation Method -->
-                <div>
-                    <label for="terminal_device_installation_method" class="block text-sm font-medium text-gray-700 mb-2">
-                        Způsob instalace
-                    </label>
-                    <input type="text" 
-                           id="terminal_device_installation_method" 
-                           name="terminal_device_installation_method" 
-                           value="{{ terminal_device.terminal_device_installation_method or '' }}"
-                           placeholder="např. Vestavné, Nástěnné, Stropní, Na DIN lištu"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Způsob montáže zařízení</p>
-                </div>
+                {{ render_field(
+                    'terminal_device_installation_method',
+                    'Způsob instalace',
+                    current_value=(terminal_device.terminal_device_installation_method if terminal_device else ''),
+                    entity_type='terminal_device',
+                    dropdown_config=dropdown_config,
+                    dropdown_sources=dropdown_sources,
+                    placeholder='např. Vestavné, Nástěnné, Stropní, Na DIN lištu',
+                    help_text='Způsob montáže zařízení'
+                ) }}
             </div>
         </div>
 
@@ -220,4 +211,118 @@
         </div>
     </form>
 </div>
+
+<script>
+// Switch between dropdown modes
+function switchDropdownMode(fieldName, mode) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    
+    // Hide all mode contents
+    container.querySelectorAll('.mode-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active state from all buttons
+    container.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+    });
+    
+    // Show selected mode content
+    const selectedContent = container.querySelector(`.mode-${mode}[data-field="${fieldName}"]`);
+    selectedContent.classList.remove('hidden');
+    
+    // Add active state to selected button
+    const selectedBtn = container.querySelector(`.mode-btn-${mode}[data-field="${fieldName}"]`);
+    selectedBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+    selectedBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+    
+    // Disable/enable form fields based on mode
+    const selectField = container.querySelector(`select#${fieldName}`);
+    const textField = container.querySelector(`input#${fieldName}_text`);
+    
+    if (mode === 'select') {
+        selectField.disabled = false;
+        if (textField) textField.disabled = true;
+    } else if (mode === 'text') {
+        selectField.disabled = true;
+        if (textField) textField.disabled = false;
+    } else {
+        selectField.disabled = true;
+        if (textField) textField.disabled = true;
+    }
+}
+
+// Add new value to dropdown and select it
+async function addNewDropdownValue(fieldName, category) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    const newValueInput = container.querySelector(`#${fieldName}_new`);
+    const value = newValueInput.value.trim();
+    
+    if (!value) {
+        alert('Zadejte hodnotu');
+        return;
+    }
+    
+    try {
+        // Send request to add new value
+        const formData = new FormData();
+        formData.append('value', value);
+        
+        const response = await fetch(`/api/dropdown/${category}/add`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add new option to select
+            const selectField = container.querySelector(`select#${fieldName}`);
+            const newOption = document.createElement('option');
+            newOption.value = data.value;
+            newOption.text = data.value;
+            newOption.selected = true;
+            selectField.appendChild(newOption);
+            
+            // Switch back to select mode
+            switchDropdownMode(fieldName, 'select');
+            
+            // Clear input
+            newValueInput.value = '';
+            
+            // Show success message
+            alert(`Hodnota "${data.value}" byla přidána a vybrána`);
+        } else {
+            alert('Chyba při přidávání hodnoty: ' + (data.error || 'Neznámá chyba'));
+        }
+    } catch (error) {
+        console.error('Error adding dropdown value:', error);
+        alert('Chyba při přidávání hodnoty');
+    }
+}
+
+// Initialize dropdown widgets on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.dropdown-widget-container').forEach(container => {
+        const fieldName = container.getAttribute('data-field');
+        // Start with select mode by default
+        switchDropdownMode(fieldName, 'select');
+    });
+});
+</script>
+
+<style>
+.dropdown-widget-container {
+    position: relative;
+}
+
+.mode-btn {
+    cursor: pointer;
+}
+
+.mode-btn:hover {
+    opacity: 0.8;
+}
+</style>
 {% endblock %}

@@ -67,7 +67,8 @@ revize-app/
 │   ├── revision_form.html           # Formulář pro CREATE/UPDATE revize
 │   ├── revision_detail.html         # Detail revize (READ) + seznam switchboardů
 │   ├── switchboard_form.html        # Formulář pro CREATE/UPDATE switchboard
-│   └── switchboard_detail.html      # Detail switchboardu (READ)
+│   ├── switchboard_detail.html      # Detail switchboardu (READ) + měření
+│   └── measurement_form.html        # Formulář pro CREATE/UPDATE měření
 ├── static/                           # Statické soubory (prázdné)
 ├── seed_data.py                      # Skript pro testovací data
 └── README.md                         # Tento soubor
@@ -133,6 +134,17 @@ revize-app/
 - Navigace: Dashboard → Revize → Switchboard
 - Testovací data (3 switchboardy v první revizi)
 
+### ✅ HOTOVO - FÁZE 6:
+- **CRUD pro SwitchboardMeasurement (Měření rozváděčů)** - kompletní implementace:
+  - ✅ CREATE: Formulář pro přidání měření (6 měřených hodnot)
+  - ✅ UPDATE: Editace měření (stejný formulář jako CREATE)
+  - ✅ DELETE: Smazání měření s potvrzením
+  - ℹ️ READ: Zobrazeno přímo v detailu switchboardu (vztah 1:1)
+- Vazba Switchboard 1:1 SwitchboardMeasurement
+- Automatická kontrola existence měření (1:1 vztah)
+- Sekce měření v detailu switchboardu
+- Testovací data (2 měření pro první dva switchboardy)
+
 ### 📋 TODO - Další fáze:
 - [ ] FÁZE 9: Dropdown systém (3 režimy)
 - [ ] FÁZE 10: Settings (správa dropdownů)
@@ -166,6 +178,13 @@ revize-app/
 - `POST /switchboard/{id}/update` - Uložení změn rozváděče
 - `POST /switchboard/{id}/delete` - Smazání rozváděče
 
+### SwitchboardMeasurement CRUD endpointy:
+- `GET /switchboard/{switchboard_id}/measurement/create` - Formulář pro nové měření
+- `POST /switchboard/{switchboard_id}/measurement/create` - Uložení nového měření
+- `GET /switchboard/{switchboard_id}/measurement/edit` - Formulář pro editaci měření
+- `POST /measurement/{id}/update` - Uložení změn měření
+- `POST /measurement/{id}/delete` - Smazání měření
+
 ---
 
 ## 📞 Support
@@ -174,4 +193,4 @@ Pro detailní zadání projektu viz: `ZADANI_REVIZE_APP.md`
 
 ---
 
-**Status:** ✅ FÁZE 1-5 HOTOVO - Plně funkční CRUD pro Revize + Switchboards připraven
+**Status:** ✅ FÁZE 1-6 HOTOVO - Plně funkční CRUD pro Revize + Switchboards + Measurements

@@ -470,6 +470,162 @@ async def switchboard_delete(switchboard_id: int, request: Request, db: Session 
     return RedirectResponse(url="/", status_code=303)
 
 
+# SWITCHBOARD MEASUREMENT CRUD ENDPOINTS
+
+# Create - Show form
+@app.get("/switchboard/{switchboard_id}/measurement/create", response_class=HTMLResponse)
+async def measurement_create_form(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Check if measurement already exists (1:1 relationship)
+    if switchboard.measurements:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/switchboard/{switchboard_id}/measurement/edit", status_code=303)
+    
+    return templates.TemplateResponse("measurement_form.html", {
+        "request": request,
+        "user_id": user_id,
+        "switchboard": switchboard,
+        "measurement": None
+    })
+
+
+# Create - Save new measurement
+@app.post("/switchboard/{switchboard_id}/measurement/create")
+async def measurement_create(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Check if measurement already exists
+    if switchboard.measurements:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+    
+    form_data = await request.form()
+    
+    # Helper function
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Create new measurement
+    new_measurement = SwitchboardMeasurement(
+        switchboard_id=switchboard_id,
+        measurements_switchboard_insulation_resistance=get_value("measurements_switchboard_insulation_resistance", float),
+        measurements_switchboard_loop_impedance_min=get_value("measurements_switchboard_loop_impedance_min", float),
+        measurements_switchboard_loop_impedance_max=get_value("measurements_switchboard_loop_impedance_max", float),
+        measurements_switchboard_rcd_trip_time_ms=get_value("measurements_switchboard_rcd_trip_time_ms", float),
+        measurements_switchboard_rcd_test_current_ma=get_value("measurements_switchboard_rcd_test_current_ma", float),
+        measurements_switchboard_earth_resistance=get_value("measurements_switchboard_earth_resistance", float)
+    )
+    
+    db.add(new_measurement)
+    db.commit()
+    
+    # Redirect to switchboard detail
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+
+
+# Update - Show edit form
+@app.get("/switchboard/{switchboard_id}/measurement/edit", response_class=HTMLResponse)
+async def measurement_edit_form(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard or not switchboard.measurements:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+    
+    return templates.TemplateResponse("measurement_form.html", {
+        "request": request,
+        "user_id": user_id,
+        "switchboard": switchboard,
+        "measurement": switchboard.measurements
+    })
+
+
+# Update - Save changes
+@app.post("/measurement/{measurement_id}/update")
+async def measurement_update(measurement_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    measurement = db.query(SwitchboardMeasurement).join(Switchboard).join(Revision).filter(
+        SwitchboardMeasurement.measurement_id == measurement_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not measurement:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/", status_code=303)
+    
+    form_data = await request.form()
+    
+    # Helper function
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Update measurement fields
+    measurement.measurements_switchboard_insulation_resistance = get_value("measurements_switchboard_insulation_resistance", float)
+    measurement.measurements_switchboard_loop_impedance_min = get_value("measurements_switchboard_loop_impedance_min", float)
+    measurement.measurements_switchboard_loop_impedance_max = get_value("measurements_switchboard_loop_impedance_max", float)
+    measurement.measurements_switchboard_rcd_trip_time_ms = get_value("measurements_switchboard_rcd_trip_time_ms", float)
+    measurement.measurements_switchboard_rcd_test_current_ma = get_value("measurements_switchboard_rcd_test_current_ma", float)
+    measurement.measurements_switchboard_earth_resistance = get_value("measurements_switchboard_earth_resistance", float)
+    
+    db.commit()
+    
+    # Redirect to switchboard detail
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/switchboard/{measurement.switchboard_id}", status_code=303)
+
+
+# Delete
+@app.post("/measurement/{measurement_id}/delete")
+async def measurement_delete(measurement_id: int, request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user(request)
+    measurement = db.query(SwitchboardMeasurement).join(Switchboard).join(Revision).filter(
+        SwitchboardMeasurement.measurement_id == measurement_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if measurement:
+        switchboard_id = measurement.switchboard_id
+        db.delete(measurement)
+        db.commit()
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/switchboard/{switchboard_id}", status_code=303)
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/", status_code=303)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

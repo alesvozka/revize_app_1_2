@@ -271,5 +271,88 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Measurements (Měření) -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-800">Měření rozváděče</h3>
+            {% if switchboard.measurements %}
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/measurement/edit" 
+                   class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                    Editovat měření
+                </a>
+            {% else %}
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/measurement/create" 
+                   class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                    + Přidat měření
+                </a>
+            {% endif %}
+        </div>
+        <div class="p-6">
+            {% if switchboard.measurements %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% if switchboard.measurements.measurements_switchboard_insulation_resistance is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Izolační odpor (MΩ)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_insulation_resistance }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_loop_impedance_min is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Impedance smyčky min (Ω)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_loop_impedance_min }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_loop_impedance_max is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Impedance smyčky max (Ω)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_loop_impedance_max }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_rcd_trip_time_ms is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Doba vypnutí proudového chrániče (ms)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_rcd_trip_time_ms }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_rcd_test_current_ma is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Zkušební proud proudového chrániče (mA)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_rcd_test_current_ma }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_earth_resistance is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Odpor uzemnění (Ω)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_earth_resistance }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 pt-4 border-t">
+                    <button onclick="if(confirm('Opravdu chcete smazat měření?')) { document.getElementById('delete-measurement-form').submit(); }" 
+                            class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        Smazat měření
+                    </button>
+                </div>
+                
+                <form id="delete-measurement-form" method="POST" action="/measurement/{{ switchboard.measurements.measurement_id }}/delete" style="display: none;">
+                </form>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <p class="text-sm">Zatím nejsou zadána měření</p>
+                    <p class="text-xs mt-1">Klikněte na tlačítko výše pro přidání měření</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

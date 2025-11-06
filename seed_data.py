@@ -4,7 +4,7 @@ Spusťte: python seed_data.py
 """
 from datetime import date, timedelta
 from database import SessionLocal, Base, engine
-from models import User, Revision, Switchboard
+from models import User, Revision, Switchboard, SwitchboardMeasurement
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -219,6 +219,45 @@ def seed_database():
                 print("⚠️  Nelze vytvořit switchboardy - revize neexistuje")
         else:
             print(f"ℹ️  Databáze již obsahuje {existing_switchboards} rozváděčů")
+        
+        # Create sample measurements for first two switchboards
+        existing_measurements = db.query(SwitchboardMeasurement).count()
+        
+        if existing_measurements == 0:
+            # Get first two switchboards
+            switchboards = db.query(Switchboard).limit(2).all()
+            
+            if len(switchboards) >= 2:
+                measurements = [
+                    SwitchboardMeasurement(
+                        switchboard_id=switchboards[0].switchboard_id,
+                        measurements_switchboard_insulation_resistance=500.0,
+                        measurements_switchboard_loop_impedance_min=0.15,
+                        measurements_switchboard_loop_impedance_max=0.25,
+                        measurements_switchboard_rcd_trip_time_ms=25.0,
+                        measurements_switchboard_rcd_test_current_ma=30.0,
+                        measurements_switchboard_earth_resistance=5.2
+                    ),
+                    SwitchboardMeasurement(
+                        switchboard_id=switchboards[1].switchboard_id,
+                        measurements_switchboard_insulation_resistance=450.0,
+                        measurements_switchboard_loop_impedance_min=0.18,
+                        measurements_switchboard_loop_impedance_max=0.28,
+                        measurements_switchboard_rcd_trip_time_ms=28.0,
+                        measurements_switchboard_rcd_test_current_ma=30.0,
+                        measurements_switchboard_earth_resistance=6.1
+                    )
+                ]
+                
+                for measurement in measurements:
+                    db.add(measurement)
+                
+                db.commit()
+                print(f"✅ Vytvořeno {len(measurements)} ukázkových měření")
+            else:
+                print("⚠️  Nelze vytvořit měření - nedostatek switchboardů")
+        else:
+            print(f"ℹ️  Databáze již obsahuje {existing_measurements} měření")
         
         print("\n🎉 Databáze je připravena k použití!")
         print("   Přihlaste se jako uživatel: admin")

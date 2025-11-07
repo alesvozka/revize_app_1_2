@@ -1,133 +1,50 @@
-{% extends "base.html" %}
+{% extends "base_improved.html" %}
 
-{% block title %}{% if measurement %}Editace měření{% else %}Nové měření{% endif %} - Revize App{% endblock %}
+{% block title %}Měření - Revize App{% endblock %}
+
+{% block sidebar_breadcrumbs %}
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': 'Měření', 'url': ''}
+] %}
+{{ super() }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <!-- Page Header -->
-    <div class="mb-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800">
-                    {% if measurement %}Editace měření{% else %}Nové měření{% endif %}
-                </h2>
-                <p class="text-gray-600 mt-1">
-                    Rozváděč: {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
-                </p>
-            </div>
-            <a href="/switchboard/{{ switchboard.switchboard_id }}" class="text-gray-600 hover:text-gray-800">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </a>
-        </div>
+<div class="max-w-4xl mx-auto">
+    <div class="mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Nové měření</h2>
     </div>
 
-    <!-- Form -->
-    <form method="POST" action="{% if measurement %}/measurement/{{ measurement.measurement_id }}/update{% else %}/switchboard/{{ switchboard.switchboard_id }}/measurement/create{% endif %}" class="bg-white rounded-lg shadow p-6">
-        
-        <!-- Info Box -->
-        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div class="flex items-start">
-                <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div class="text-sm text-blue-800">
-                    <p class="font-medium mb-1">Instrukce k vyplnění měření:</p>
-                    <ul class="list-disc list-inside space-y-1 text-xs">
-                        <li>Všechna pole jsou volitelná - vyplňte pouze provedená měření</li>
-                        <li>Hodnoty zadávejte v uvedených jednotkách</li>
-                        <li>Pro desetinná čísla použijte tečku (např. 2.5)</li>
-                    </ul>
+    <form method="POST" class="flat-card">
+        <div class="p-4 space-y-6">
+            <div>
+                <h3 class="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Měřené hodnoty</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Typ měření <span class="text-red-500">*</span></label>
+                        <select name="measurement_type" required class="form-input">
+                            <option value="">-- Vyberte --</option>
+                            <option value="insulation">Odpor izolace</option>
+                            <option value="loop">Impedance smyčky</option>
+                            <option value="rcd">Test RCD</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Hodnota</label>
+                        <input type="number" name="value" step="0.01" required class="form-input">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="form-label">Poznámka</label>
+                        <textarea name="note" rows="2" class="form-input"></textarea>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Měření -->
-        <div class="mb-8">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Naměřené hodnoty</h3>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Izolační odpor (MΩ)
-                    </label>
-                    <input type="number" step="0.001" name="measurements_switchboard_insulation_resistance" 
-                           value="{% if measurement and measurement.measurements_switchboard_insulation_resistance is not none %}{{ measurement.measurements_switchboard_insulation_resistance }}{% endif %}" 
-                           placeholder="např. 500"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Měření izolačního odporu mezi živými částmi a zemí</p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Impedance smyčky MIN (Ω)
-                        </label>
-                        <input type="number" step="0.001" name="measurements_switchboard_loop_impedance_min" 
-                               value="{% if measurement and measurement.measurements_switchboard_loop_impedance_min is not none %}{{ measurement.measurements_switchboard_loop_impedance_min }}{% endif %}" 
-                               placeholder="např. 0.15"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <p class="mt-1 text-xs text-gray-500">Minimální naměřená hodnota</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Impedance smyčky MAX (Ω)
-                        </label>
-                        <input type="number" step="0.001" name="measurements_switchboard_loop_impedance_max" 
-                               value="{% if measurement and measurement.measurements_switchboard_loop_impedance_max is not none %}{{ measurement.measurements_switchboard_loop_impedance_max }}{% endif %}" 
-                               placeholder="např. 0.25"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <p class="mt-1 text-xs text-gray-500">Maximální naměřená hodnota</p>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Doba vypnutí proudového chrániče (ms)
-                        </label>
-                        <input type="number" step="0.1" name="measurements_switchboard_rcd_trip_time_ms" 
-                               value="{% if measurement and measurement.measurements_switchboard_rcd_trip_time_ms is not none %}{{ measurement.measurements_switchboard_rcd_trip_time_ms }}{% endif %}" 
-                               placeholder="např. 25"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <p class="mt-1 text-xs text-gray-500">Čas do odpojení při zkušebním proudu</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Zkušební proud proudového chrániče (mA)
-                        </label>
-                        <input type="number" step="0.1" name="measurements_switchboard_rcd_test_current_ma" 
-                               value="{% if measurement and measurement.measurements_switchboard_rcd_test_current_ma is not none %}{{ measurement.measurements_switchboard_rcd_test_current_ma }}{% endif %}" 
-                               placeholder="např. 30"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <p class="mt-1 text-xs text-gray-500">Proud použitý při testu</p>
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Odpor uzemnění (Ω)
-                    </label>
-                    <input type="number" step="0.001" name="measurements_switchboard_earth_resistance" 
-                           value="{% if measurement and measurement.measurements_switchboard_earth_resistance is not none %}{{ measurement.measurements_switchboard_earth_resistance }}{% endif %}" 
-                           placeholder="např. 5.2"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">Odpor zemnicí soustavy</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Form Actions -->
-        <div class="flex items-center justify-between pt-6 border-t">
-            <a href="/switchboard/{{ switchboard.switchboard_id }}" class="px-4 py-2 text-gray-700 hover:text-gray-900 transition">
-                Zrušit
-            </a>
-            <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                {% if measurement %}Uložit změny{% else %}Uložit měření{% endif %}
-            </button>
+        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end space-x-2">
+            <a href="/" class="btn btn-secondary">Zrušit</a>
+            <button type="submit" class="btn btn-primary">Uložit měření</button>
         </div>
     </form>
 </div>

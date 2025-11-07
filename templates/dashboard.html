@@ -1,131 +1,147 @@
-{% extends "base.html" %}
+{% extends "base_improved.html" %}
 
 {% block title %}Dashboard - Revize App{% endblock %}
 
+{% block sidebar_breadcrumbs %}
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': ''}
+] %}
+{{ super() }}
+{% endblock %}
+
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-4">
     <!-- Page Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between pb-4 border-b border-gray-200">
         <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
-        <a href="/revision/create" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+        <a href="/revision/create" class="btn btn-primary">
             + Nová revize
         </a>
     </div>
     
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white p-6 rounded-lg shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">Celkem revizí</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ total_revisions }}</p>
-                </div>
-                <div class="bg-blue-100 p-3 rounded-full">
-                    <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white p-6 rounded-lg shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">Aktivní revize</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ active_revisions }}</p>
-                </div>
-                <div class="bg-green-100 p-3 rounded-full">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+        <div class="flat-card">
+            <div class="flat-card-body">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs uppercase tracking-wide">Celkem revizí</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ total_revisions }}</p>
+                    </div>
+                    <div class="bg-blue-50 p-3">
+                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="bg-white p-6 rounded-lg shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">Dokončené revize</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ completed_revisions }}</p>
+        <div class="flat-card">
+            <div class="flat-card-body">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs uppercase tracking-wide">Aktivní revize</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ active_revisions }}</p>
+                    </div>
+                    <div class="bg-green-50 p-3">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
                 </div>
-                <div class="bg-purple-100 p-3 rounded-full">
-                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
+            </div>
+        </div>
+        
+        <div class="flat-card">
+            <div class="flat-card-body">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs uppercase tracking-wide">Dokončené revize</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ completed_revisions }}</p>
+                    </div>
+                    <div class="bg-purple-50 p-3">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Recent Revisions -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800">Poslední revize</h3>
-        </div>
-        <div class="p-6">
+    <div class="flat-card">
+        <div class="flat-card-header">Poslední revize</div>
+        <div class="flat-card-body p-0">
             {% if revisions %}
-                <div class="space-y-4">
-                    {% for revision in revisions %}
-                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                        <div class="flex items-start justify-between">
-                            <a href="/revision/{{ revision.revision_id }}" class="flex-1">
-                                <div class="flex items-center space-x-3">
-                                    <h4 class="text-lg font-semibold text-gray-800">
-                                        {% if revision.revision_name %}
-                                            {{ revision.revision_name }}
-                                        {% else %}
-                                            Revize #{{ revision.revision_id }}
-                                        {% endif %}
-                                    </h4>
-                                    {% if revision.revision_end_date %}
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700">
-                                            Dokončeno
-                                        </span>
-                                    {% else %}
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                                            Aktivní
-                                        </span>
-                                    {% endif %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Název / Kód</th>
+                            <th>Klient</th>
+                            <th>Adresa</th>
+                            <th style="width: 120px;">Datum</th>
+                            <th style="width: 100px;">Status</th>
+                            <th style="width: 120px;" class="text-right">Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for revision in revisions %}
+                        <tr onclick="window.location='/revision/{{ revision.revision_id }}'" style="cursor: pointer;">
+                            <td>
+                                <div class="font-medium text-gray-800">
+                                    {{ revision.revision_name or 'Revize #' ~ revision.revision_id }}
                                 </div>
-                                
-                                <div class="mt-2 space-y-1 text-sm text-gray-600">
-                                    {% if revision.revision_code %}
-                                        <p><span class="font-medium">Kód:</span> {{ revision.revision_code }}</p>
-                                    {% endif %}
-                                    {% if revision.revision_client %}
-                                        <p><span class="font-medium">Klient:</span> {{ revision.revision_client }}</p>
-                                    {% endif %}
-                                    {% if revision.revision_address %}
-                                        <p><span class="font-medium">Adresa:</span> {{ revision.revision_address }}</p>
-                                    {% endif %}
-                                    {% if revision.revision_start_date %}
-                                        <p><span class="font-medium">Datum zahájení:</span> {{ revision.revision_start_date.strftime('%d.%m.%Y') }}</p>
-                                    {% endif %}
+                                {% if revision.revision_code %}
+                                <div class="text-xs text-gray-500">{{ revision.revision_code }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-gray-600">{{ revision.revision_client or '—' }}</td>
+                            <td class="text-gray-600">{{ revision.revision_address or '—' }}</td>
+                            <td class="text-gray-600">
+                                {% if revision.revision_start_date %}
+                                    {{ revision.revision_start_date.strftime('%d.%m.%Y') }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if revision.revision_end_date %}
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                                        Dokončeno
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                        Aktivní
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right" onclick="event.stopPropagation();">
+                                <div class="flex justify-end items-center gap-1">
+                                    <form method="POST" action="/revision/{{ revision.revision_id }}/duplicate" class="inline">
+                                        <button type="submit" class="action-icon action-icon-edit" title="Duplikovat">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/revision/{{ revision.revision_id }}/delete" 
+                                          onsubmit="return confirm('Opravdu chcete smazat tuto revizi a všechna její data?')" class="inline">
+                                        <button type="submit" class="action-icon action-icon-delete" title="Smazat">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
                                 </div>
-                            </a>
-                            
-                            <div class="flex gap-2 ml-4">
-                                <form method="POST" action="/revision/{{ revision.revision_id }}/duplicate" class="inline">
-                                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" title="Duplikovat revizi">
-                                        📋
-                                    </button>
-                                </form>
-                                <form method="POST" action="/revision/{{ revision.revision_id }}/delete" 
-                                      onsubmit="return confirm('Opravdu chcete smazat tuto revizi a všechna její data?')" class="inline">
-                                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100" title="Smazat revizi">
-                                        🗑️
-                                    </button>
-                                </form>
-                                <svg class="w-5 h-5 text-gray-400 mt-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
-                <div class="text-center py-12 text-gray-500">
+                <div class="text-center py-16 text-gray-500">
                     <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>

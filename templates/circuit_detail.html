@@ -1,315 +1,87 @@
-{% extends "base.html" %}
+{% extends "base_improved.html" %}
 
-{% block title %}Detail obvodu{% endblock %}
+{% block title %}Obvod {{ circuit.circuit_position }} - Revize App{% endblock %}
+
+{% block sidebar_breadcrumbs %}
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': circuit.device.switchboard.revision.revision_name or 'Revize', 'url': '/revision/' ~ circuit.device.switchboard.revision.revision_id},
+    {'label': circuit.device.switchboard.switchboard_name or 'Rozváděč', 'url': '/switchboard/' ~ circuit.device.switchboard.switchboard_id},
+    {'label': 'Přístroj ' ~ circuit.device.switchboard_device_position, 'url': '/device/' ~ circuit.device.device_id},
+    {'label': 'Obvod ' ~ circuit.circuit_position, 'url': ''}
+] %}
+{{ super() }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
-    <!-- Header -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex-1">
-                <div class="flex items-center gap-3 mb-2">
-                    <h1 class="text-2xl font-bold text-gray-900">
-                        Obvod {{ circuit.circuit_number or "—" }}
-                    </h1>
-                    {% if circuit.circuit_room %}
-                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                        {{ circuit.circuit_room }}
-                    </span>
+<div class="space-y-4">
+    <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Obvod: {{ circuit.circuit_position }}</h2>
+            <p class="text-sm text-gray-600 mt-1">
+                Přístroj: <a href="/device/{{ circuit.device.device_id }}" class="text-primary hover:underline">{{ circuit.device.switchboard_device_position }}</a>
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="/circuit/{{ circuit.circuit_id }}/edit" class="btn btn-primary">Editovat</a>
+            <a href="/device/{{ circuit.device.device_id }}" class="btn btn-secondary">Zpět</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="flat-card">
+            <div class="flat-card-header">Parametry obvodu</div>
+            <div class="flat-card-body">
+                <table class="w-full text-sm">
+                    <tr><td class="py-1 text-gray-600 w-2/5">Pozice:</td><td class="py-1 font-medium font-mono">{{ circuit.circuit_position }}</td></tr>
+                    <tr><td class="py-1 text-gray-600">Popis:</td><td class="py-1 font-medium">{{ circuit.circuit_description or '—' }}</td></tr>
+                    <tr><td class="py-1 text-gray-600">Jistič:</td><td class="py-1 font-medium">{{ circuit.circuit_circuit_breaker or '—' }}</td></tr>
+                    {% if circuit.circuit_cable %}
+                    <tr><td class="py-1 text-gray-600">Kabel:</td><td class="py-1 font-medium">{{ circuit.circuit_cable }}</td></tr>
                     {% endif %}
-                </div>
-                <p class="text-sm text-gray-600">
-                    Přístroj: 
-                    <a href="{{ url_for('device_detail', device_id=circuit.device.device_id) }}" 
-                       class="text-blue-600 hover:text-blue-800 font-medium">
-                        {{ circuit.device.switchboard_device_position or "—" }}
-                    </a>
-                    {% if circuit.device.switchboard_device_type %}
-                        ({{ circuit.device.switchboard_device_type }})
-                    {% endif %}
-                </p>
-                <p class="text-sm text-gray-600">
-                    Rozváděč: 
-                    <a href="{{ url_for('switchboard_detail', switchboard_id=circuit.device.switchboard.switchboard_id) }}" 
-                       class="text-blue-600 hover:text-blue-800 font-medium">
-                        {{ circuit.device.switchboard.switchboard_name or "—" }}
-                    </a>
-                </p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ url_for('circuit_edit_form', circuit_id=circuit.circuit_id) }}" 
-                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                    ✏️ Editovat
-                </a>
-                <form method="POST" action="{{ url_for('circuit_delete', circuit_id=circuit.circuit_id) }}" 
-                      onsubmit="return confirm('Opravdu chcete smazat tento obvod{% if terminal_devices %} a všechna koncová zařízení ({{ terminal_devices|length }}){% endif %}?')" 
-                      class="inline">
-                    <button type="submit" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
-                        🗑️ Smazat
-                    </button>
-                </form>
-            </div>
-        </div>
-        <a href="{{ url_for('device_detail', device_id=circuit.device.device_id) }}" 
-           class="inline-block text-sm text-blue-600 hover:text-blue-800">
-            ← Zpět na přístroj
-        </a>
-    </div>
-
-    <!-- Circuit Info -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-            Základní informace
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Číslo obvodu</dt>
-                <dd class="mt-1 text-base text-gray-900">{{ circuit.circuit_number or "—" }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Místnost / Oblast</dt>
-                <dd class="mt-1 text-base text-gray-900">{{ circuit.circuit_room or "—" }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Počet zásuvek</dt>
-                <dd class="mt-1 text-base text-gray-900">{{ circuit.circuit_number_of_outlets or "—" }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Zakončení kabelu</dt>
-                <dd class="mt-1 text-base text-gray-900">{{ circuit.circuit_cable_termination or "—" }}</dd>
-            </div>
-            <div class="md:col-span-2">
-                <dt class="text-sm font-medium text-gray-500">Popis obvodu</dt>
-                <dd class="mt-1 text-base text-gray-900">{{ circuit.circuit_description or "—" }}</dd>
-            </div>
-            {% if circuit.circuit_description_from_switchboard %}
-            <div class="md:col-span-2 lg:col-span-3">
-                <dt class="text-sm font-medium text-gray-500">Popis z rozváděče</dt>
-                <dd class="mt-1 text-base text-gray-900 italic">{{ circuit.circuit_description_from_switchboard }}</dd>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Cable Info -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-            Parametry kabelu
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Typ kabelu</dt>
-                <dd class="mt-1 text-base text-gray-900 font-mono">{{ circuit.circuit_cable or "—" }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Způsob uložení</dt>
-                <dd class="mt-1 text-base text-gray-900">{{ circuit.circuit_cable_installation_method or "—" }}</dd>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- Measurements -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Měření obvodu</h3>
-            {% if measurement %}
-                <div class="flex gap-2">
-                    <a href="{{ url_for('circuit_measurement_edit_form', circuit_id=circuit.circuit_id) }}" 
-                       class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                        ✏️ Editovat měření
-                    </a>
-                    <form method="POST" action="{{ url_for('circuit_measurement_delete', measurement_id=measurement.measurement_id) }}" 
-                          onsubmit="return confirm('Opravdu chcete smazat měření?')" 
-                          class="inline">
-                        <button type="submit" 
-                                class="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50">
-                            🗑️ Smazat měření
-                        </button>
-                    </form>
-                </div>
+    <div class="flat-card">
+        <div class="flat-card-header flex items-center justify-between">
+            <span>Koncová zařízení</span>
+            <a href="/circuit/{{ circuit.circuit_id }}/terminal-device/create" class="btn btn-primary text-xs">+ Přidat zařízení</a>
+        </div>
+        <div class="flat-card-body p-0">
+            {% if circuit.terminal_devices %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Označení</th>
+                            <th>Typ</th>
+                            <th>Místnost</th>
+                            <th style="width: 120px;" class="text-right">Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for td in circuit.terminal_devices %}
+                        <tr onclick="window.location='/terminal-device/{{ td.terminal_device_id }}'" style="cursor: pointer;">
+                            <td class="font-medium">{{ td.terminal_device_designation or '—' }}</td>
+                            <td>{{ td.terminal_device_type or '—' }}</td>
+                            <td class="text-gray-600">{{ td.terminal_device_room or '—' }}</td>
+                            <td class="text-right" onclick="event.stopPropagation();">
+                                <div class="flex justify-end gap-1">
+                                    <a href="/terminal-device/{{ td.terminal_device_id }}/edit" class="action-icon action-icon-edit"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
-                <a href="{{ url_for('circuit_measurement_create_form', circuit_id=circuit.circuit_id) }}" 
-                   class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                    + Přidat měření
-                </a>
+                <div class="text-center py-12 text-gray-500">
+                    <p>Žádná zařízení</p>
+                    <a href="/circuit/{{ circuit.circuit_id }}/terminal-device/create" class="text-primary hover:underline text-sm">Přidat první zařízení</a>
+                </div>
             {% endif %}
         </div>
-
-        {% if measurement %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Izolační odpor</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.2f"|format(measurement.measurements_circuit_insulation_resistance) if measurement.measurements_circuit_insulation_resistance else "—" }} 
-                    {% if measurement.measurements_circuit_insulation_resistance %}<span class="text-sm text-gray-500">MΩ</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Impedance smyčky (min)</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.3f"|format(measurement.measurements_circuit_loop_impedance_min) if measurement.measurements_circuit_loop_impedance_min else "—" }}
-                    {% if measurement.measurements_circuit_loop_impedance_min %}<span class="text-sm text-gray-500">Ω</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Impedance smyčky (max)</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.3f"|format(measurement.measurements_circuit_loop_impedance_max) if measurement.measurements_circuit_loop_impedance_max else "—" }}
-                    {% if measurement.measurements_circuit_loop_impedance_max %}<span class="text-sm text-gray-500">Ω</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">RCD - Čas vypnutí</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.1f"|format(measurement.measurements_circuit_rcd_trip_time_ms) if measurement.measurements_circuit_rcd_trip_time_ms else "—" }}
-                    {% if measurement.measurements_circuit_rcd_trip_time_ms %}<span class="text-sm text-gray-500">ms</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">RCD - Zkušební proud</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.1f"|format(measurement.measurements_circuit_rcd_test_current_ma) if measurement.measurements_circuit_rcd_test_current_ma else "—" }}
-                    {% if measurement.measurements_circuit_rcd_test_current_ma %}<span class="text-sm text-gray-500">mA</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Odpor uzemnění</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.3f"|format(measurement.measurements_circuit_earth_resistance) if measurement.measurements_circuit_earth_resistance else "—" }}
-                    {% if measurement.measurements_circuit_earth_resistance %}<span class="text-sm text-gray-500">Ω</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Kontinuita</dt>
-                <dd class="mt-1 text-base text-gray-900">
-                    {{ "%.3f"|format(measurement.measurements_circuit_continuity) if measurement.measurements_circuit_continuity else "—" }}
-                    {% if measurement.measurements_circuit_continuity %}<span class="text-sm text-gray-500">Ω</span>{% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-gray-500">Pořadí fází</dt>
-                <dd class="mt-1 text-base text-gray-900 font-mono">{{ measurement.measurements_circuit_order_of_phases or "—" }}</dd>
-            </div>
-        </div>
-        {% else %}
-        <div class="text-center py-8">
-            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            <p class="text-gray-500 text-sm">Nebylo provedeno žádné měření</p>
-            <p class="text-gray-400 text-xs mt-1">Klikněte na tlačítko výše pro přidání měření</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Terminal Devices -->
-    <div class="bg-white rounded-lg shadow-sm p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Koncová zařízení</h3>
-            <a href="{{ url_for('terminal_device_create_form', circuit_id=circuit.circuit_id) }}" 
-               class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                + Přidat zařízení
-            </a>
-        </div>
-        
-        {% if terminal_devices %}
-        <div class="space-y-3">
-            {% for device in terminal_devices %}
-            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h4 class="font-medium text-gray-900">{{ device.terminal_device_type or "Neznámé zařízení" }}</h4>
-                            {% if device.terminal_device_marking %}
-                            <span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded font-mono">
-                                {{ device.terminal_device_marking }}
-                            </span>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 mt-2">
-                            {% if device.terminal_device_manufacturer or device.terminal_device_model %}
-                            <div>
-                                <span class="font-medium">Výrobce/Model:</span>
-                                {{ device.terminal_device_manufacturer or "—" }}
-                                {% if device.terminal_device_model %} / {{ device.terminal_device_model }}{% endif %}
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_power %}
-                            <div>
-                                <span class="font-medium">Výkon:</span> {{ device.terminal_device_power }} W
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_ip_rating %}
-                            <div>
-                                <span class="font-medium">Krytí:</span> 
-                                <span class="font-mono">{{ device.terminal_device_ip_rating }}</span>
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_protection_class %}
-                            <div>
-                                <span class="font-medium">Třída ochrany:</span> 
-                                <span class="font-mono">{{ device.terminal_device_protection_class }}</span>
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_supply_type %}
-                            <div>
-                                <span class="font-medium">Napájení:</span> {{ device.terminal_device_supply_type }}
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_installation_method %}
-                            <div>
-                                <span class="font-medium">Instalace:</span> {{ device.terminal_device_installation_method }}
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_serial_number %}
-                            <div class="md:col-span-2">
-                                <span class="font-medium">S/N:</span> 
-                                <span class="font-mono text-xs">{{ device.terminal_device_serial_number }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-2 ml-4">
-                        <a href="{{ url_for('terminal_device_detail', terminal_device_id=device.terminal_device_id) }}" 
-                           class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
-                            📋 Detail
-                        </a>
-                        <a href="{{ url_for('terminal_device_edit_form', terminal_device_id=device.terminal_device_id) }}" 
-                           class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100">
-                            ✏️ Editovat
-                        </a>
-                        <form method="POST" action="{{ url_for('terminal_device_duplicate', terminal_device_id=device.terminal_device_id) }}" 
-                              class="inline">
-                            <button type="submit" 
-                                    class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" title="Duplikovat">
-                                📋
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ url_for('terminal_device_delete', terminal_device_id=device.terminal_device_id) }}" 
-                              onsubmit="return confirm('Opravdu chcete smazat toto koncové zařízení?')" 
-                              class="inline">
-                            <button type="submit" 
-                                    class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">
-                                🗑️
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="text-center py-12">
-            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-            </svg>
-            <p class="text-gray-500 text-sm font-medium mb-1">Nejsou evidována žádná koncová zařízení</p>
-            <p class="text-gray-400 text-xs">Klikněte na tlačítko "Přidat zařízení" pro vytvoření prvního koncového zařízení</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

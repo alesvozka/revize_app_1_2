@@ -66,9 +66,9 @@
             {% if revisions %}
                 <div class="space-y-4">
                     {% for revision in revisions %}
-                    <a href="/revision/{{ revision.revision_id }}" class="block border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                         <div class="flex items-start justify-between">
-                            <div class="flex-1">
+                            <a href="/revision/{{ revision.revision_id }}" class="flex-1">
                                 <div class="flex items-center space-x-3">
                                     <h4 class="text-lg font-semibold text-gray-800">
                                         {% if revision.revision_name %}
@@ -102,15 +102,26 @@
                                         <p><span class="font-medium">Datum zahájení:</span> {{ revision.revision_start_date.strftime('%d.%m.%Y') }}</p>
                                     {% endif %}
                                 </div>
-                            </div>
+                            </a>
                             
-                            <div class="ml-4">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex gap-2 ml-4">
+                                <form method="POST" action="/revision/{{ revision.revision_id }}/duplicate" class="inline">
+                                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" title="Duplikovat revizi">
+                                        📋
+                                    </button>
+                                </form>
+                                <form method="POST" action="/revision/{{ revision.revision_id }}/delete" 
+                                      onsubmit="return confirm('Opravdu chcete smazat tuto revizi a všechna její data?')" class="inline">
+                                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100" title="Smazat revizi">
+                                        🗑️
+                                    </button>
+                                </form>
+                                <svg class="w-5 h-5 text-gray-400 mt-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </div>
                         </div>
-                    </a>
+                    </div>
                     {% endfor %}
                 </div>
             {% else %}

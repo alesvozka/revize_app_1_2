@@ -281,6 +281,13 @@
                            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100">
                             ✏️ Editovat
                         </a>
+                        <form method="POST" action="{{ url_for('terminal_device_duplicate', terminal_device_id=device.terminal_device_id) }}" 
+                              class="inline">
+                            <button type="submit" 
+                                    class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" title="Duplikovat">
+                                📋
+                            </button>
+                        </form>
                         <form method="POST" action="{{ url_for('terminal_device_delete', terminal_device_id=device.terminal_device_id) }}" 
                               onsubmit="return confirm('Opravdu chcete smazat toto koncové zařízení?')" 
                               class="inline">

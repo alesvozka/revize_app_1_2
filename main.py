@@ -115,86 +115,6 @@ def get_field_dropdown_config(entity_type: str, db: Session):
     return result
 
 
-def build_breadcrumbs(db: Session, **kwargs):
-    """
-    Build breadcrumbs navigation based on current context
-    
-    Args:
-        revision_id: int
-        switchboard_id: int  
-        device_id: int
-        circuit_id: int
-        terminal_device_id: int
-    
-    Returns:
-        list: [{"name": str, "url": str}, ...]
-    """
-    breadcrumbs = [{"name": "Dashboard", "url": "/"}]
-    
-    # If we have terminal device, build full chain
-    if kwargs.get('terminal_device_id'):
-        terminal = db.query(TerminalDevice).filter(
-            TerminalDevice.terminal_device_id == kwargs['terminal_device_id']
-        ).first()
-        if terminal:
-            circuit = terminal.circuit
-            device = circuit.device
-            switchboard = device.switchboard
-            revision = switchboard.revision
-            
-            breadcrumbs.append({"name": revision.revision_name or f"Revize #{revision.revision_id}", "url": f"/revision/{revision.revision_id}"})
-            breadcrumbs.append({"name": switchboard.switchboard_name or f"Rozváděč #{switchboard.switchboard_id}", "url": f"/switchboard/{switchboard.switchboard_id}"})
-            breadcrumbs.append({"name": f"Přístroj #{device.switchboard_device_position or device.device_id}", "url": f"/device/{device.device_id}"})
-            breadcrumbs.append({"name": circuit.circuit_description or f"Obvod #{circuit.circuit_number or circuit.circuit_id}", "url": f"/circuit/{circuit.circuit_id}"})
-            breadcrumbs.append({"name": terminal.terminal_device_marking or f"Zařízení #{terminal.terminal_device_id}", "url": f"/terminal/{terminal.terminal_device_id}"})
-    
-    # If we have circuit, build chain
-    elif kwargs.get('circuit_id'):
-        circuit = db.query(Circuit).filter(Circuit.circuit_id == kwargs['circuit_id']).first()
-        if circuit:
-            device = circuit.device
-            switchboard = device.switchboard
-            revision = switchboard.revision
-            
-            breadcrumbs.append({"name": revision.revision_name or f"Revize #{revision.revision_id}", "url": f"/revision/{revision.revision_id}"})
-            breadcrumbs.append({"name": switchboard.switchboard_name or f"Rozváděč #{switchboard.switchboard_id}", "url": f"/switchboard/{switchboard.switchboard_id}"})
-            breadcrumbs.append({"name": f"Přístroj #{device.switchboard_device_position or device.device_id}", "url": f"/device/{device.device_id}"})
-            breadcrumbs.append({"name": circuit.circuit_description or f"Obvod #{circuit.circuit_number or circuit.circuit_id}", "url": f"/circuit/{circuit.circuit_id}"})
-    
-    # If we have device, build chain
-    elif kwargs.get('device_id'):
-        device = db.query(SwitchboardDevice).filter(
-            SwitchboardDevice.device_id == kwargs['device_id']
-        ).first()
-        if device:
-            switchboard = device.switchboard
-            revision = switchboard.revision
-            
-            breadcrumbs.append({"name": revision.revision_name or f"Revize #{revision.revision_id}", "url": f"/revision/{revision.revision_id}"})
-            breadcrumbs.append({"name": switchboard.switchboard_name or f"Rozváděč #{switchboard.switchboard_id}", "url": f"/switchboard/{switchboard.switchboard_id}"})
-            breadcrumbs.append({"name": f"Přístroj #{device.switchboard_device_position or device.device_id}", "url": f"/device/{device.device_id}"})
-    
-    # If we have switchboard, build chain
-    elif kwargs.get('switchboard_id'):
-        switchboard = db.query(Switchboard).filter(
-            Switchboard.switchboard_id == kwargs['switchboard_id']
-        ).first()
-        if switchboard:
-            revision = switchboard.revision
-            breadcrumbs.append({"name": revision.revision_name or f"Revize #{revision.revision_id}", "url": f"/revision/{revision.revision_id}"})
-            breadcrumbs.append({"name": switchboard.switchboard_name or f"Rozváděč #{switchboard.switchboard_id}", "url": f"/switchboard/{switchboard.switchboard_id}"})
-    
-    # If we have just revision
-    elif kwargs.get('revision_id'):
-        revision = db.query(Revision).filter(
-            Revision.revision_id == kwargs['revision_id']
-        ).first()
-        if revision:
-            breadcrumbs.append({"name": revision.revision_name or f"Revize #{revision.revision_id}", "url": f"/revision/{revision.revision_id}"})
-    
-    return breadcrumbs
-
-
 # Root endpoint - Dashboard
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, db: Session = Depends(get_db)):
@@ -233,8 +153,7 @@ async def revision_create_form(request: Request):
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
-        "revision": None,
-        "is_duplicate": False
+        "revision": None
     })
 
 
@@ -313,18 +232,10 @@ async def revision_detail(revision_id: int, request: Request, db: Session = Depe
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    # Sort switchboards by switchboard_order, treating None as infinity
-    if revision.switchboards:
-        revision.switchboards.sort(key=lambda x: x.switchboard_order if x.switchboard_order is not None else 999999)
-    
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, revision_id=revision_id)
-    
     return templates.TemplateResponse("revision_detail.html", {
         "request": request,
         "user_id": user_id,
-        "revision": revision,
-        "breadcrumbs": breadcrumbs
+        "revision": revision
     })
 
 
@@ -341,15 +252,10 @@ async def revision_edit_form(revision_id: int, request: Request, db: Session = D
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, revision_id=revision_id)
-    
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
-        "revision": revision,
-        "is_duplicate": False,
-        "breadcrumbs": breadcrumbs
+        "revision": revision
     })
 
 
@@ -464,20 +370,13 @@ async def switchboard_create_form(revision_id: int, request: Request, db: Sessio
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, revision_id=revision_id)
-    
     return templates.TemplateResponse("switchboard_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": revision,
         "switchboard": None,
-        "measurement": None,
-        "is_duplicate": False,
-        "field_configs": dropdown_config,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -561,14 +460,10 @@ async def switchboard_detail(switchboard_id: int, request: Request, db: Session 
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, switchboard_id=switchboard_id)
-    
     return templates.TemplateResponse("switchboard_detail.html", {
         "request": request,
         "user_id": user_id,
-        "switchboard": switchboard,
-        "breadcrumbs": breadcrumbs
+        "switchboard": switchboard
     })
 
 
@@ -598,25 +493,13 @@ async def switchboard_edit_form(switchboard_id: int, request: Request, db: Sessi
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Get measurement
-    measurement = db.query(SwitchboardMeasurement).filter(
-        SwitchboardMeasurement.switchboard_id == switchboard_id
-    ).first()
-    
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, switchboard_id=switchboard_id)
-    
     return templates.TemplateResponse("switchboard_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": switchboard.revision,
         "switchboard": switchboard,
-        "measurement": measurement,
-        "is_duplicate": False,
-        "field_configs": dropdown_config,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -876,9 +759,8 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
         return RedirectResponse(url="/", status_code=303)
     
     # Get all devices in this switchboard for parent selection
-    parent_devices = db.query(SwitchboardDevice).filter(
-        SwitchboardDevice.switchboard_id == switchboard_id,
-        SwitchboardDevice.parent_device_id == None
+    devices = db.query(SwitchboardDevice).filter(
+        SwitchboardDevice.switchboard_id == switchboard_id
     ).order_by(SwitchboardDevice.switchboard_device_position).all()
     
     # Get dropdown configuration for device
@@ -894,19 +776,14 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, switchboard_id=switchboard_id)
-    
     return templates.TemplateResponse("device_form.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": switchboard,
         "device": None,
-        "parent_devices": parent_devices,
-        "is_duplicate": False,
+        "devices": devices,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -974,11 +851,10 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    # Get all parent devices in this switchboard for parent selection (only RCDs)
-    parent_devices = db.query(SwitchboardDevice).filter(
+    # Get all devices in this switchboard for parent selection (exclude self and descendants)
+    devices = db.query(SwitchboardDevice).filter(
         SwitchboardDevice.switchboard_id == device.switchboard_id,
-        SwitchboardDevice.device_id != device_id,
-        SwitchboardDevice.parent_device_id == None
+        SwitchboardDevice.device_id != device_id
     ).order_by(SwitchboardDevice.switchboard_device_position).all()
     
     # Get dropdown configuration for device
@@ -994,19 +870,14 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, device_id=device_id)
-    
     return templates.TemplateResponse("device_form.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": device.switchboard,
         "device": device,
-        "parent_devices": parent_devices,
-        "is_duplicate": False,
+        "devices": devices,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1110,19 +981,13 @@ async def circuit_create_form(device_id: int, request: Request, db: Session = De
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, device_id=device_id)
-    
     return templates.TemplateResponse("circuit_form.html", {
         "request": request,
         "device": device,
         "circuit": None,
-        "measurement": None,
         "is_edit": False,
-        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1205,15 +1070,11 @@ async def circuit_detail(circuit_id: int, request: Request, db: Session = Depend
         TerminalDevice.circuit_id == circuit_id
     ).all()
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
-    
     return templates.TemplateResponse("circuit_detail.html", {
         "request": request,
         "circuit": circuit,
         "measurement": measurement,
-        "terminal_devices": terminal_devices,
-        "breadcrumbs": breadcrumbs
+        "terminal_devices": terminal_devices
     })
 
 
@@ -1245,24 +1106,13 @@ async def circuit_edit_form(circuit_id: int, request: Request, db: Session = Dep
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Get measurement
-    measurement = db.query(CircuitMeasurement).filter(
-        CircuitMeasurement.circuit_id == circuit_id
-    ).first()
-    
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
-    
     return templates.TemplateResponse("circuit_form.html", {
         "request": request,
         "device": circuit.device,
         "circuit": circuit,
-        "measurement": measurement,
         "is_edit": True,
-        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1543,14 +1393,10 @@ async def device_detail(device_id: int, request: Request, db: Session = Depends(
         Circuit.device_id == device_id
     ).all()
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, device_id=device_id)
-    
     return templates.TemplateResponse("device_detail.html", {
         "request": request,
         "device": device,
-        "circuits": circuits,
-        "breadcrumbs": breadcrumbs
+        "circuits": circuits
     })
 
 
@@ -1586,18 +1432,13 @@ async def terminal_device_create_form(circuit_id: int, request: Request, db: Ses
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
-    
     return templates.TemplateResponse("terminal_device_form.html", {
         "request": request,
         "circuit": circuit,
         "terminal_device": None,
         "is_edit": False,
-        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1667,13 +1508,9 @@ async def terminal_device_detail(terminal_device_id: int, request: Request, db: 
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, terminal_device_id=terminal_device_id)
-    
     return templates.TemplateResponse("terminal_device_detail.html", {
         "request": request,
-        "terminal": terminal,
-        "breadcrumbs": breadcrumbs
+        "terminal": terminal
     })
 
 
@@ -1705,18 +1542,13 @@ async def terminal_device_edit_form(terminal_device_id: int, request: Request, d
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
-    # Build breadcrumbs
-    breadcrumbs = build_breadcrumbs(db, terminal_device_id=terminal_device_id)
-    
     return templates.TemplateResponse("terminal_device_form.html", {
         "request": request,
         "circuit": terminal.circuit,
         "terminal_device": terminal,
         "is_edit": True,
-        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -2028,788 +1860,6 @@ async def dropdown_config_update(request: Request, db: Session = Depends(get_db)
     
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/settings", status_code=303)
-
-
-# ==================== DUPLICATION ROUTES ====================
-
-# Duplicate Revision (with all nested data)
-@app.get("/revision/{revision_id}/duplicate", response_class=HTMLResponse)
-async def revision_duplicate_form(revision_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    revision = db.query(Revision).filter(
-        Revision.revision_id == revision_id,
-        Revision.user_id == user_id
-    ).first()
-    
-    if not revision:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    breadcrumbs = build_breadcrumbs(db, revision_id=revision_id)
-    
-    return templates.TemplateResponse("revision_form.html", {
-        "request": request,
-        "user_id": user_id,
-        "revision": revision,
-        "is_duplicate": True,
-        "breadcrumbs": breadcrumbs
-    })
-
-
-@app.post("/revision/{revision_id}/duplicate")
-async def revision_duplicate_submit(revision_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    original_revision = db.query(Revision).filter(
-        Revision.revision_id == revision_id,
-        Revision.user_id == user_id
-    ).first()
-    
-    if not original_revision:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    # Get form data
-    form_data = await request.form()
-    
-    # Create new revision with updated data from form
-    from datetime import datetime
-    new_revision = Revision(
-        user_id=user_id,
-        revision_code=form_data.get("revision_code"),
-        revision_name=form_data.get("revision_name"),
-        revision_owner=form_data.get("revision_owner"),
-        revision_client=form_data.get("revision_client"),
-        revision_address=form_data.get("revision_address"),
-        revision_description=form_data.get("revision_description"),
-        revision_type=form_data.get("revision_type"),
-        revision_date_of_previous_revision=form_data.get("revision_date_of_previous_revision") or None,
-        revision_start_date=form_data.get("revision_start_date") or None,
-        revision_end_date=form_data.get("revision_end_date") or None,
-        revision_date_of_creation=datetime.now().date(),
-        revision_recommended_date_for_next_revision=form_data.get("revision_recommended_date_for_next_revision") or None,
-        revision_number_of_copies_technician=int(form_data.get("revision_number_of_copies_technician")) if form_data.get("revision_number_of_copies_technician") else None,
-        revision_number_of_copies_owner=int(form_data.get("revision_number_of_copies_owner")) if form_data.get("revision_number_of_copies_owner") else None,
-        revision_number_of_copies_contractor=int(form_data.get("revision_number_of_copies_contractor")) if form_data.get("revision_number_of_copies_contractor") else None,
-        revision_number_of_copies_client=int(form_data.get("revision_number_of_copies_client")) if form_data.get("revision_number_of_copies_client") else None,
-        revision_attachment=form_data.get("revision_attachment"),
-        revision_attachment_submitter=form_data.get("revision_attachment_submitter"),
-        revision_attachment_producer=form_data.get("revision_attachment_producer"),
-        revision_attachment_date_of_creation=form_data.get("revision_attachment_date_of_creation") or None,
-        revision_technician=form_data.get("revision_technician"),
-        revision_certificate_number=form_data.get("revision_certificate_number"),
-        revision_authorization_number=form_data.get("revision_authorization_number"),
-        revision_project_documentation=form_data.get("revision_project_documentation"),
-        revision_contractor=form_data.get("revision_contractor"),
-        revision_short_description=form_data.get("revision_short_description"),
-        revision_measuring_instrument_manufacturer_type=form_data.get("revision_measuring_instrument_manufacturer_type"),
-        revision_measuring_instrument_serial_number=form_data.get("revision_measuring_instrument_serial_number"),
-        revision_measuring_instrument_calibration=form_data.get("revision_measuring_instrument_calibration"),
-        revision_measuring_instrument_calibration_validity=form_data.get("revision_measuring_instrument_calibration_validity") or None,
-        revision_overall_assessment=form_data.get("revision_overall_assessment")
-    )
-    db.add(new_revision)
-    db.flush()  # Get new revision ID
-    
-    # Duplicate all switchboards
-    for old_switchboard in original_revision.switchboards:
-        new_switchboard = Switchboard(
-            revision_id=new_revision.revision_id,
-            switchboard_name=old_switchboard.switchboard_name,
-            switchboard_description=old_switchboard.switchboard_description,
-            switchboard_location=old_switchboard.switchboard_location,
-            switchboard_order=old_switchboard.switchboard_order,
-            switchboard_type=old_switchboard.switchboard_type,
-            switchboard_serial_number=old_switchboard.switchboard_serial_number,
-            switchboard_production_date=old_switchboard.switchboard_production_date,
-            switchboard_ip_rating=old_switchboard.switchboard_ip_rating,
-            switchboard_impact_protection=old_switchboard.switchboard_impact_protection,
-            switchboard_protection_class=old_switchboard.switchboard_protection_class,
-            switchboard_rated_current=old_switchboard.switchboard_rated_current,
-            switchboard_rated_voltage=old_switchboard.switchboard_rated_voltage,
-            switchboard_manufacturer=old_switchboard.switchboard_manufacturer,
-            switchboard_manufacturer_address=old_switchboard.switchboard_manufacturer_address,
-            switchboard_standards=old_switchboard.switchboard_standards,
-            switchboard_enclosure_type=old_switchboard.switchboard_enclosure_type,
-            switchboard_enclosure_manufacturer=old_switchboard.switchboard_enclosure_manufacturer,
-            switchboard_enclosure_installation_method=old_switchboard.switchboard_enclosure_installation_method,
-            switchboard_superior_switchboard=old_switchboard.switchboard_superior_switchboard,
-            switchboard_superior_circuit_breaker_rated_current=old_switchboard.switchboard_superior_circuit_breaker_rated_current,
-            switchboard_superior_circuit_breaker_trip_characteristic=old_switchboard.switchboard_superior_circuit_breaker_trip_characteristic,
-            switchboard_superior_circuit_breaker_manufacturer=old_switchboard.switchboard_superior_circuit_breaker_manufacturer,
-            switchboard_superior_circuit_breaker_model=old_switchboard.switchboard_superior_circuit_breaker_model,
-            switchboard_main_switch=old_switchboard.switchboard_main_switch,
-            switchboard_note=old_switchboard.switchboard_note,
-            switchboard_cable=old_switchboard.switchboard_cable,
-            switchboard_cable_installation_method=old_switchboard.switchboard_cable_installation_method
-        )
-        db.add(new_switchboard)
-        db.flush()
-        
-        # Duplicate switchboard measurement
-        if old_switchboard.measurement:
-            new_measurement = SwitchboardMeasurement(
-                switchboard_id=new_switchboard.switchboard_id,
-                measurements_switchboard_insulation_resistance=old_switchboard.measurement.measurements_switchboard_insulation_resistance,
-                measurements_switchboard_loop_impedance_min=old_switchboard.measurement.measurements_switchboard_loop_impedance_min,
-                measurements_switchboard_loop_impedance_max=old_switchboard.measurement.measurements_switchboard_loop_impedance_max,
-                measurements_switchboard_rcd_trip_time_ms=old_switchboard.measurement.measurements_switchboard_rcd_trip_time_ms,
-                measurements_switchboard_rcd_test_current_ma=old_switchboard.measurement.measurements_switchboard_rcd_test_current_ma,
-                measurements_switchboard_earth_resistance=old_switchboard.measurement.measurements_switchboard_earth_resistance
-            )
-            db.add(new_measurement)
-        
-        # Duplicate all devices (with hierarchy)
-        device_mapping = {}  # old_id -> new_id
-        
-        # First pass: create all devices
-        for old_device in old_switchboard.devices:
-            new_device = SwitchboardDevice(
-                switchboard_id=new_switchboard.switchboard_id,
-                parent_device_id=None,  # Will be set in second pass
-                switchboard_device_position=old_device.switchboard_device_position,
-                switchboard_device_type=old_device.switchboard_device_type,
-                switchboard_device_manufacturer=old_device.switchboard_device_manufacturer,
-                switchboard_device_model=old_device.switchboard_device_model,
-                switchboard_device_trip_characteristic=old_device.switchboard_device_trip_characteristic,
-                switchboard_device_rated_current=old_device.switchboard_device_rated_current,
-                switchboard_device_residual_current_ma=old_device.switchboard_device_residual_current_ma,
-                switchboard_device_sub_devices=old_device.switchboard_device_sub_devices,
-                switchboard_device_poles=old_device.switchboard_device_poles,
-                switchboard_device_module_width=old_device.switchboard_device_module_width
-            )
-            db.add(new_device)
-            db.flush()
-            device_mapping[old_device.device_id] = new_device.device_id
-        
-        # Second pass: set parent_device_id
-        for old_device in old_switchboard.devices:
-            if old_device.parent_device_id:
-                new_device_id = device_mapping[old_device.device_id]
-                new_device = db.query(SwitchboardDevice).filter(
-                    SwitchboardDevice.device_id == new_device_id
-                ).first()
-                new_device.parent_device_id = device_mapping[old_device.parent_device_id]
-        
-        # Third pass: duplicate circuits and terminal devices
-        for old_device_id, new_device_id in device_mapping.items():
-            old_device = db.query(SwitchboardDevice).filter(
-                SwitchboardDevice.device_id == old_device_id
-            ).first()
-            
-            for old_circuit in old_device.circuits:
-                new_circuit = Circuit(
-                    device_id=new_device_id,
-                    circuit_number=old_circuit.circuit_number,
-                    circuit_room=old_circuit.circuit_room,
-                    circuit_description=old_circuit.circuit_description,
-                    circuit_description_from_switchboard=old_circuit.circuit_description_from_switchboard,
-                    circuit_number_of_outlets=old_circuit.circuit_number_of_outlets,
-                    circuit_cable_termination=old_circuit.circuit_cable_termination,
-                    circuit_cable=old_circuit.circuit_cable,
-                    circuit_cable_installation_method=old_circuit.circuit_cable_installation_method
-                )
-                db.add(new_circuit)
-                db.flush()
-                
-                # Duplicate circuit measurement
-                if old_circuit.measurement:
-                    new_circuit_measurement = CircuitMeasurement(
-                        circuit_id=new_circuit.circuit_id,
-                        measurements_circuit_insulation_resistance=old_circuit.measurement.measurements_circuit_insulation_resistance,
-                        measurements_circuit_loop_impedance_min=old_circuit.measurement.measurements_circuit_loop_impedance_min,
-                        measurements_circuit_loop_impedance_max=old_circuit.measurement.measurements_circuit_loop_impedance_max,
-                        measurements_circuit_rcd_trip_time_ms=old_circuit.measurement.measurements_circuit_rcd_trip_time_ms,
-                        measurements_circuit_rcd_test_current_ma=old_circuit.measurement.measurements_circuit_rcd_test_current_ma,
-                        measurements_circuit_earth_resistance=old_circuit.measurement.measurements_circuit_earth_resistance,
-                        measurements_circuit_continuity=old_circuit.measurement.measurements_circuit_continuity,
-                        measurements_circuit_order_of_phases=old_circuit.measurement.measurements_circuit_order_of_phases
-                    )
-                    db.add(new_circuit_measurement)
-                
-                # Duplicate terminal devices
-                for old_terminal in old_circuit.terminal_devices:
-                    new_terminal = TerminalDevice(
-                        circuit_id=new_circuit.circuit_id,
-                        terminal_device_type=old_terminal.terminal_device_type,
-                        terminal_device_manufacturer=old_terminal.terminal_device_manufacturer,
-                        terminal_device_model=old_terminal.terminal_device_model,
-                        terminal_device_marking=old_terminal.terminal_device_marking,
-                        terminal_device_power=old_terminal.terminal_device_power,
-                        terminal_device_ip_rating=old_terminal.terminal_device_ip_rating,
-                        terminal_device_protection_class=old_terminal.terminal_device_protection_class,
-                        terminal_device_serial_number=old_terminal.terminal_device_serial_number,
-                        terminal_device_supply_type=old_terminal.terminal_device_supply_type,
-                        terminal_device_installation_method=old_terminal.terminal_device_installation_method
-                    )
-                    db.add(new_terminal)
-    
-    db.commit()
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/revision/{new_revision.revision_id}", status_code=303)
-
-
-# Duplicate Switchboard (with all nested data)
-@app.get("/switchboard/{switchboard_id}/duplicate", response_class=HTMLResponse)
-async def switchboard_duplicate_form(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    switchboard = db.query(Switchboard).filter(
-        Switchboard.switchboard_id == switchboard_id
-    ).first()
-    
-    if not switchboard or switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    revision = switchboard.revision
-    breadcrumbs = build_breadcrumbs(db, switchboard_id=switchboard_id)
-    field_configs = get_field_dropdown_config("switchboard", db)
-    dropdown_sources = {}
-    for field_name, config in field_configs.items():
-        if config['enabled'] and config['category']:
-            dropdown_sources[field_name] = db.query(DropdownSource).filter(
-                DropdownSource.category == config['category']
-            ).order_by(DropdownSource.display_order).all()
-    
-    return templates.TemplateResponse("switchboard_form.html", {
-        "request": request,
-        "user_id": user_id,
-        "revision": revision,
-        "switchboard": switchboard,
-        "measurement": switchboard.measurement,
-        "is_duplicate": True,
-        "field_configs": field_configs,
-        "dropdown_config": field_configs,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
-    })
-
-
-@app.post("/switchboard/{switchboard_id}/duplicate")
-async def switchboard_duplicate_submit(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    old_switchboard = db.query(Switchboard).filter(
-        Switchboard.switchboard_id == switchboard_id
-    ).first()
-    
-    if not old_switchboard or old_switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    # Get form data
-    form_data = await request.form()
-    
-    # Create new switchboard
-    new_switchboard = Switchboard(
-        revision_id=old_switchboard.revision_id,
-        switchboard_name=form_data.get("switchboard_name"),
-        switchboard_description=form_data.get("switchboard_description"),
-        switchboard_location=form_data.get("switchboard_location"),
-        switchboard_order=int(form_data.get("switchboard_order")) if form_data.get("switchboard_order") else None,
-        switchboard_type=form_data.get("switchboard_type"),
-        switchboard_serial_number=form_data.get("switchboard_serial_number"),
-        switchboard_production_date=form_data.get("switchboard_production_date") or None,
-        switchboard_ip_rating=form_data.get("switchboard_ip_rating"),
-        switchboard_impact_protection=form_data.get("switchboard_impact_protection"),
-        switchboard_protection_class=form_data.get("switchboard_protection_class"),
-        switchboard_rated_current=float(form_data.get("switchboard_rated_current")) if form_data.get("switchboard_rated_current") else None,
-        switchboard_rated_voltage=float(form_data.get("switchboard_rated_voltage")) if form_data.get("switchboard_rated_voltage") else None,
-        switchboard_manufacturer=form_data.get("switchboard_manufacturer"),
-        switchboard_manufacturer_address=form_data.get("switchboard_manufacturer_address"),
-        switchboard_standards=form_data.get("switchboard_standards"),
-        switchboard_enclosure_type=form_data.get("switchboard_enclosure_type"),
-        switchboard_enclosure_manufacturer=form_data.get("switchboard_enclosure_manufacturer"),
-        switchboard_enclosure_installation_method=form_data.get("switchboard_enclosure_installation_method"),
-        switchboard_superior_switchboard=form_data.get("switchboard_superior_switchboard"),
-        switchboard_superior_circuit_breaker_rated_current=float(form_data.get("switchboard_superior_circuit_breaker_rated_current")) if form_data.get("switchboard_superior_circuit_breaker_rated_current") else None,
-        switchboard_superior_circuit_breaker_trip_characteristic=form_data.get("switchboard_superior_circuit_breaker_trip_characteristic"),
-        switchboard_superior_circuit_breaker_manufacturer=form_data.get("switchboard_superior_circuit_breaker_manufacturer"),
-        switchboard_superior_circuit_breaker_model=form_data.get("switchboard_superior_circuit_breaker_model"),
-        switchboard_main_switch=form_data.get("switchboard_main_switch"),
-        switchboard_note=form_data.get("switchboard_note"),
-        switchboard_cable=form_data.get("switchboard_cable"),
-        switchboard_cable_installation_method=form_data.get("switchboard_cable_installation_method")
-    )
-    db.add(new_switchboard)
-    db.flush()
-    
-    # Duplicate measurement if exists
-    if old_switchboard.measurement:
-        new_measurement = SwitchboardMeasurement(
-            switchboard_id=new_switchboard.switchboard_id,
-            measurements_switchboard_insulation_resistance=float(form_data.get("measurements_switchboard_insulation_resistance")) if form_data.get("measurements_switchboard_insulation_resistance") else None,
-            measurements_switchboard_loop_impedance_min=float(form_data.get("measurements_switchboard_loop_impedance_min")) if form_data.get("measurements_switchboard_loop_impedance_min") else None,
-            measurements_switchboard_loop_impedance_max=float(form_data.get("measurements_switchboard_loop_impedance_max")) if form_data.get("measurements_switchboard_loop_impedance_max") else None,
-            measurements_switchboard_rcd_trip_time_ms=float(form_data.get("measurements_switchboard_rcd_trip_time_ms")) if form_data.get("measurements_switchboard_rcd_trip_time_ms") else None,
-            measurements_switchboard_rcd_test_current_ma=float(form_data.get("measurements_switchboard_rcd_test_current_ma")) if form_data.get("measurements_switchboard_rcd_test_current_ma") else None,
-            measurements_switchboard_earth_resistance=float(form_data.get("measurements_switchboard_earth_resistance")) if form_data.get("measurements_switchboard_earth_resistance") else None
-        )
-        db.add(new_measurement)
-    
-    # Duplicate all devices (with hierarchy)
-    device_mapping = {}  # old_id -> new_id
-    
-    # First pass: create all devices
-    for old_device in old_switchboard.devices:
-        new_device = SwitchboardDevice(
-            switchboard_id=new_switchboard.switchboard_id,
-            parent_device_id=None,  # Will be set in second pass
-            switchboard_device_position=old_device.switchboard_device_position,
-            switchboard_device_type=old_device.switchboard_device_type,
-            switchboard_device_manufacturer=old_device.switchboard_device_manufacturer,
-            switchboard_device_model=old_device.switchboard_device_model,
-            switchboard_device_trip_characteristic=old_device.switchboard_device_trip_characteristic,
-            switchboard_device_rated_current=old_device.switchboard_device_rated_current,
-            switchboard_device_residual_current_ma=old_device.switchboard_device_residual_current_ma,
-            switchboard_device_sub_devices=old_device.switchboard_device_sub_devices,
-            switchboard_device_poles=old_device.switchboard_device_poles,
-            switchboard_device_module_width=old_device.switchboard_device_module_width
-        )
-        db.add(new_device)
-        db.flush()
-        device_mapping[old_device.device_id] = new_device.device_id
-    
-    # Second pass: set parent_device_id
-    for old_device in old_switchboard.devices:
-        if old_device.parent_device_id:
-            new_device_id = device_mapping[old_device.device_id]
-            new_device = db.query(SwitchboardDevice).filter(
-                SwitchboardDevice.device_id == new_device_id
-            ).first()
-            new_device.parent_device_id = device_mapping[old_device.parent_device_id]
-    
-    # Third pass: duplicate circuits and terminal devices
-    for old_device_id, new_device_id in device_mapping.items():
-        old_device = db.query(SwitchboardDevice).filter(
-            SwitchboardDevice.device_id == old_device_id
-        ).first()
-        
-        for old_circuit in old_device.circuits:
-            new_circuit = Circuit(
-                device_id=new_device_id,
-                circuit_number=old_circuit.circuit_number,
-                circuit_room=old_circuit.circuit_room,
-                circuit_description=old_circuit.circuit_description,
-                circuit_description_from_switchboard=old_circuit.circuit_description_from_switchboard,
-                circuit_number_of_outlets=old_circuit.circuit_number_of_outlets,
-                circuit_cable_termination=old_circuit.circuit_cable_termination,
-                circuit_cable=old_circuit.circuit_cable,
-                circuit_cable_installation_method=old_circuit.circuit_cable_installation_method
-            )
-            db.add(new_circuit)
-            db.flush()
-            
-            # Duplicate circuit measurement
-            if old_circuit.measurement:
-                new_circuit_measurement = CircuitMeasurement(
-                    circuit_id=new_circuit.circuit_id,
-                    measurements_circuit_insulation_resistance=old_circuit.measurement.measurements_circuit_insulation_resistance,
-                    measurements_circuit_loop_impedance_min=old_circuit.measurement.measurements_circuit_loop_impedance_min,
-                    measurements_circuit_loop_impedance_max=old_circuit.measurement.measurements_circuit_loop_impedance_max,
-                    measurements_circuit_rcd_trip_time_ms=old_circuit.measurement.measurements_circuit_rcd_trip_time_ms,
-                    measurements_circuit_rcd_test_current_ma=old_circuit.measurement.measurements_circuit_rcd_test_current_ma,
-                    measurements_circuit_earth_resistance=old_circuit.measurement.measurements_circuit_earth_resistance,
-                    measurements_circuit_continuity=old_circuit.measurement.measurements_circuit_continuity,
-                    measurements_circuit_order_of_phases=old_circuit.measurement.measurements_circuit_order_of_phases
-                )
-                db.add(new_circuit_measurement)
-            
-            # Duplicate terminal devices
-            for old_terminal in old_circuit.terminal_devices:
-                new_terminal = TerminalDevice(
-                    circuit_id=new_circuit.circuit_id,
-                    terminal_device_type=old_terminal.terminal_device_type,
-                    terminal_device_manufacturer=old_terminal.terminal_device_manufacturer,
-                    terminal_device_model=old_terminal.terminal_device_model,
-                    terminal_device_marking=old_terminal.terminal_device_marking,
-                    terminal_device_power=old_terminal.terminal_device_power,
-                    terminal_device_ip_rating=old_terminal.terminal_device_ip_rating,
-                    terminal_device_protection_class=old_terminal.terminal_device_protection_class,
-                    terminal_device_serial_number=old_terminal.terminal_device_serial_number,
-                    terminal_device_supply_type=old_terminal.terminal_device_supply_type,
-                    terminal_device_installation_method=old_terminal.terminal_device_installation_method
-                )
-                db.add(new_terminal)
-    
-    db.commit()
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/switchboard/{new_switchboard.switchboard_id}", status_code=303)
-
-
-# Duplicate Device (with all nested circuits and terminals)
-@app.get("/device/{device_id}/duplicate", response_class=HTMLResponse)
-async def device_duplicate_form(device_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    device = db.query(SwitchboardDevice).filter(
-        SwitchboardDevice.device_id == device_id
-    ).first()
-    
-    if not device or device.switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    switchboard = device.switchboard
-    breadcrumbs = build_breadcrumbs(db, device_id=device_id)
-    dropdown_config = get_field_dropdown_config("device", db)
-    dropdown_sources = {}
-    for field_name, config in dropdown_config.items():
-        if config['enabled'] and config['category']:
-            dropdown_sources[field_name] = db.query(DropdownSource).filter(
-                DropdownSource.category == config['category']
-            ).order_by(DropdownSource.display_order).all()
-    
-    # Get parent devices for dropdown
-    parent_devices = db.query(SwitchboardDevice).filter(
-        SwitchboardDevice.switchboard_id == switchboard.switchboard_id,
-        SwitchboardDevice.parent_device_id == None
-    ).all()
-    
-    return templates.TemplateResponse("device_form.html", {
-        "request": request,
-        "user_id": user_id,
-        "switchboard": switchboard,
-        "device": device,
-        "is_duplicate": True,
-        "parent_devices": parent_devices,
-        "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
-    })
-
-
-@app.post("/device/{device_id}/duplicate")
-async def device_duplicate_submit(device_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    old_device = db.query(SwitchboardDevice).filter(
-        SwitchboardDevice.device_id == device_id
-    ).first()
-    
-    if not old_device or old_device.switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    # Get form data
-    form_data = await request.form()
-    
-    # Create new device
-    parent_id = form_data.get("parent_device_id")
-    new_device = SwitchboardDevice(
-        switchboard_id=old_device.switchboard_id,
-        parent_device_id=int(parent_id) if parent_id and parent_id != "" else None,
-        switchboard_device_position=form_data.get("switchboard_device_position"),
-        switchboard_device_type=form_data.get("switchboard_device_type"),
-        switchboard_device_manufacturer=form_data.get("switchboard_device_manufacturer"),
-        switchboard_device_model=form_data.get("switchboard_device_model"),
-        switchboard_device_trip_characteristic=form_data.get("switchboard_device_trip_characteristic"),
-        switchboard_device_rated_current=float(form_data.get("switchboard_device_rated_current")) if form_data.get("switchboard_device_rated_current") else None,
-        switchboard_device_residual_current_ma=float(form_data.get("switchboard_device_residual_current_ma")) if form_data.get("switchboard_device_residual_current_ma") else None,
-        switchboard_device_sub_devices=form_data.get("switchboard_device_sub_devices"),
-        switchboard_device_poles=int(form_data.get("switchboard_device_poles")) if form_data.get("switchboard_device_poles") else None,
-        switchboard_device_module_width=float(form_data.get("switchboard_device_module_width")) if form_data.get("switchboard_device_module_width") else None
-    )
-    db.add(new_device)
-    db.flush()
-    
-    # Duplicate child devices recursively
-    def duplicate_child_devices(old_parent_id, new_parent_id):
-        child_devices = db.query(SwitchboardDevice).filter(
-            SwitchboardDevice.parent_device_id == old_parent_id
-        ).all()
-        
-        for old_child in child_devices:
-            new_child = SwitchboardDevice(
-                switchboard_id=old_child.switchboard_id,
-                parent_device_id=new_parent_id,
-                switchboard_device_position=old_child.switchboard_device_position,
-                switchboard_device_type=old_child.switchboard_device_type,
-                switchboard_device_manufacturer=old_child.switchboard_device_manufacturer,
-                switchboard_device_model=old_child.switchboard_device_model,
-                switchboard_device_trip_characteristic=old_child.switchboard_device_trip_characteristic,
-                switchboard_device_rated_current=old_child.switchboard_device_rated_current,
-                switchboard_device_residual_current_ma=old_child.switchboard_device_residual_current_ma,
-                switchboard_device_sub_devices=old_child.switchboard_device_sub_devices,
-                switchboard_device_poles=old_child.switchboard_device_poles,
-                switchboard_device_module_width=old_child.switchboard_device_module_width
-            )
-            db.add(new_child)
-            db.flush()
-            
-            # Recursively duplicate this child's children
-            duplicate_child_devices(old_child.device_id, new_child.device_id)
-            
-            # Duplicate circuits for this child
-            for old_circuit in old_child.circuits:
-                new_circuit = Circuit(
-                    device_id=new_child.device_id,
-                    circuit_number=old_circuit.circuit_number,
-                    circuit_room=old_circuit.circuit_room,
-                    circuit_description=old_circuit.circuit_description,
-                    circuit_description_from_switchboard=old_circuit.circuit_description_from_switchboard,
-                    circuit_number_of_outlets=old_circuit.circuit_number_of_outlets,
-                    circuit_cable_termination=old_circuit.circuit_cable_termination,
-                    circuit_cable=old_circuit.circuit_cable,
-                    circuit_cable_installation_method=old_circuit.circuit_cable_installation_method
-                )
-                db.add(new_circuit)
-                db.flush()
-                
-                # Duplicate circuit measurement
-                if old_circuit.measurement:
-                    new_circuit_measurement = CircuitMeasurement(
-                        circuit_id=new_circuit.circuit_id,
-                        measurements_circuit_insulation_resistance=old_circuit.measurement.measurements_circuit_insulation_resistance,
-                        measurements_circuit_loop_impedance_min=old_circuit.measurement.measurements_circuit_loop_impedance_min,
-                        measurements_circuit_loop_impedance_max=old_circuit.measurement.measurements_circuit_loop_impedance_max,
-                        measurements_circuit_rcd_trip_time_ms=old_circuit.measurement.measurements_circuit_rcd_trip_time_ms,
-                        measurements_circuit_rcd_test_current_ma=old_circuit.measurement.measurements_circuit_rcd_test_current_ma,
-                        measurements_circuit_earth_resistance=old_circuit.measurement.measurements_circuit_earth_resistance,
-                        measurements_circuit_continuity=old_circuit.measurement.measurements_circuit_continuity,
-                        measurements_circuit_order_of_phases=old_circuit.measurement.measurements_circuit_order_of_phases
-                    )
-                    db.add(new_circuit_measurement)
-                
-                # Duplicate terminal devices
-                for old_terminal in old_circuit.terminal_devices:
-                    new_terminal = TerminalDevice(
-                        circuit_id=new_circuit.circuit_id,
-                        terminal_device_type=old_terminal.terminal_device_type,
-                        terminal_device_manufacturer=old_terminal.terminal_device_manufacturer,
-                        terminal_device_model=old_terminal.terminal_device_model,
-                        terminal_device_marking=old_terminal.terminal_device_marking,
-                        terminal_device_power=old_terminal.terminal_device_power,
-                        terminal_device_ip_rating=old_terminal.terminal_device_ip_rating,
-                        terminal_device_protection_class=old_terminal.terminal_device_protection_class,
-                        terminal_device_serial_number=old_terminal.terminal_device_serial_number,
-                        terminal_device_supply_type=old_terminal.terminal_device_supply_type,
-                        terminal_device_installation_method=old_terminal.terminal_device_installation_method
-                    )
-                    db.add(new_terminal)
-    
-    # Duplicate all child devices
-    duplicate_child_devices(old_device.device_id, new_device.device_id)
-    
-    # Duplicate circuits for the main device
-    for old_circuit in old_device.circuits:
-        new_circuit = Circuit(
-            device_id=new_device.device_id,
-            circuit_number=old_circuit.circuit_number,
-            circuit_room=old_circuit.circuit_room,
-            circuit_description=old_circuit.circuit_description,
-            circuit_description_from_switchboard=old_circuit.circuit_description_from_switchboard,
-            circuit_number_of_outlets=old_circuit.circuit_number_of_outlets,
-            circuit_cable_termination=old_circuit.circuit_cable_termination,
-            circuit_cable=old_circuit.circuit_cable,
-            circuit_cable_installation_method=old_circuit.circuit_cable_installation_method
-        )
-        db.add(new_circuit)
-        db.flush()
-        
-        # Duplicate circuit measurement
-        if old_circuit.measurement:
-            new_circuit_measurement = CircuitMeasurement(
-                circuit_id=new_circuit.circuit_id,
-                measurements_circuit_insulation_resistance=old_circuit.measurement.measurements_circuit_insulation_resistance,
-                measurements_circuit_loop_impedance_min=old_circuit.measurement.measurements_circuit_loop_impedance_min,
-                measurements_circuit_loop_impedance_max=old_circuit.measurement.measurements_circuit_loop_impedance_max,
-                measurements_circuit_rcd_trip_time_ms=old_circuit.measurement.measurements_circuit_rcd_trip_time_ms,
-                measurements_circuit_rcd_test_current_ma=old_circuit.measurement.measurements_circuit_rcd_test_current_ma,
-                measurements_circuit_earth_resistance=old_circuit.measurement.measurements_circuit_earth_resistance,
-                measurements_circuit_continuity=old_circuit.measurement.measurements_circuit_continuity,
-                measurements_circuit_order_of_phases=old_circuit.measurement.measurements_circuit_order_of_phases
-            )
-            db.add(new_circuit_measurement)
-        
-        # Duplicate terminal devices
-        for old_terminal in old_circuit.terminal_devices:
-            new_terminal = TerminalDevice(
-                circuit_id=new_circuit.circuit_id,
-                terminal_device_type=old_terminal.terminal_device_type,
-                terminal_device_manufacturer=old_terminal.terminal_device_manufacturer,
-                terminal_device_model=old_terminal.terminal_device_model,
-                terminal_device_marking=old_terminal.terminal_device_marking,
-                terminal_device_power=old_terminal.terminal_device_power,
-                terminal_device_ip_rating=old_terminal.terminal_device_ip_rating,
-                terminal_device_protection_class=old_terminal.terminal_device_protection_class,
-                terminal_device_serial_number=old_terminal.terminal_device_serial_number,
-                terminal_device_supply_type=old_terminal.terminal_device_supply_type,
-                terminal_device_installation_method=old_terminal.terminal_device_installation_method
-            )
-            db.add(new_terminal)
-    
-    db.commit()
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/device/{new_device.device_id}", status_code=303)
-
-
-# Duplicate Circuit (with all terminal devices)
-@app.get("/circuit/{circuit_id}/duplicate", response_class=HTMLResponse)
-async def circuit_duplicate_form(circuit_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    circuit = db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
-    
-    if not circuit or circuit.device.switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    device = circuit.device
-    breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
-    dropdown_config = get_field_dropdown_config("circuit", db)
-    dropdown_sources = {}
-    for field_name, config in dropdown_config.items():
-        if config['enabled'] and config['category']:
-            dropdown_sources[field_name] = db.query(DropdownSource).filter(
-                DropdownSource.category == config['category']
-            ).order_by(DropdownSource.display_order).all()
-    
-    return templates.TemplateResponse("circuit_form.html", {
-        "request": request,
-        "user_id": user_id,
-        "device": device,
-        "circuit": circuit,
-        "measurement": circuit.measurement,
-        "is_edit": False,
-        "is_duplicate": True,
-        "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
-    })
-
-
-@app.post("/circuit/{circuit_id}/duplicate")
-async def circuit_duplicate_submit(circuit_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    old_circuit = db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
-    
-    if not old_circuit or old_circuit.device.switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    # Get form data
-    form_data = await request.form()
-    
-    # Create new circuit
-    new_circuit = Circuit(
-        device_id=old_circuit.device_id,
-        circuit_number=form_data.get("circuit_number"),
-        circuit_room=form_data.get("circuit_room"),
-        circuit_description=form_data.get("circuit_description"),
-        circuit_description_from_switchboard=form_data.get("circuit_description_from_switchboard"),
-        circuit_number_of_outlets=int(form_data.get("circuit_number_of_outlets")) if form_data.get("circuit_number_of_outlets") else None,
-        circuit_cable_termination=form_data.get("circuit_cable_termination"),
-        circuit_cable=form_data.get("circuit_cable"),
-        circuit_cable_installation_method=form_data.get("circuit_cable_installation_method")
-    )
-    db.add(new_circuit)
-    db.flush()
-    
-    # Duplicate measurement if exists
-    if old_circuit.measurement:
-        new_measurement = CircuitMeasurement(
-            circuit_id=new_circuit.circuit_id,
-            measurements_circuit_insulation_resistance=float(form_data.get("measurements_circuit_insulation_resistance")) if form_data.get("measurements_circuit_insulation_resistance") else None,
-            measurements_circuit_loop_impedance_min=float(form_data.get("measurements_circuit_loop_impedance_min")) if form_data.get("measurements_circuit_loop_impedance_min") else None,
-            measurements_circuit_loop_impedance_max=float(form_data.get("measurements_circuit_loop_impedance_max")) if form_data.get("measurements_circuit_loop_impedance_max") else None,
-            measurements_circuit_rcd_trip_time_ms=float(form_data.get("measurements_circuit_rcd_trip_time_ms")) if form_data.get("measurements_circuit_rcd_trip_time_ms") else None,
-            measurements_circuit_rcd_test_current_ma=float(form_data.get("measurements_circuit_rcd_test_current_ma")) if form_data.get("measurements_circuit_rcd_test_current_ma") else None,
-            measurements_circuit_earth_resistance=float(form_data.get("measurements_circuit_earth_resistance")) if form_data.get("measurements_circuit_earth_resistance") else None,
-            measurements_circuit_continuity=float(form_data.get("measurements_circuit_continuity")) if form_data.get("measurements_circuit_continuity") else None,
-            measurements_circuit_order_of_phases=form_data.get("measurements_circuit_order_of_phases")
-        )
-        db.add(new_measurement)
-    
-    # Duplicate all terminal devices
-    for old_terminal in old_circuit.terminal_devices:
-        new_terminal = TerminalDevice(
-            circuit_id=new_circuit.circuit_id,
-            terminal_device_type=old_terminal.terminal_device_type,
-            terminal_device_manufacturer=old_terminal.terminal_device_manufacturer,
-            terminal_device_model=old_terminal.terminal_device_model,
-            terminal_device_marking=old_terminal.terminal_device_marking,
-            terminal_device_power=old_terminal.terminal_device_power,
-            terminal_device_ip_rating=old_terminal.terminal_device_ip_rating,
-            terminal_device_protection_class=old_terminal.terminal_device_protection_class,
-            terminal_device_serial_number=old_terminal.terminal_device_serial_number,
-            terminal_device_supply_type=old_terminal.terminal_device_supply_type,
-            terminal_device_installation_method=old_terminal.terminal_device_installation_method
-        )
-        db.add(new_terminal)
-    
-    db.commit()
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/circuit/{new_circuit.circuit_id}", status_code=303)
-
-
-# Duplicate Terminal Device
-@app.get("/terminal/{terminal_device_id}/duplicate", response_class=HTMLResponse)
-async def terminal_duplicate_form(terminal_device_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    terminal = db.query(TerminalDevice).filter(
-        TerminalDevice.terminal_device_id == terminal_device_id
-    ).first()
-    
-    if not terminal or terminal.circuit.device.switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    circuit = terminal.circuit
-    breadcrumbs = build_breadcrumbs(db, terminal_device_id=terminal_device_id)
-    dropdown_config = get_field_dropdown_config("terminal_device", db)
-    dropdown_sources = {}
-    for field_name, config in dropdown_config.items():
-        if config['enabled'] and config['category']:
-            dropdown_sources[field_name] = db.query(DropdownSource).filter(
-                DropdownSource.category == config['category']
-            ).order_by(DropdownSource.display_order).all()
-    
-    return templates.TemplateResponse("terminal_device_form.html", {
-        "request": request,
-        "user_id": user_id,
-        "circuit": circuit,
-        "terminal_device": terminal,
-        "is_edit": False,
-        "is_duplicate": True,
-        "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources,
-        "breadcrumbs": breadcrumbs
-    })
-
-
-@app.post("/terminal/{terminal_device_id}/duplicate")
-async def terminal_duplicate_submit(terminal_device_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = get_current_user(request)
-    old_terminal = db.query(TerminalDevice).filter(
-        TerminalDevice.terminal_device_id == terminal_device_id
-    ).first()
-    
-    if not old_terminal or old_terminal.circuit.device.switchboard.revision.user_id != user_id:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=303)
-    
-    # Get form data
-    form_data = await request.form()
-    
-    # Create new terminal device
-    new_terminal = TerminalDevice(
-        circuit_id=old_terminal.circuit_id,
-        terminal_device_type=form_data.get("terminal_device_type"),
-        terminal_device_manufacturer=form_data.get("terminal_device_manufacturer"),
-        terminal_device_model=form_data.get("terminal_device_model"),
-        terminal_device_marking=form_data.get("terminal_device_marking"),
-        terminal_device_power=float(form_data.get("terminal_device_power")) if form_data.get("terminal_device_power") else None,
-        terminal_device_ip_rating=form_data.get("terminal_device_ip_rating"),
-        terminal_device_protection_class=form_data.get("terminal_device_protection_class"),
-        terminal_device_serial_number=form_data.get("terminal_device_serial_number"),
-        terminal_device_supply_type=form_data.get("terminal_device_supply_type"),
-        terminal_device_installation_method=form_data.get("terminal_device_installation_method")
-    )
-    db.add(new_terminal)
-    db.commit()
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/terminal/{new_terminal.terminal_device_id}", status_code=303)
 
 
 if __name__ == "__main__":

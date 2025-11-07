@@ -8,7 +8,7 @@
     <!-- Page Header -->
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-800">
-            {% if is_duplicate %}Duplikovat přístroj{% elif device %}Editovat přístroj{% else %}Nový přístroj{% endif %}
+            {% if device %}Editovat přístroj{% else %}Nový přístroj{% endif %}
         </h2>
         <p class="text-gray-600 mt-1">
             Rozváděč: <a href="/switchboard/{{ switchboard.switchboard_id }}" class="text-primary hover:underline">
@@ -18,7 +18,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{% if is_duplicate %}/device/{{ device.device_id }}/duplicate{% elif device %}/device/{{ device.device_id }}/update{% else %}/switchboard/{{ switchboard.switchboard_id }}/device/create{% endif %}" class="bg-white rounded-lg shadow">
+    <form method="POST" action="{% if device %}/device/{{ device.device_id }}/update{% else %}/switchboard/{{ switchboard.switchboard_id }}/device/create{% endif %}" class="bg-white rounded-lg shadow">
         
         <!-- Info box -->
         <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">

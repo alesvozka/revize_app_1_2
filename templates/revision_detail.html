@@ -27,10 +27,6 @@
                 {% endif %}
             </div>
             <div class="flex items-center space-x-2">
-                <a href="/revision/{{ revision.revision_id }}/duplicate" 
-                   class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
-                    Duplikovat
-                </a>
                 <a href="/revision/{{ revision.revision_id }}/edit" 
                    class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                     Editovat
@@ -321,7 +317,7 @@
         <div class="p-6">
             {% if revision.switchboards %}
                 <div class="space-y-3">
-                    {% for switchboard in revision.switchboards %}
+                    {% for switchboard in revision.switchboards|sort(attribute='switchboard_order') %}
                     <a href="/switchboard/{{ switchboard.switchboard_id }}" 
                        class="block border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                         <div class="flex items-center justify-between">

@@ -20,31 +20,27 @@
                 </div>
                 <p class="text-sm text-gray-600">
                     Rozváděč: 
-                    <a href="{{ url_for('switchboard_detail', id=device.switchboard.switchboard_id) }}" 
+                    <a href="{{ url_for('switchboard_detail', switchboard_id=device.switchboard.switchboard_id) }}" 
                        class="text-blue-600 hover:text-blue-800 font-medium">
                         {{ device.switchboard.switchboard_name or "—" }}
                     </a>
                 </p>
                 <p class="text-sm text-gray-600">
                     Revize: 
-                    <a href="{{ url_for('revision_detail', id=device.switchboard.revision.revision_id) }}" 
+                    <a href="{{ url_for('revision_detail', revision_id=device.switchboard.revision.revision_id) }}" 
                        class="text-blue-600 hover:text-blue-800 font-medium">
                         {{ device.switchboard.revision.revision_name or "—" }}
                     </a>
                 </p>
             </div>
             <div class="flex gap-2">
-                <a href="/device/{{ device.device_id }}/duplicate" 
-                   class="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
-                    📋 Duplikovat
-                </a>
-                <a href="/device/{{ device.device_id }}/edit" 
+                <a href="{{ url_for('device_edit_form', device_id=device.device_id) }}" 
                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                     ✏️ Editovat
                 </a>
             </div>
         </div>
-        <a href="/switchboard/{{ device.switchboard.switchboard_id }}" 
+        <a href="{{ url_for('switchboard_detail', switchboard_id=device.switchboard.switchboard_id) }}" 
            class="inline-block text-sm text-blue-600 hover:text-blue-800">
             ← Zpět na rozváděč
         </a>

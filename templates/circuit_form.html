@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/form_field.html" import render_field %}
 
-{% block title %}{% if is_duplicate %}Duplikovat obvod{% elif is_edit %}Editovat obvod{% else %}Nový obvod{% endif %}{% endblock %}
+{% block title %}{{ "Editovat obvod" if is_edit else "Nový obvod" }}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
@@ -10,7 +10,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">
-                    {% if is_duplicate %}Duplikovat obvod{% elif is_edit %}Editovat obvod{% else %}Nový obvod{% endif %}
+                    {{ "Editovat obvod" if is_edit else "Nový obvod" }}
                 </h1>
                 <p class="text-sm text-gray-600 mt-1">
                     Přístroj: <span class="font-medium">{{ device.switchboard_device_position or "—" }}</span>
@@ -22,7 +22,7 @@
                     Rozváděč: <span class="font-medium">{{ device.switchboard.switchboard_name or "—" }}</span>
                 </p>
             </div>
-            <a href="/device/{{ device.device_id }}" 
+            <a href="{{ url_for('device_detail', device_id=device.device_id) }}" 
                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 ← Zpět na přístroj
             </a>
@@ -47,7 +47,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{% if is_duplicate %}/circuit/{{ circuit.circuit_id }}/duplicate{% elif is_edit %}/circuit/{{ circuit.circuit_id }}/update{% else %}/device/{{ device.device_id }}/circuit/create{% endif %}" 
+    <form method="POST" action="{{ url_for('circuit_update', circuit_id=circuit.circuit_id) if is_edit else url_for('circuit_create', device_id=device.device_id) }}" 
           class="bg-white rounded-lg shadow-sm p-6">
         
         <!-- Circuit Info Section -->
@@ -185,9 +185,9 @@
         <div class="flex gap-3 pt-6 border-t border-gray-200">
             <button type="submit" 
                     class="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
-                {% if is_duplicate %}Duplikovat obvod{% elif is_edit %}Uložit změny{% else %}Vytvořit obvod{% endif %}
+                {{ "Uložit změny" if is_edit else "Vytvořit obvod" }}
             </button>
-            <a href="/device/{{ device.device_id }}" 
+            <a href="{{ url_for('device_detail', device_id=device.device_id) }}" 
                class="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
                 Zrušit
             </a>

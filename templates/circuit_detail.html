@@ -30,22 +30,18 @@
                 </p>
                 <p class="text-sm text-gray-600">
                     Rozváděč: 
-                    <a href="{{ url_for('switchboard_detail', id=circuit.device.switchboard.switchboard_id) }}" 
+                    <a href="{{ url_for('switchboard_detail', switchboard_id=circuit.device.switchboard.switchboard_id) }}" 
                        class="text-blue-600 hover:text-blue-800 font-medium">
                         {{ circuit.device.switchboard.switchboard_name or "—" }}
                     </a>
                 </p>
             </div>
             <div class="flex gap-2">
-                <a href="/circuit/{{ circuit.circuit_id }}/duplicate" 
-                   class="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
-                    📋 Duplikovat
-                </a>
-                <a href="/circuit/{{ circuit.circuit_id }}/edit" 
+                <a href="{{ url_for('circuit_edit_form', circuit_id=circuit.circuit_id) }}" 
                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                     ✏️ Editovat
                 </a>
-                <form method="POST" action="/circuit/{{ circuit.circuit_id }}/delete" 
+                <form method="POST" action="{{ url_for('circuit_delete', circuit_id=circuit.circuit_id) }}" 
                       onsubmit="return confirm('Opravdu chcete smazat tento obvod{% if terminal_devices %} a všechna koncová zařízení ({{ terminal_devices|length }}){% endif %}?')" 
                       class="inline">
                     <button type="submit" 
@@ -55,7 +51,7 @@
                 </form>
             </div>
         </div>
-        <a href="/device/{{ circuit.device.device_id }}" 
+        <a href="{{ url_for('device_detail', device_id=circuit.device.device_id) }}" 
            class="inline-block text-sm text-blue-600 hover:text-blue-800">
             ← Zpět na přístroj
         </a>

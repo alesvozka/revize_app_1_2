@@ -233,7 +233,8 @@ async def revision_create_form(request: Request):
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
-        "revision": None
+        "revision": None,
+        "is_duplicate": False
     })
 
 
@@ -340,10 +341,15 @@ async def revision_edit_form(revision_id: int, request: Request, db: Session = D
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, revision_id=revision_id)
+    
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
-        "revision": revision
+        "revision": revision,
+        "is_duplicate": False,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -458,13 +464,20 @@ async def switchboard_create_form(revision_id: int, request: Request, db: Sessio
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, revision_id=revision_id)
+    
     return templates.TemplateResponse("switchboard_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": revision,
         "switchboard": None,
+        "measurement": None,
+        "is_duplicate": False,
+        "field_configs": dropdown_config,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -585,13 +598,25 @@ async def switchboard_edit_form(switchboard_id: int, request: Request, db: Sessi
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Get measurement
+    measurement = db.query(SwitchboardMeasurement).filter(
+        SwitchboardMeasurement.switchboard_id == switchboard_id
+    ).first()
+    
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, switchboard_id=switchboard_id)
+    
     return templates.TemplateResponse("switchboard_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": switchboard.revision,
         "switchboard": switchboard,
+        "measurement": measurement,
+        "is_duplicate": False,
+        "field_configs": dropdown_config,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -851,8 +876,9 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
         return RedirectResponse(url="/", status_code=303)
     
     # Get all devices in this switchboard for parent selection
-    devices = db.query(SwitchboardDevice).filter(
-        SwitchboardDevice.switchboard_id == switchboard_id
+    parent_devices = db.query(SwitchboardDevice).filter(
+        SwitchboardDevice.switchboard_id == switchboard_id,
+        SwitchboardDevice.parent_device_id == None
     ).order_by(SwitchboardDevice.switchboard_device_position).all()
     
     # Get dropdown configuration for device
@@ -868,14 +894,19 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, switchboard_id=switchboard_id)
+    
     return templates.TemplateResponse("device_form.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": switchboard,
         "device": None,
-        "devices": devices,
+        "parent_devices": parent_devices,
+        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -943,10 +974,11 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    # Get all devices in this switchboard for parent selection (exclude self and descendants)
-    devices = db.query(SwitchboardDevice).filter(
+    # Get all parent devices in this switchboard for parent selection (only RCDs)
+    parent_devices = db.query(SwitchboardDevice).filter(
         SwitchboardDevice.switchboard_id == device.switchboard_id,
-        SwitchboardDevice.device_id != device_id
+        SwitchboardDevice.device_id != device_id,
+        SwitchboardDevice.parent_device_id == None
     ).order_by(SwitchboardDevice.switchboard_device_position).all()
     
     # Get dropdown configuration for device
@@ -962,14 +994,19 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, device_id=device_id)
+    
     return templates.TemplateResponse("device_form.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": device.switchboard,
         "device": device,
-        "devices": devices,
+        "parent_devices": parent_devices,
+        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -1073,13 +1110,19 @@ async def circuit_create_form(device_id: int, request: Request, db: Session = De
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, device_id=device_id)
+    
     return templates.TemplateResponse("circuit_form.html", {
         "request": request,
         "device": device,
         "circuit": None,
+        "measurement": None,
         "is_edit": False,
+        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -1202,13 +1245,24 @@ async def circuit_edit_form(circuit_id: int, request: Request, db: Session = Dep
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Get measurement
+    measurement = db.query(CircuitMeasurement).filter(
+        CircuitMeasurement.circuit_id == circuit_id
+    ).first()
+    
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
+    
     return templates.TemplateResponse("circuit_form.html", {
         "request": request,
         "device": circuit.device,
         "circuit": circuit,
+        "measurement": measurement,
         "is_edit": True,
+        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -1532,13 +1586,18 @@ async def terminal_device_create_form(circuit_id: int, request: Request, db: Ses
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
+    
     return templates.TemplateResponse("terminal_device_form.html", {
         "request": request,
         "circuit": circuit,
         "terminal_device": None,
         "is_edit": False,
+        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -1646,13 +1705,18 @@ async def terminal_device_edit_form(terminal_device_id: int, request: Request, d
         ).order_by(DropdownSource.display_order, DropdownSource.value).all()
         dropdown_sources[category] = sources
     
+    # Build breadcrumbs
+    breadcrumbs = build_breadcrumbs(db, terminal_device_id=terminal_device_id)
+    
     return templates.TemplateResponse("terminal_device_form.html", {
         "request": request,
         "circuit": terminal.circuit,
         "terminal_device": terminal,
         "is_edit": True,
+        "is_duplicate": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "breadcrumbs": breadcrumbs
     })
 
 
@@ -2215,6 +2279,7 @@ async def switchboard_duplicate_form(switchboard_id: int, request: Request, db: 
         "measurement": switchboard.measurement,
         "is_duplicate": True,
         "field_configs": field_configs,
+        "dropdown_config": field_configs,
         "dropdown_sources": dropdown_sources,
         "breadcrumbs": breadcrumbs
     })
@@ -2386,9 +2451,9 @@ async def device_duplicate_form(device_id: int, request: Request, db: Session = 
     
     switchboard = device.switchboard
     breadcrumbs = build_breadcrumbs(db, device_id=device_id)
-    field_configs = get_field_dropdown_config("device", db)
+    dropdown_config = get_field_dropdown_config("device", db)
     dropdown_sources = {}
-    for field_name, config in field_configs.items():
+    for field_name, config in dropdown_config.items():
         if config['enabled'] and config['category']:
             dropdown_sources[field_name] = db.query(DropdownSource).filter(
                 DropdownSource.category == config['category']
@@ -2407,7 +2472,7 @@ async def device_duplicate_form(device_id: int, request: Request, db: Session = 
         "device": device,
         "is_duplicate": True,
         "parent_devices": parent_devices,
-        "field_configs": field_configs,
+        "dropdown_config": dropdown_config,
         "dropdown_sources": dropdown_sources,
         "breadcrumbs": breadcrumbs
     })
@@ -2590,9 +2655,9 @@ async def circuit_duplicate_form(circuit_id: int, request: Request, db: Session 
     
     device = circuit.device
     breadcrumbs = build_breadcrumbs(db, circuit_id=circuit_id)
-    field_configs = get_field_dropdown_config("circuit", db)
+    dropdown_config = get_field_dropdown_config("circuit", db)
     dropdown_sources = {}
-    for field_name, config in field_configs.items():
+    for field_name, config in dropdown_config.items():
         if config['enabled'] and config['category']:
             dropdown_sources[field_name] = db.query(DropdownSource).filter(
                 DropdownSource.category == config['category']
@@ -2604,8 +2669,9 @@ async def circuit_duplicate_form(circuit_id: int, request: Request, db: Session 
         "device": device,
         "circuit": circuit,
         "measurement": circuit.measurement,
+        "is_edit": False,
         "is_duplicate": True,
-        "field_configs": field_configs,
+        "dropdown_config": dropdown_config,
         "dropdown_sources": dropdown_sources,
         "breadcrumbs": breadcrumbs
     })
@@ -2690,9 +2756,9 @@ async def terminal_duplicate_form(terminal_device_id: int, request: Request, db:
     
     circuit = terminal.circuit
     breadcrumbs = build_breadcrumbs(db, terminal_device_id=terminal_device_id)
-    field_configs = get_field_dropdown_config("terminal_device", db)
+    dropdown_config = get_field_dropdown_config("terminal_device", db)
     dropdown_sources = {}
-    for field_name, config in field_configs.items():
+    for field_name, config in dropdown_config.items():
         if config['enabled'] and config['category']:
             dropdown_sources[field_name] = db.query(DropdownSource).filter(
                 DropdownSource.category == config['category']
@@ -2703,8 +2769,9 @@ async def terminal_duplicate_form(terminal_device_id: int, request: Request, db:
         "user_id": user_id,
         "circuit": circuit,
         "terminal_device": terminal,
+        "is_edit": False,
         "is_duplicate": True,
-        "field_configs": field_configs,
+        "dropdown_config": dropdown_config,
         "dropdown_sources": dropdown_sources,
         "breadcrumbs": breadcrumbs
     })

@@ -72,7 +72,7 @@ class Switchboard(Base):
     switchboard_name = Column(String(255))
     switchboard_description = Column(Text)
     switchboard_location = Column(String(255))
-    switchboard_order = Column(Integer)
+    switchboard_order = Column(Integer, default=0)
     switchboard_type = Column(String(100))
     switchboard_serial_number = Column(String(100))
     switchboard_production_date = Column(Date)

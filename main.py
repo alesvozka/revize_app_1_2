@@ -36,6 +36,24 @@ def init_default_user():
     finally:
         db.close()
 
+def fix_switchboard_order_nulls():
+    """Opraví None hodnoty v switchboard_order na 0"""
+    db = next(get_db())
+    try:
+        switchboards = db.query(Switchboard).filter(Switchboard.switchboard_order == None).all()
+        if switchboards:
+            for switchboard in switchboards:
+                switchboard.switchboard_order = 0
+            db.commit()
+            print(f"✅ Opraveno {len(switchboards)} rozváděčů s None hodnotou v switchboard_order")
+        else:
+            print("ℹ️  Všechny rozváděče mají platnou hodnotu switchboard_order")
+    except Exception as e:
+        print(f"⚠️  Chyba při opravě switchboard_order: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 # Initialize FastAPI app
 app = FastAPI(title="Revize App")
 
@@ -43,6 +61,7 @@ app = FastAPI(title="Revize App")
 @app.on_event("startup")
 async def startup_event():
     init_default_user()
+    fix_switchboard_order_nulls()
 
 # Add session middleware
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")

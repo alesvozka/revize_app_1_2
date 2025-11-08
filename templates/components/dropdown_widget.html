@@ -25,39 +25,62 @@ Parameters:
     <div class="flex gap-2 mb-2">
         <button type="button" 
                 onclick="switchDropdownMode('{{ field_name }}', 'select')"
-                class="mode-btn mode-btn-select px-3 py-1 text-xs font-medium border rounded transition-colors"
+                class="mode-btn mode-btn-select px-3 py-1.5 text-xs font-medium border rounded transition-colors"
                 data-field="{{ field_name }}">
             📋 Z databáze
         </button>
         <button type="button" 
                 onclick="switchDropdownMode('{{ field_name }}', 'add')"
-                class="mode-btn mode-btn-add px-3 py-1 text-xs font-medium border rounded transition-colors"
+                class="mode-btn mode-btn-add px-3 py-1.5 text-xs font-medium border rounded transition-colors"
                 data-field="{{ field_name }}">
             ➕ Přidat nový
         </button>
         <button type="button" 
                 onclick="switchDropdownMode('{{ field_name }}', 'text')"
-                class="mode-btn mode-btn-text px-3 py-1 text-xs font-medium border rounded transition-colors"
+                class="mode-btn mode-btn-text px-3 py-1.5 text-xs font-medium border rounded transition-colors"
                 data-field="{{ field_name }}">
             ✎ Volný text
         </button>
     </div>
 
-    <!-- Mode 1: Select from database -->
+    <!-- Mode 1: Select from database (CUSTOM DROPDOWN) -->
     <div class="mode-content mode-select" data-field="{{ field_name }}">
-        <select id="{{ field_name }}" 
-                name="{{ field_name }}"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value="">-- Vyberte hodnotu --</option>
-            <!-- Values will be loaded dynamically or from server -->
-            {% if category %}
-                {% for source in dropdown_sources.get(category, []) %}
-                <option value="{{ source.value }}" {% if current_value == source.value %}selected{% endif %}>
-                    {{ source.value }}
-                </option>
-                {% endfor %}
-            {% endif %}
-        </select>
+        <div class="custom-select-wrapper relative">
+            <input type="hidden" 
+                   id="{{ field_name }}" 
+                   name="{{ field_name }}"
+                   value="{{ current_value or '' }}">
+            
+            <button type="button" 
+                    class="custom-select-trigger w-full px-3 py-2 border border-gray-300 rounded text-left bg-white hover:border-gray-400 transition-colors flex items-center justify-between"
+                    onclick="toggleCustomSelect('{{ field_name }}')">
+                <span class="custom-select-value text-gray-900">
+                    {% if current_value %}
+                        {{ current_value }}
+                    {% else %}
+                        -- Vyberte hodnotu --
+                    {% endif %}
+                </span>
+                <svg class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            
+            <div class="custom-select-options absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto hidden">
+                <div class="custom-select-option px-3 py-2 hover:bg-gray-100 cursor-pointer text-gray-500"
+                     data-value="">
+                    -- Vyberte hodnotu --
+                </div>
+                {% if category %}
+                    {% for source in dropdown_sources.get(category, []) %}
+                    <div class="custom-select-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-900 {% if current_value == source.value %}bg-blue-50 font-medium{% endif %}"
+                         data-value="{{ source.value }}">
+                        {{ source.value }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Mode 2: Add new value -->
@@ -66,10 +89,10 @@ Parameters:
             <input type="text" 
                    id="{{ field_name }}_new"
                    placeholder="Zadejte novou hodnotu..."
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent">
             <button type="button"
                     onclick="addNewDropdownValue('{{ field_name }}', '{{ category }}')"
-                    class="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700">
+                    class="px-4 py-2 bg-green-600 text-white font-medium rounded hover:bg-green-700 transition">
                 Přidat a vybrat
             </button>
         </div>
@@ -83,7 +106,7 @@ Parameters:
                name="{{ field_name }}"
                value="{{ current_value or '' }}"
                placeholder="{{ placeholder or 'Zadejte hodnotu...' }}"
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+               class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <p class="text-xs text-gray-500 mt-1">Hodnota se uloží pouze do tohoto záznamu, nebude přidána do databáze hodnot</p>
     </div>
 
@@ -93,6 +116,73 @@ Parameters:
 </div>
 
 <script>
+// Toggle custom select dropdown
+function toggleCustomSelect(fieldName) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    const wrapper = container.querySelector('.custom-select-wrapper');
+    const options = wrapper.querySelector('.custom-select-options');
+    const arrow = wrapper.querySelector('svg');
+    
+    // Close all other dropdowns first
+    document.querySelectorAll('.custom-select-options').forEach(opt => {
+        if (opt !== options) {
+            opt.classList.add('hidden');
+        }
+    });
+    document.querySelectorAll('.custom-select-wrapper svg').forEach(svg => {
+        if (svg !== arrow) {
+            svg.classList.remove('rotate-180');
+        }
+    });
+    
+    // Toggle this dropdown
+    options.classList.toggle('hidden');
+    arrow.classList.toggle('rotate-180');
+}
+
+// Handle option selection in custom dropdown
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('custom-select-option')) {
+        const option = e.target;
+        const value = option.getAttribute('data-value');
+        const wrapper = option.closest('.custom-select-wrapper');
+        const container = option.closest('.dropdown-widget-container');
+        const fieldName = container.getAttribute('data-field');
+        
+        // Update hidden input
+        const hiddenInput = wrapper.querySelector(`input[type="hidden"]`);
+        hiddenInput.value = value;
+        
+        // Update display text
+        const displayText = wrapper.querySelector('.custom-select-value');
+        displayText.textContent = value || '-- Vyberte hodnotu --';
+        displayText.classList.toggle('text-gray-500', !value);
+        displayText.classList.toggle('text-gray-900', !!value);
+        
+        // Update option styling
+        wrapper.querySelectorAll('.custom-select-option').forEach(opt => {
+            opt.classList.remove('bg-blue-50', 'font-medium');
+        });
+        option.classList.add('bg-blue-50', 'font-medium');
+        
+        // Close dropdown
+        wrapper.querySelector('.custom-select-options').classList.add('hidden');
+        wrapper.querySelector('svg').classList.remove('rotate-180');
+    }
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.custom-select-wrapper') && !e.target.classList.contains('custom-select-option')) {
+        document.querySelectorAll('.custom-select-options').forEach(opt => {
+            opt.classList.add('hidden');
+        });
+        document.querySelectorAll('.custom-select-wrapper svg').forEach(svg => {
+            svg.classList.remove('rotate-180');
+        });
+    }
+});
+
 // Switch between dropdown modes
 function switchDropdownMode(fieldName, mode) {
     const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
@@ -118,17 +208,17 @@ function switchDropdownMode(fieldName, mode) {
     selectedBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
     
     // Disable/enable form fields based on mode
-    const selectField = container.querySelector(`select#${fieldName}`);
+    const hiddenField = container.querySelector(`input[type="hidden"]#${fieldName}`);
     const textField = container.querySelector(`input#${fieldName}_text`);
     
     if (mode === 'select') {
-        selectField.disabled = false;
+        if (hiddenField) hiddenField.disabled = false;
         if (textField) textField.disabled = true;
     } else if (mode === 'text') {
-        selectField.disabled = true;
+        if (hiddenField) hiddenField.disabled = true;
         if (textField) textField.disabled = false;
     } else {
-        selectField.disabled = true;
+        if (hiddenField) hiddenField.disabled = true;
         if (textField) textField.disabled = true;
     }
 }
@@ -157,13 +247,21 @@ async function addNewDropdownValue(fieldName, category) {
         const data = await response.json();
         
         if (data.success) {
-            // Add new option to select
-            const selectField = container.querySelector(`select#${fieldName}`);
-            const newOption = document.createElement('option');
-            newOption.value = data.value;
-            newOption.text = data.value;
-            newOption.selected = true;
-            selectField.appendChild(newOption);
+            // Add new option to custom select
+            const optionsContainer = container.querySelector('.custom-select-options');
+            const newOption = document.createElement('div');
+            newOption.className = 'custom-select-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-900 bg-blue-50 font-medium';
+            newOption.setAttribute('data-value', data.value);
+            newOption.textContent = data.value;
+            optionsContainer.appendChild(newOption);
+            
+            // Update hidden input and display
+            const hiddenInput = container.querySelector(`input[type="hidden"]#${fieldName}`);
+            hiddenInput.value = data.value;
+            const displayText = container.querySelector('.custom-select-value');
+            displayText.textContent = data.value;
+            displayText.classList.remove('text-gray-500');
+            displayText.classList.add('text-gray-900');
             
             // Switch back to select mode
             switchDropdownMode(fieldName, 'select');
@@ -202,6 +300,37 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .mode-btn:hover {
-    opacity: 0.8;
+    opacity: 0.9;
+}
+
+.custom-select-wrapper {
+    position: relative;
+}
+
+.custom-select-trigger {
+    cursor: pointer;
+}
+
+.custom-select-trigger:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.custom-select-options {
+    max-height: 240px;
+}
+
+.custom-select-option:first-child {
+    color: #9ca3af;
+}
+
+/* Smooth arrow rotation */
+.custom-select-wrapper svg {
+    transition: transform 0.2s ease;
+}
+
+.rotate-180 {
+    transform: rotate(180deg);
 }
 </style>

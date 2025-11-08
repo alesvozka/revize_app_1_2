@@ -659,6 +659,178 @@ async def switchboard_create(revision_id: int, request: Request, db: Session = D
     return RedirectResponse(url=f"/switchboard/{new_switchboard.switchboard_id}", status_code=303)
 
 
+# Quick Add - Get list with form (for HTMX)
+@app.get("/revision/{revision_id}/switchboard/list-with-form", response_class=HTMLResponse)
+async def switchboard_list_with_form(revision_id: int, request: Request, db: Session = Depends(get_db)):
+    """
+    Returns the list of switchboards + empty form container for HTMX
+    """
+    user_id = get_current_user(request)
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        return "<div class='text-red-500 p-4'>Revize nenalezena</div>"
+    
+    # Get dropdown sources for form
+    dropdown_sources = {}
+    categories = db.query(DropdownSource.category).distinct().all()
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
+    return templates.TemplateResponse("components/switchboard_list_with_form.html", {
+        "request": request,
+        "revision_id": revision_id,
+        "switchboards": revision.switchboards,
+        "dropdown_sources": dropdown_sources,
+        "show_form": False
+    })
+
+
+# Quick Add - Get form (for HTMX)
+@app.get("/revision/{revision_id}/switchboard/quick-add-form", response_class=HTMLResponse)
+async def get_switchboard_quick_add_form(
+    revision_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns HTML with inline form for adding switchboard
+    """
+    user_id = get_current_user(request)
+    
+    # Verify revision ownership
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        return "<div class='text-red-500 p-4'>Revize nenalezena</div>"
+    
+    # Get dropdown sources for form
+    dropdown_sources = {}
+    categories = db.query(DropdownSource.category).distinct().all()
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
+    return templates.TemplateResponse("components/quick_add_switchboard_form.html", {
+        "request": request,
+        "revision_id": revision_id,
+        "dropdown_sources": dropdown_sources
+    })
+
+
+# Quick Add - Submit and refresh (for HTMX)
+@app.post("/revision/{revision_id}/switchboard/quick-add", response_class=HTMLResponse)
+async def quick_add_switchboard(
+    revision_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Creates new switchboard and returns updated list + empty form
+    """
+    user_id = get_current_user(request)
+    
+    # Verify revision ownership
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        return "<div class='text-red-500 p-4'>Revize nenalezena</div>"
+    
+    form_data = await request.form()
+    
+    # Helper function
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Auto-determine order if not provided
+    order = get_value("switchboard_order", int)
+    if order is None:
+        max_order = db.query(func.max(Switchboard.switchboard_order)).filter(
+            Switchboard.revision_id == revision_id
+        ).scalar()
+        order = (max_order or 0) + 1
+    
+    # Create new switchboard
+    new_switchboard = Switchboard(
+        revision_id=revision_id,
+        switchboard_name=get_value("switchboard_name"),
+        switchboard_description=get_value("switchboard_description"),
+        switchboard_location=get_value("switchboard_location"),
+        switchboard_order=order,
+        switchboard_type=get_value("switchboard_type"),
+        switchboard_serial_number=get_value("switchboard_serial_number"),
+        switchboard_production_date=get_value("switchboard_production_date"),
+        switchboard_ip_rating=get_value("switchboard_ip_rating"),
+        switchboard_impact_protection=get_value("switchboard_impact_protection"),
+        switchboard_protection_class=get_value("switchboard_protection_class"),
+        switchboard_rated_current=get_value("switchboard_rated_current", float),
+        switchboard_rated_voltage=get_value("switchboard_rated_voltage", float),
+        switchboard_manufacturer=get_value("switchboard_manufacturer"),
+        switchboard_manufacturer_address=get_value("switchboard_manufacturer_address"),
+        switchboard_standards=get_value("switchboard_standards"),
+        switchboard_enclosure_type=get_value("switchboard_enclosure_type"),
+        switchboard_enclosure_manufacturer=get_value("switchboard_enclosure_manufacturer"),
+        switchboard_enclosure_installation_method=get_value("switchboard_enclosure_installation_method"),
+        switchboard_superior_switchboard=get_value("switchboard_superior_switchboard"),
+        switchboard_superior_circuit_breaker_rated_current=get_value("switchboard_superior_circuit_breaker_rated_current", float),
+        switchboard_superior_circuit_breaker_trip_characteristic=get_value("switchboard_superior_circuit_breaker_trip_characteristic"),
+        switchboard_superior_circuit_breaker_manufacturer=get_value("switchboard_superior_circuit_breaker_manufacturer"),
+        switchboard_superior_circuit_breaker_model=get_value("switchboard_superior_circuit_breaker_model"),
+        switchboard_main_switch=get_value("switchboard_main_switch"),
+        switchboard_note=get_value("switchboard_note"),
+        switchboard_cable=get_value("switchboard_cable"),
+        switchboard_cable_installation_method=get_value("switchboard_cable_installation_method")
+    )
+    
+    db.add(new_switchboard)
+    db.commit()
+    db.refresh(new_switchboard)
+    
+    # Return updated list + empty form
+    revision = db.query(Revision).filter(Revision.revision_id == revision_id).first()
+    
+    # Get dropdown sources for form
+    dropdown_sources = {}
+    categories = db.query(DropdownSource.category).distinct().all()
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
+    return templates.TemplateResponse("components/switchboard_list_with_form.html", {
+        "request": request,
+        "revision_id": revision_id,
+        "switchboards": revision.switchboards,
+        "dropdown_sources": dropdown_sources,
+        "show_form": False  # Hide form after successful submit
+    })
+
+
 # Read - Show detail
 @app.get("/switchboard/{switchboard_id}", response_class=HTMLResponse)
 async def switchboard_detail(switchboard_id: int, request: Request, db: Session = Depends(get_db)):

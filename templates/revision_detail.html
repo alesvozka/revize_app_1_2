@@ -331,69 +331,28 @@
     <!-- Switchboards (Rozváděče) -->
     <div class="bg-white border border-gray-200 rounded mt-6">
         <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-base font-semibold text-gray-900">Rozváděče</h3>
+            <h3 class="text-base font-semibold text-gray-900">Rozváděče ({{ revision.switchboards|length }})</h3>
+            <!-- Fallback link to full form -->
             <a href="/revision/{{ revision.revision_id }}/switchboard/create" 
-               class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm font-medium btn-flat">
-                + Přidat rozváděč
+               class="text-gray-500 hover:text-gray-700 text-sm">
+                Plný formulář →
             </a>
         </div>
-        <div class="divide-y divide-gray-200">
-            {% if revision.switchboards %}
-                {% for switchboard in revision.switchboards|sort(attribute='switchboard_order') %}
-                <div class="p-4 hover:bg-gray-50 transition">
-                    <div class="flex items-center justify-between">
-                        <a href="/switchboard/{{ switchboard.switchboard_id }}" class="flex-1">
-                            <h4 class="font-semibold text-gray-900 text-base">
-                                {% if switchboard.switchboard_name %}
-                                    {{ switchboard.switchboard_name }}
-                                {% else %}
-                                    Rozváděč #{{ switchboard.switchboard_id }}
-                                {% endif %}
-                            </h4>
-                            <div class="mt-2 grid grid-cols-3 gap-4 text-sm text-gray-600">
-                                {% if switchboard.switchboard_location %}
-                                    <p><span class="font-medium text-gray-500">Umístění:</span> {{ switchboard.switchboard_location }}</p>
-                                {% endif %}
-                                {% if switchboard.switchboard_type %}
-                                    <p><span class="font-medium text-gray-500">Typ:</span> {{ switchboard.switchboard_type }}</p>
-                                {% endif %}
-                                {% if switchboard.switchboard_order is not none %}
-                                    <p><span class="font-medium text-gray-500">Pořadí:</span> {{ switchboard.switchboard_order }}</p>
-                                {% endif %}
-                            </div>
-                        </a>
-                        <div class="flex gap-1.5 ml-4">
-                            <form method="POST" action="/switchboard/{{ switchboard.switchboard_id }}/duplicate" class="inline">
-                                <button type="submit" class="p-2 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition" title="Duplikovat rozváděč">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                    </svg>
-                                </button>
-                            </form>
-                            <form method="POST" action="/switchboard/{{ switchboard.switchboard_id }}/delete" 
-                                  onsubmit="return confirm('Opravdu chcete smazat tento rozváděč a všechna jeho data?')" class="inline">
-                                <button type="submit" class="p-2 text-red-600 bg-red-50 rounded hover:bg-red-100 transition" title="Smazat rozváděč">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
-                            </form>
-                            <svg class="w-5 h-5 text-gray-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-center py-12 text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                    <p class="text-sm font-medium">Zatím nejsou přidány žádné rozváděče</p>
-                    <p class="text-xs mt-1">Začněte přidáním prvního rozváděče</p>
-                </div>
-            {% endif %}
+        
+        <!-- HTMX Target for dynamic content -->
+        <div id="switchboards-section"
+             class="p-4"
+             hx-get="/revision/{{ revision.revision_id }}/switchboard/list-with-form"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Loading state -->
+            <div class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-sm">Načítám rozváděče...</p>
+            </div>
         </div>
     </div>
 </div>

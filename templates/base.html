@@ -17,8 +17,10 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#2563eb',
+                        primary: '#3b82f6',
                         secondary: '#64748b',
+                        accent: '#10b981',
+                        danger: '#ef4444',
                     }
                 }
             }
@@ -32,7 +34,27 @@
         }
         .sidebar-scroll::-webkit-scrollbar-thumb {
             background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
+            border-radius: 2px;
+        }
+        
+        /* Table styles */
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+        
+        /* Flat button styles */
+        .btn-flat {
+            border: none;
+            box-shadow: none;
+            transition: all 0.15s ease;
+        }
+        
+        .btn-flat:hover {
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -45,37 +67,37 @@
             <!-- Sidebar Header -->
             <div class="p-4 border-b border-gray-200 flex items-center justify-between">
                 <h1 class="text-xl font-bold text-gray-800">Revize App</h1>
-                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
             </div>
             
             <!-- Sidebar Navigation -->
-            <nav class="flex-1 overflow-y-auto sidebar-scroll p-4">
-                <ul class="space-y-2">
+            <nav class="flex-1 overflow-y-auto sidebar-scroll p-3">
+                <ul class="space-y-1">
                     <!-- Dashboard -->
                     <li>
-                        <a href="/" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900">
+                        <a href="/" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                             </svg>
-                            <span class="sidebar-text">Dashboard</span>
+                            <span class="sidebar-text font-medium">Dashboard</span>
                         </a>
                     </li>
                     
                     <!-- Revize with tree structure -->
                     {% if sidebar_revisions is defined and sidebar_revisions %}
-                    <li class="border-t border-gray-200 pt-2 mt-2">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    <li class="border-t border-gray-200 pt-3 mt-3">
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                             Revize
                         </div>
                         <ul class="mt-2 space-y-1">
                             {% for revision in sidebar_revisions %}
                             <li>
                                 <a href="/revision/{{ revision.revision_id }}" 
-                                   class="flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-700">
+                                   class="flex items-center space-x-2 px-3 py-2 text-sm rounded hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition">
                                     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
@@ -88,7 +110,7 @@
                                     {% for switchboard in revision.switchboards|sort(attribute='switchboard_order') %}
                                     <li>
                                         <a href="/switchboard/{{ switchboard.switchboard_id }}" 
-                                           class="flex items-center space-x-2 px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900">
+                                           class="flex items-center space-x-2 px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition">
                                             <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                             </svg>
@@ -105,13 +127,13 @@
                     {% endif %}
                     
                     <!-- Nastavení -->
-                    <li class="border-t border-gray-200 pt-2 mt-2">
-                        <a href="/settings" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900">
+                    <li class="border-t border-gray-200 pt-3 mt-3">
+                        <a href="/settings" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <span class="sidebar-text">Nastavení</span>
+                            <span class="sidebar-text font-medium">Nastavení</span>
                         </a>
                     </li>
                 </ul>
@@ -124,8 +146,8 @@
         </header>
         
         <!-- MAIN CONTENT AREA (shared for both desktop and mobile) -->
-        <main class="flex-1 overflow-y-auto pb-16 md:pb-0">
-            <div class="container mx-auto p-4 md:p-6">
+        <main class="flex-1 overflow-y-auto pb-16 md:pb-0 bg-gray-50">
+            <div class="container mx-auto p-4 md:p-6 max-w-7xl">
                 {% block content %}{% endblock %}
             </div>
         </main>

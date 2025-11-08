@@ -182,6 +182,44 @@
         </nav>
     </div>
     
+    <!-- Modal for adding new dropdown value (shared by all dropdowns) -->
+    <div id="form-add-value-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center" onclick="closeFormAddValueModal(event)">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onclick="event.stopPropagation()">
+            <div class="modal-header px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Přidat novou hodnotu</h3>
+                <button onclick="closeFormAddValueModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body px-6 py-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nová hodnota
+                </label>
+                <input type="text" 
+                       id="form-modal-new-value"
+                       placeholder="Zadejte hodnotu..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-2">
+                    Hodnota bude uložena do databáze a automaticky vybrána
+                </p>
+            </div>
+            
+            <div class="modal-footer px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="closeFormAddValueModal()" 
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition">
+                    Zrušit
+                </button>
+                <button onclick="saveFormNewValue()" 
+                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium">
+                    Přidat a vybrat
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
     <script>
         // Toggle sidebar collapse
@@ -199,7 +237,241 @@
                 texts.forEach(text => text.classList.remove('hidden'));
             }
         }
+
+        // ========================================
+        // COMPACT DROPDOWN FUNCTIONS
+        // ========================================
+        
+        // State for modal
+        let currentFormModalField = null;
+        let currentFormModalCategory = null;
+
+        // Toggle dropdown
+        function toggleFormDropdown(fieldName) {
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (!container) return;
+            
+            const dropdown = container.querySelector('.dropdown-options');
+            const arrow = container.querySelector('.dropdown-arrow');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-options').forEach(d => {
+                if (d !== dropdown) d.classList.add('hidden');
+            });
+            document.querySelectorAll('.dropdown-arrow').forEach(a => {
+                if (a !== arrow) a.classList.remove('rotate-180');
+            });
+            
+            // Toggle this dropdown
+            dropdown.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Select value from dropdown
+        function selectFormDropdownValue(fieldName, value) {
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (!container) return;
+            
+            const input = container.querySelector(`#${fieldName}`);
+            const dropdown = container.querySelector('.dropdown-options');
+            const arrow = container.querySelector('.dropdown-arrow');
+            
+            // Set value
+            input.value = value;
+            
+            // Update option styling
+            container.querySelectorAll('.dropdown-option').forEach(opt => {
+                opt.classList.remove('bg-blue-50', 'font-medium');
+            });
+            
+            // Close dropdown
+            dropdown.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+            
+            // Focus input
+            input.focus();
+        }
+
+        // Open modal for adding new value
+        function openFormAddValueModal(fieldName, category) {
+            currentFormModalField = fieldName;
+            currentFormModalCategory = category;
+            
+            // Close dropdown first
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (container) {
+                const dropdown = container.querySelector('.dropdown-options');
+                const arrow = container.querySelector('.dropdown-arrow');
+                dropdown.classList.add('hidden');
+                arrow.classList.remove('rotate-180');
+            }
+            
+            // Show modal
+            const modal = document.getElementById('form-add-value-modal');
+            const input = document.getElementById('form-modal-new-value');
+            modal.classList.remove('hidden');
+            input.value = '';
+            input.focus();
+        }
+
+        // Close modal
+        function closeFormAddValueModal(event) {
+            // If event is provided and target is not the overlay, don't close
+            if (event && event.target !== event.currentTarget) {
+                return;
+            }
+            
+            const modal = document.getElementById('form-add-value-modal');
+            modal.classList.add('hidden');
+            currentFormModalField = null;
+            currentFormModalCategory = null;
+        }
+
+        // Save new value from modal
+        async function saveFormNewValue() {
+            const input = document.getElementById('form-modal-new-value');
+            const value = input.value.trim();
+            
+            if (!value) {
+                alert('Zadejte hodnotu');
+                input.focus();
+                return;
+            }
+            
+            if (!currentFormModalField || !currentFormModalCategory) {
+                alert('Chyba: Neznámé pole nebo kategorie');
+                return;
+            }
+            
+            try {
+                // Send request to add new value
+                const formData = new FormData();
+                formData.append('value', value);
+                
+                const response = await fetch(`/api/dropdown/${currentFormModalCategory}/add`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Find the container and dropdown
+                    const container = document.querySelector(`.dropdown-widget-container[data-field="${currentFormModalField}"]`);
+                    const dropdown = container.querySelector('.dropdown-options');
+                    const fieldInput = container.querySelector(`#${currentFormModalField}`);
+                    
+                    // Add new option to dropdown (before the separator)
+                    const separator = dropdown.querySelector('.border-t');
+                    const newOption = document.createElement('div');
+                    newOption.className = 'dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-900';
+                    newOption.setAttribute('onclick', `selectFormDropdownValue('${currentFormModalField}', '${data.value}')`);
+                    newOption.textContent = data.value;
+                    
+                    if (separator) {
+                        dropdown.insertBefore(newOption, separator);
+                    } else {
+                        dropdown.insertBefore(newOption, dropdown.lastElementChild);
+                    }
+                    
+                    // Set the new value in the input
+                    fieldInput.value = data.value;
+                    
+                    // Close modal
+                    closeFormAddValueModal();
+                    
+                    // Show success message
+                    alert(`Hodnota "${data.value}" byla přidána a vybrána`);
+                } else {
+                    alert('Chyba při přidávání hodnoty: ' + (data.error || 'Neznámá chyba'));
+                }
+            } catch (error) {
+                console.error('Error adding dropdown value:', error);
+                alert('Chyba při přidávání hodnoty');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-widget-container') && !e.target.closest('.modal-overlay')) {
+                document.querySelectorAll('.dropdown-options').forEach(d => {
+                    d.classList.add('hidden');
+                });
+                document.querySelectorAll('.dropdown-arrow').forEach(a => {
+                    a.classList.remove('rotate-180');
+                });
+            }
+        });
+
+        // Handle Enter key in modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalInput = document.getElementById('form-modal-new-value');
+            if (modalInput) {
+                modalInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveFormNewValue();
+                    }
+                });
+            }
+        });
+
+        // Handle Escape key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('form-add-value-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeFormAddValueModal();
+                }
+            }
+        });
     </script>
+    
+    <style>
+        .dropdown-widget-container {
+            position: relative;
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-option {
+            transition: background-color 0.15s ease;
+        }
+
+        .modal-overlay {
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            animation: slideUp 0.2s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
     
     {% block extra_js %}{% endblock %}
 </body>

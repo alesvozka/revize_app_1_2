@@ -263,7 +263,8 @@ async def revision_detail(revision_id: int, request: Request, db: Session = Depe
         "request": request,
         "user_id": user_id,
         "revision": revision,
-        "sidebar_revisions": get_sidebar_revisions(db, user_id)
+        "sidebar_revisions": get_sidebar_revisions(db, user_id),
+        "current_revision_for_sidebar": revision
     })
 
 
@@ -672,7 +673,9 @@ async def switchboard_detail(switchboard_id: int, request: Request, db: Session 
     return templates.TemplateResponse("switchboard_detail.html", {
         "request": request,
         "user_id": user_id,
-        "switchboard": switchboard
+        "switchboard": switchboard,
+        "sidebar_revisions": get_sidebar_revisions(db, user_id),
+        "current_revision_for_sidebar": switchboard.revision
     })
 
 
@@ -1839,7 +1842,9 @@ async def device_detail(device_id: int, request: Request, db: Session = Depends(
     return templates.TemplateResponse("device_detail.html", {
         "request": request,
         "device": device,
-        "circuits": circuits
+        "circuits": circuits,
+        "sidebar_revisions": get_sidebar_revisions(db, user_id),
+        "current_revision_for_sidebar": device.switchboard.revision
     })
 
 

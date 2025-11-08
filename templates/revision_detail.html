@@ -3,6 +3,12 @@
 {% block title %}{{ revision.revision_name or 'Revize #' ~ revision.revision_id }} - Revize App{% endblock %}
 
 {% block content %}
+<!-- Breadcrumb Navigation -->
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': revision.revision_name or 'Revize #' ~ revision.revision_id|string, 'url': '#'}
+] %}
+
 <div class="max-w-6xl mx-auto">
     <!-- Page Header -->
     <div class="mb-6">

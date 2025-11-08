@@ -2340,6 +2340,46 @@ async def dropdown_config_update(request: Request, db: Session = Depends(get_db)
     return RedirectResponse(url="/settings", status_code=303)
 
 
+# ========================================
+# PROFILE PAGE
+# ========================================
+
+@app.get("/profile", response_class=HTMLResponse)
+async def profile_page(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Simple profile page showing user info
+    """
+    user_id = get_current_user(request)
+    
+    # Count user's revisions
+    total_revisions = db.query(Revision).filter(Revision.user_id == user_id).count()
+    
+    # Count total switchboards
+    total_switchboards = db.query(Switchboard).join(Revision).filter(
+        Revision.user_id == user_id
+    ).count()
+    
+    # Count total devices
+    total_devices = db.query(Device).join(Switchboard).join(Revision).filter(
+        Revision.user_id == user_id
+    ).count()
+    
+    # Get sidebar revisions
+    sidebar_revisions = get_sidebar_revisions(db, user_id)
+    
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "user_id": user_id,
+        "total_revisions": total_revisions,
+        "total_switchboards": total_switchboards,
+        "total_devices": total_devices,
+        "sidebar_revisions": sidebar_revisions
+    })
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

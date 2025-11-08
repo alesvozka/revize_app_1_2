@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>{% block title %}Revize App{% endblock %}</title>
     
     <!-- Tailwind CSS -->
@@ -55,6 +55,45 @@
         
         .btn-flat:hover {
             transform: translateY(-1px);
+        }
+        
+        /* Mobile-first touch optimizations */
+        @media (max-width: 768px) {
+            /* Minimum touch target size: 44x44px (Apple HIG) */
+            button, a, input[type="button"], input[type="submit"] {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Larger form inputs for mobile */
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"],
+            input[type="number"],
+            input[type="date"],
+            textarea,
+            select {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 12px;
+            }
+            
+            /* Better spacing for mobile */
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+        
+        /* Safe area insets for notched devices */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            body {
+                padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* Smooth transitions */
+        * {
+            -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
         }
     </style>
 </head>
@@ -146,40 +185,23 @@
         </header>
         
         <!-- MAIN CONTENT AREA (shared for both desktop and mobile) -->
-        <main class="flex-1 overflow-y-auto pb-16 md:pb-0 bg-gray-50">
+        <main class="flex-1 overflow-y-auto pb-20 md:pb-0 bg-gray-50">
+            <!-- Breadcrumb (optional, shown when breadcrumbs variable is set) -->
+            {% block breadcrumb %}
+                {% if breadcrumbs is defined %}
+                    {% include 'components/breadcrumb.html' %}
+                {% endif %}
+            {% endblock %}
+            
             <div class="container mx-auto p-4 md:p-6 max-w-7xl">
                 {% block content %}{% endblock %}
             </div>
         </main>
         
-        <!-- MOBILE BOTTOM NAVIGATION (visible only on mobile) -->
-        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-            <div class="flex justify-around items-center h-16">
-                <!-- Dashboard -->
-                <a href="/" class="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span class="text-xs mt-1">Dashboard</span>
-                </a>
-                
-                <!-- Nová revize -->
-                <a href="/revision/create" class="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    <span class="text-xs mt-1">Nová revize</span>
-                </a>
-                
-                <!-- Aktuální revize -->
-                <a href="#" class="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="text-xs mt-1">Aktuální</span>
-                </a>
-            </div>
-        </nav>
+        <!-- MOBILE BOTTOM NAVIGATION with FAB (visible only on mobile) -->
+        <div class="md:hidden">
+            {% include 'components/bottom_nav.html' %}
+        </div>
     </div>
     
     <!-- Modal for adding new dropdown value (shared by all dropdowns) -->

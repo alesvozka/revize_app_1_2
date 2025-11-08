@@ -3,6 +3,13 @@
 {% block title %}{{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }} - Revize App{% endblock %}
 
 {% block content %}
+<!-- Breadcrumb Navigation - hierarchical example -->
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id|string, 'url': '/revision/' ~ switchboard.revision.revision_id|string},
+    {'label': switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id|string, 'url': '#'}
+] %}
+
 <div class="max-w-7xl mx-auto">
     <!-- Page Header -->
     <div class="mb-6">

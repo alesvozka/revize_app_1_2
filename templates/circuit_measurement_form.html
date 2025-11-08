@@ -1,50 +1,215 @@
 {% extends "base.html" %}
 
-{% block title %}Měření obvodu - Revize App{% endblock %}
-
-{% block sidebar_breadcrumbs %}
-{% set breadcrumbs = [
-    {'label': 'Dashboard', 'url': '/'},
-    {'label': 'Obvod', 'url': '/circuit/' ~ circuit_id},
-    {'label': 'Měření', 'url': ''}
-] %}
-{{ super() }}
-{% endblock %}
+{% block title %}{{ "Editovat měření" if is_edit else "Nové měření obvodu" }}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <div class="mb-4">
-        <h2 class="text-2xl font-bold text-gray-800">Měření obvodu</h2>
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {{ "Editovat měření" if is_edit else "Nové měření obvodu" }}
+                </h1>
+                <p class="text-sm text-gray-600 mt-1">
+                    Obvod: <span class="font-medium">{{ circuit.circuit_number or "—" }}</span>
+                    {% if circuit.circuit_room %}
+                        ({{ circuit.circuit_room }})
+                    {% endif %}
+                </p>
+                <p class="text-sm text-gray-600">
+                    Přístroj: <span class="font-medium">{{ circuit.device.switchboard_device_position or "—" }}</span>
+                </p>
+            </div>
+            <a href="{{ url_for('circuit_detail', circuit_id=circuit.circuit_id) }}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                ← Zpět na obvod
+            </a>
+        </div>
     </div>
 
-    <form method="POST" action="/circuit/{{ circuit_id }}/measurement" class="flat-card">
-        <div class="p-4 space-y-6">
-            <div>
-                <h3 class="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Měřené hodnoty</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-label">Odpor izolace (MΩ)</label>
-                        <input type="number" name="insulation_resistance" step="0.01" class="form-input">
-                    </div>
-                    <div>
-                        <label class="form-label">Impedance smyčky (Ω)</label>
-                        <input type="number" name="loop_impedance" step="0.01" class="form-input">
-                    </div>
-                    <div>
-                        <label class="form-label">Zkratový proud (A)</label>
-                        <input type="number" name="short_circuit_current" step="0.1" class="form-input">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="form-label">Poznámka</label>
-                        <textarea name="note" rows="2" class="form-input"></textarea>
-                    </div>
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <div class="text-sm text-blue-800">
+                <p class="font-medium mb-1">Měření elektrických parametrů obvodu</p>
+                <ul class="list-disc list-inside space-y-1 text-blue-700">
+                    <li>Všechna pole jsou volitelná - vyplňte pouze provedená měření</li>
+                    <li>Uveďte hodnoty v zadaných jednotkách (MΩ, Ω, ms, mA)</li>
+                    <li>Pro RCD měření zadejte čas vypnutí i zkušební proud</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{{ url_for('circuit_measurement_update', measurement_id=measurement.measurement_id) if is_edit else url_for('circuit_measurement_create', circuit_id=circuit.circuit_id) }}" 
+          class="bg-white rounded-lg shadow-sm p-6">
+        
+        <!-- Basic Measurements -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Základní měření
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Insulation Resistance -->
+                <div>
+                    <label for="measurements_circuit_insulation_resistance" class="block text-sm font-medium text-gray-700 mb-2">
+                        Izolační odpor (MΩ)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_insulation_resistance" 
+                           name="measurements_circuit_insulation_resistance" 
+                           value="{{ measurement.measurements_circuit_insulation_resistance or '' }}"
+                           step="0.01"
+                           min="0"
+                           placeholder="např. 450.50"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Izolační odpor v megaohmech</p>
+                </div>
+
+                <!-- Earth Resistance -->
+                <div>
+                    <label for="measurements_circuit_earth_resistance" class="block text-sm font-medium text-gray-700 mb-2">
+                        Odpor uzemnění (Ω)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_earth_resistance" 
+                           name="measurements_circuit_earth_resistance" 
+                           value="{{ measurement.measurements_circuit_earth_resistance or '' }}"
+                           step="0.001"
+                           min="0"
+                           placeholder="např. 0.125"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Odpor uzemnění v ohmech</p>
+                </div>
+
+                <!-- Continuity -->
+                <div>
+                    <label for="measurements_circuit_continuity" class="block text-sm font-medium text-gray-700 mb-2">
+                        Kontinuita (Ω)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_continuity" 
+                           name="measurements_circuit_continuity" 
+                           value="{{ measurement.measurements_circuit_continuity or '' }}"
+                           step="0.001"
+                           min="0"
+                           placeholder="např. 0.050"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Odpor ochranného vodiče</p>
+                </div>
+
+                <!-- Order of Phases -->
+                <div>
+                    <label for="measurements_circuit_order_of_phases" class="block text-sm font-medium text-gray-700 mb-2">
+                        Pořadí fází
+                    </label>
+                    <input type="text" 
+                           id="measurements_circuit_order_of_phases" 
+                           name="measurements_circuit_order_of_phases" 
+                           value="{{ measurement.measurements_circuit_order_of_phases or '' }}"
+                           placeholder="např. L1-L2-L3, správné"
+                           maxlength="50"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Kontrola správného pořadí fází</p>
                 </div>
             </div>
         </div>
 
-        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end space-x-2">
-            <a href="/circuit/{{ circuit_id }}" class="btn btn-secondary">Zrušit</a>
-            <button type="submit" class="btn btn-primary">Uložit měření</button>
+        <!-- Loop Impedance -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Impedance smyčky
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Loop Impedance Min -->
+                <div>
+                    <label for="measurements_circuit_loop_impedance_min" class="block text-sm font-medium text-gray-700 mb-2">
+                        Minimální impedance (Ω)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_loop_impedance_min" 
+                           name="measurements_circuit_loop_impedance_min" 
+                           value="{{ measurement.measurements_circuit_loop_impedance_min or '' }}"
+                           step="0.001"
+                           min="0"
+                           placeholder="např. 0.215"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Nejnižší naměřená hodnota</p>
+                </div>
+
+                <!-- Loop Impedance Max -->
+                <div>
+                    <label for="measurements_circuit_loop_impedance_max" class="block text-sm font-medium text-gray-700 mb-2">
+                        Maximální impedance (Ω)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_loop_impedance_max" 
+                           name="measurements_circuit_loop_impedance_max" 
+                           value="{{ measurement.measurements_circuit_loop_impedance_max or '' }}"
+                           step="0.001"
+                           min="0"
+                           placeholder="např. 0.285"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Nejvyšší naměřená hodnota</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RCD Parameters -->
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                Parametry RCD
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- RCD Trip Time -->
+                <div>
+                    <label for="measurements_circuit_rcd_trip_time_ms" class="block text-sm font-medium text-gray-700 mb-2">
+                        Čas vypnutí (ms)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_rcd_trip_time_ms" 
+                           name="measurements_circuit_rcd_trip_time_ms" 
+                           value="{{ measurement.measurements_circuit_rcd_trip_time_ms or '' }}"
+                           step="0.1"
+                           min="0"
+                           placeholder="např. 25.3"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Doba vypnutí RCD v milisekundách</p>
+                </div>
+
+                <!-- RCD Test Current -->
+                <div>
+                    <label for="measurements_circuit_rcd_test_current_ma" class="block text-sm font-medium text-gray-700 mb-2">
+                        Zkušební proud (mA)
+                    </label>
+                    <input type="number" 
+                           id="measurements_circuit_rcd_test_current_ma" 
+                           name="measurements_circuit_rcd_test_current_ma" 
+                           value="{{ measurement.measurements_circuit_rcd_test_current_ma or '' }}"
+                           step="0.1"
+                           min="0"
+                           placeholder="např. 30.0"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-xs text-gray-500">Proud při kterém RCD vypnul</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-6 border-t border-gray-200">
+            <button type="submit" 
+                    class="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                {{ "Uložit změny" if is_edit else "Vytvořit měření" }}
+            </button>
+            <a href="{{ url_for('circuit_detail', circuit_id=circuit.circuit_id) }}" 
+               class="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                Zrušit
+            </a>
         </div>
     </form>
 </div>

@@ -2,42 +2,36 @@
 
 {% block title %}{{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }} - Revize App{% endblock %}
 
-{% block sidebar_breadcrumbs %}
-{% set breadcrumbs = [
-    {'label': 'Dashboard', 'url': '/'},
-    {'label': switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id, 'url': '/revision/' ~ switchboard.revision.revision_id},
-    {'label': switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id, 'url': ''}
-] %}
-{{ super() }}
-{% endblock %}
-
 {% block content %}
-<div class="space-y-4">
+<div class="max-w-5xl mx-auto">
     <!-- Page Header -->
-    <div class="flex items-center justify-between pb-4 border-b border-gray-200">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-800">
-                {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
-            </h2>
-            <p class="text-sm text-gray-600 mt-1">
-                Revize: <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-primary hover:underline">
-                    {{ switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id }}
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">
+                    {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
+                </h2>
+                <p class="text-gray-600 mt-1">
+                    Revize: <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-primary hover:underline">
+                        {{ switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id }}
+                    </a>
+                </p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/edit" 
+                   class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    Editovat
                 </a>
-            </p>
-        </div>
-        <div class="flex items-center space-x-2">
-            <a href="/switchboard/{{ switchboard.switchboard_id }}/edit" class="btn btn-primary">
-                Editovat
-            </a>
-            <button onclick="if(confirm('Opravdu chcete smazat tento rozváděč?')) { document.getElementById('delete-form').submit(); }" 
-                    class="btn btn-danger">
-                Smazat
-            </button>
-            <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-gray-600 hover:text-gray-800 p-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </a>
+                <button onclick="if(confirm('Opravdu chcete smazat tento rozváděč?')) { document.getElementById('delete-form').submit(); }" 
+                        class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                    Smazat
+                </button>
+                <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-gray-600 hover:text-gray-800 p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -45,229 +39,523 @@
     <form id="delete-form" method="POST" action="/switchboard/{{ switchboard.switchboard_id }}/delete" style="display: none;">
     </form>
 
-    <!-- Grid layout pro info karty -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Content -->
+    <div class="space-y-6">
         
         <!-- Základní informace -->
-        {% if switchboard.switchboard_location or switchboard.switchboard_order is not none or switchboard.switchboard_type or switchboard.switchboard_description %}
-        <div class="flat-card">
-            <div class="flat-card-header">Základní informace</div>
-            <div class="flat-card-body">
-                <table class="w-full text-sm">
-                    {% if switchboard.switchboard_location %}
-                    <tr>
-                        <td class="py-1 text-gray-600 w-1/3">Umístění:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_location }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_order is not none %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Pořadí:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_order }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_type %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Typ:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_type }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_description %}
-                    <tr>
-                        <td class="py-1 text-gray-600 align-top">Popis:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_description }}</td>
-                    </tr>
-                    {% endif %}
-                </table>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Základní informace</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_location %}
+                <div>
+                    <p class="text-sm text-gray-500">Umístění</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_location }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_order is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Pořadí</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_order }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_type %}
+                <div>
+                    <p class="text-sm text-gray-500">Typ rozváděče</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_type }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_description %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Popis</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Technické údaje -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Technické údaje</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_serial_number %}
+                <div>
+                    <p class="text-sm text-gray-500">Sériové číslo</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_serial_number }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_production_date %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum výroby</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_production_date.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_rated_current is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Jmenovitý proud</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_rated_current }} A</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_rated_voltage is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Jmenovité napětí</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_rated_voltage }} V</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_ip_rating %}
+                <div>
+                    <p class="text-sm text-gray-500">Krytí IP</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_ip_rating }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_impact_protection %}
+                <div>
+                    <p class="text-sm text-gray-500">Ochrana proti nárazu</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_impact_protection }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_protection_class %}
+                <div>
+                    <p class="text-sm text-gray-500">Třída ochrany</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_protection_class }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Výrobce -->
+        {% if switchboard.switchboard_manufacturer or switchboard.switchboard_manufacturer_address or switchboard.switchboard_standards %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Výrobce</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_manufacturer %}
+                <div>
+                    <p class="text-sm text-gray-500">Výrobce rozváděče</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_manufacturer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_manufacturer_address %}
+                <div>
+                    <p class="text-sm text-gray-500">Adresa výrobce</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_manufacturer_address }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_standards %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Normy</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_standards }}</p>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endif %}
 
-        <!-- Technické údaje -->
-        {% if switchboard.switchboard_serial_number or switchboard.switchboard_production_date or switchboard.switchboard_rated_current is not none or switchboard.switchboard_rated_voltage is not none or switchboard.switchboard_ip_rating or switchboard.switchboard_impact_protection or switchboard.switchboard_protection_class %}
-        <div class="flat-card">
-            <div class="flat-card-header">Technické údaje</div>
-            <div class="flat-card-body">
-                <table class="w-full text-sm">
-                    {% if switchboard.switchboard_serial_number %}
-                    <tr>
-                        <td class="py-1 text-gray-600 w-1/3">Sériové číslo:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_serial_number }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_production_date %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Datum výroby:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_production_date.strftime('%d.%m.%Y') }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_rated_current is not none %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Jmenovitý proud:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_rated_current }} A</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_rated_voltage is not none %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Jmenovité napětí:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_rated_voltage }} V</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_ip_rating %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Krytí IP:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_ip_rating }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_impact_protection %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Ochrana proti nárazu:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_impact_protection }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if switchboard.switchboard_protection_class %}
-                    <tr>
-                        <td class="py-1 text-gray-600">Třída ochrany:</td>
-                        <td class="py-1 font-medium">{{ switchboard.switchboard_protection_class }}</td>
-                    </tr>
-                    {% endif %}
-                </table>
+        <!-- Skříň rozváděče -->
+        {% if switchboard.switchboard_enclosure_type or switchboard.switchboard_enclosure_manufacturer or switchboard.switchboard_enclosure_installation_method %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Skříň rozváděče</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_enclosure_type %}
+                <div>
+                    <p class="text-sm text-gray-500">Typ skříně</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_enclosure_type }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_enclosure_manufacturer %}
+                <div>
+                    <p class="text-sm text-gray-500">Výrobce skříně</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_enclosure_manufacturer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_enclosure_installation_method %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Způsob instalace skříně</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_enclosure_installation_method }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Nadřazený rozváděč -->
+        {% if switchboard.switchboard_superior_switchboard or switchboard.switchboard_superior_circuit_breaker_rated_current or switchboard.switchboard_superior_circuit_breaker_trip_characteristic or switchboard.switchboard_superior_circuit_breaker_manufacturer or switchboard.switchboard_superior_circuit_breaker_model %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Nadřazený rozváděč</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_superior_switchboard %}
+                <div>
+                    <p class="text-sm text-gray-500">Nadřazený rozváděč</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_switchboard }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_rated_current is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - jmenovitý proud</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_rated_current }} A</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_trip_characteristic %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - charakteristika</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_trip_characteristic }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_manufacturer %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - výrobce</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_manufacturer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_model %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - model</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_model }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Hlavní vypínač a kabel -->
+        {% if switchboard.switchboard_main_switch or switchboard.switchboard_cable or switchboard.switchboard_cable_installation_method %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Hlavní vypínač a kabel</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_main_switch %}
+                <div>
+                    <p class="text-sm text-gray-500">Hlavní vypínač</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_main_switch }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_cable %}
+                <div>
+                    <p class="text-sm text-gray-500">Kabel</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_cable }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_cable_installation_method %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Způsob instalace kabelu</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_cable_installation_method }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Poznámka -->
+        {% if switchboard.switchboard_note %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Poznámka</h3>
+            <div>
+                <p class="font-medium text-gray-800">{{ switchboard.switchboard_note }}</p>
             </div>
         </div>
         {% endif %}
     </div>
 
-    <!-- Přístroje v rozváděči -->
-    <div class="flat-card">
-        <div class="flat-card-header flex items-center justify-between">
-            <span>Přístroje v rozváděči</span>
+    <!-- Devices (Přístroje v rozváděči) -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-800">Přístroje v rozváděči</h3>
             <a href="/switchboard/{{ switchboard.switchboard_id }}/device/create" 
-               class="btn btn-primary text-xs">
+               class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
                 + Přidat přístroj
             </a>
         </div>
-        <div class="flat-card-body p-0">
+        <div class="p-6">
             {% if switchboard.devices %}
-                <!-- Tabulka přístrojů -->
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 80px;">Pozice</th>
-                            <th>Typ</th>
-                            <th style="width: 100px;">Proud</th>
-                            <th>Výrobce</th>
-                            <th>Model</th>
-                            <th style="width: 150px;" class="text-right">Akce</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for device in switchboard.devices %}
-                            {% if not device.parent_device_id %}
+                <!-- Tree structure -->
+                <div class="space-y-2">
+                    {% for device in switchboard.devices %}
+                        {% if not device.parent_device_id %}
                             <!-- Root device -->
-                            <tr>
-                                <td>
-                                    <span class="font-mono text-xs bg-gray-100 px-2 py-1 border border-gray-300">
-                                        {{ device.switchboard_device_position }}
-                                    </span>
-                                </td>
-                                <td class="font-medium">{{ device.switchboard_device_type or 'N/A' }}</td>
-                                <td>
-                                    {% if device.switchboard_device_rated_current %}
-                                        {{ device.switchboard_device_rated_current }}A
-                                    {% endif %}
-                                </td>
-                                <td class="text-gray-600">{{ device.switchboard_device_manufacturer or '—' }}</td>
-                                <td class="text-gray-600">{{ device.switchboard_device_model or '—' }}</td>
-                                <td class="text-right">
-                                    <div class="flex justify-end items-center gap-1">
-                                        <a href="/device/{{ device.device_id }}" class="action-icon action-icon-view" title="Detail">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="font-mono text-sm bg-white px-2 py-1 rounded border border-gray-300">
+                                                {{ device.switchboard_device_position }}
+                                            </span>
+                                            <div>
+                                                <p class="font-medium text-gray-800">
+                                                    {{ device.switchboard_device_type or 'Neznámý typ' }}
+                                                    {% if device.switchboard_device_rated_current %}
+                                                        <span class="text-gray-600">{{ device.switchboard_device_rated_current }}A</span>
+                                                    {% endif %}
+                                                </p>
+                                                {% if device.switchboard_device_manufacturer or device.switchboard_device_model %}
+                                                <p class="text-sm text-gray-500">
+                                                    {{ device.switchboard_device_manufacturer or '' }}
+                                                    {% if device.switchboard_device_model %}{{ device.switchboard_device_model }}{% endif %}
+                                                </p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <a href="/device/{{ device.device_id }}" 
+                                           class="text-blue-600 hover:text-blue-800 p-2" title="Detail a obvody">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                             </svg>
                                         </a>
-                                        <a href="/device/{{ device.device_id }}/edit" class="action-icon action-icon-edit" title="Editovat">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <a href="/device/{{ device.device_id }}/edit" 
+                                           class="text-primary hover:text-blue-700 p-2" title="Editovat">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
                                         </a>
                                         <button onclick="document.getElementById('duplicate-device-{{ device.device_id }}').submit();" 
-                                                class="action-icon action-icon-edit" title="Duplikovat">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                class="text-blue-600 hover:text-blue-700 p-2" title="Duplikovat">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                             </svg>
                                         </button>
                                         <form id="duplicate-device-{{ device.device_id }}" method="POST" action="/device/{{ device.device_id }}/duplicate" style="display: none;"></form>
                                         <button onclick="if(confirm('Opravdu chcete smazat tento přístroj{% if device.child_devices %} a všechny podřízené přístroje{% endif %}?')) { document.getElementById('delete-device-{{ device.device_id }}').submit(); }" 
-                                                class="action-icon action-icon-delete" title="Smazat">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                class="text-red-500 hover:text-red-700 p-2" title="Smazat">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
                                         </button>
                                         <form id="delete-device-{{ device.device_id }}" method="POST" action="/device/{{ device.device_id }}/delete" style="display: none;"></form>
                                     </div>
-                                </td>
-                            </tr>
-                            
-                            <!-- Child devices -->
-                            {% if device.child_devices %}
-                                {% for child in device.child_devices %}
-                                <tr style="background-color: #fafbfc;">
-                                    <td>
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-gray-400">└─</span>
-                                            <span class="font-mono text-xs bg-white px-2 py-1 border border-gray-300">
-                                                {{ child.switchboard_device_position }}
-                                            </span>
+                                </div>
+                                
+                                <!-- Child devices (1st level) -->
+                                {% if device.child_devices %}
+                                <div class="bg-white">
+                                    {% for child in device.child_devices %}
+                                        <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between ml-8">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-3">
+                                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                    </svg>
+                                                    <span class="font-mono text-sm bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                                                        {{ child.switchboard_device_position }}
+                                                    </span>
+                                                    <div>
+                                                        <p class="font-medium text-gray-800">
+                                                            {{ child.switchboard_device_type or 'Neznámý typ' }}
+                                                            {% if child.switchboard_device_rated_current %}
+                                                                <span class="text-gray-600">{{ child.switchboard_device_rated_current }}A</span>
+                                                            {% endif %}
+                                                        </p>
+                                                        {% if child.switchboard_device_manufacturer or child.switchboard_device_model %}
+                                                        <p class="text-sm text-gray-500">
+                                                            {{ child.switchboard_device_manufacturer or '' }}
+                                                            {% if child.switchboard_device_model %}{{ child.switchboard_device_model }}{% endif %}
+                                                        </p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <a href="/device/{{ child.device_id }}" 
+                                                   class="text-blue-600 hover:text-blue-800 p-2" title="Detail a obvody">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                </a>
+                                                <a href="/device/{{ child.device_id }}/edit" 
+                                                   class="text-primary hover:text-blue-700 p-2" title="Editovat">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </a>
+                                                <button onclick="document.getElementById('duplicate-device-{{ child.device_id }}').submit();" 
+                                                        class="text-blue-600 hover:text-blue-700 p-2" title="Duplikovat">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                </button>
+                                                <form id="duplicate-device-{{ child.device_id }}" method="POST" action="/device/{{ child.device_id }}/duplicate" style="display: none;"></form>
+                                                <button onclick="if(confirm('Opravdu chcete smazat tento přístroj{% if child.child_devices %} a všechny podřízené přístroje{% endif %}?')) { document.getElementById('delete-device-{{ child.device_id }}').submit(); }" 
+                                                        class="text-red-500 hover:text-red-700 p-2" title="Smazat">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                                <form id="delete-device-{{ child.device_id }}" method="POST" action="/device/{{ child.device_id }}/delete" style="display: none;"></form>
+                                            </div>
                                         </div>
-                                    </td>
-                                    <td class="font-medium">{{ child.switchboard_device_type or 'N/A' }}</td>
-                                    <td>
-                                        {% if child.switchboard_device_rated_current %}
-                                            {{ child.switchboard_device_rated_current }}A
+                                        
+                                        <!-- Child devices (2nd level - grandchildren) -->
+                                        {% if child.child_devices %}
+                                            {% for grandchild in child.child_devices %}
+                                                <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between ml-16">
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center space-x-3">
+                                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                            </svg>
+                                                            <span class="font-mono text-sm bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                                                                {{ grandchild.switchboard_device_position }}
+                                                            </span>
+                                                            <div>
+                                                                <p class="font-medium text-gray-800">
+                                                                    {{ grandchild.switchboard_device_type or 'Neznámý typ' }}
+                                                                    {% if grandchild.switchboard_device_rated_current %}
+                                                                        <span class="text-gray-600">{{ grandchild.switchboard_device_rated_current }}A</span>
+                                                                    {% endif %}
+                                                                </p>
+                                                                {% if grandchild.switchboard_device_manufacturer or grandchild.switchboard_device_model %}
+                                                                <p class="text-sm text-gray-500">
+                                                                    {{ grandchild.switchboard_device_manufacturer or '' }}
+                                                                    {% if grandchild.switchboard_device_model %}{{ grandchild.switchboard_device_model }}{% endif %}
+                                                                </p>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center space-x-2">
+                                                        <a href="/device/{{ grandchild.device_id }}" 
+                                                           class="text-blue-600 hover:text-blue-800 p-2" title="Detail a obvody">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                            </svg>
+                                                        </a>
+                                                        <a href="/device/{{ grandchild.device_id }}/edit" 
+                                                           class="text-primary hover:text-blue-700 p-2" title="Editovat">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                            </svg>
+                                                        </a>
+                                                        <button onclick="document.getElementById('duplicate-device-{{ grandchild.device_id }}').submit();" 
+                                                                class="text-blue-600 hover:text-blue-700 p-2" title="Duplikovat">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                            </svg>
+                                                        </button>
+                                                        <form id="duplicate-device-{{ grandchild.device_id }}" method="POST" action="/device/{{ grandchild.device_id }}/duplicate" style="display: none;"></form>
+                                                        <button onclick="if(confirm('Opravdu chcete smazat tento přístroj?')) { document.getElementById('delete-device-{{ grandchild.device_id }}').submit(); }" 
+                                                                class="text-red-500 hover:text-red-700 p-2" title="Smazat">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                            </svg>
+                                                        </button>
+                                                        <form id="delete-device-{{ grandchild.device_id }}" method="POST" action="/device/{{ grandchild.device_id }}/delete" style="display: none;"></form>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
                                         {% endif %}
-                                    </td>
-                                    <td class="text-gray-600">{{ child.switchboard_device_manufacturer or '—' }}</td>
-                                    <td class="text-gray-600">{{ child.switchboard_device_model or '—' }}</td>
-                                    <td class="text-right">
-                                        <div class="flex justify-end items-center gap-1">
-                                            <a href="/device/{{ child.device_id }}" class="action-icon action-icon-view" title="Detail">
-                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                </svg>
-                                            </a>
-                                            <a href="/device/{{ child.device_id }}/edit" class="action-icon action-icon-edit" title="Editovat">
-                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                </svg>
-                                            </a>
-                                            <button onclick="document.getElementById('duplicate-device-{{ child.device_id }}').submit();" 
-                                                    class="action-icon action-icon-edit" title="Duplikovat">
-                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                </svg>
-                                            </button>
-                                            <form id="duplicate-device-{{ child.device_id }}" method="POST" action="/device/{{ child.device_id }}/duplicate" style="display: none;"></form>
-                                            <button onclick="if(confirm('Opravdu chcete smazat tento přístroj?')) { document.getElementById('delete-device-{{ child.device_id }}').submit(); }" 
-                                                    class="action-icon action-icon-delete" title="Smazat">
-                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
-                                            <form id="delete-device-{{ child.device_id }}" method="POST" action="/device/{{ child.device_id }}/delete" style="display: none;"></form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             {% else %}
-                <div class="p-8 text-center text-gray-500">
-                    Žádné přístroje. <a href="/switchboard/{{ switchboard.switchboard_id }}/device/create" class="text-primary hover:underline">Přidat první přístroj</a>
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    <p class="text-sm">Zatím nejsou přidány žádné přístroje</p>
+                    <p class="text-xs mt-1">Klikněte na tlačítko výše pro přidání přístroje</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Measurements (Měření) -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-800">Měření rozváděče</h3>
+            {% if switchboard.measurements %}
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/measurement/edit" 
+                   class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                    Editovat měření
+                </a>
+            {% else %}
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/measurement/create" 
+                   class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                    + Přidat měření
+                </a>
+            {% endif %}
+        </div>
+        <div class="p-6">
+            {% if switchboard.measurements %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% if switchboard.measurements.measurements_switchboard_insulation_resistance is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Izolační odpor (MΩ)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_insulation_resistance }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_loop_impedance_min is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Impedance smyčky min (Ω)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_loop_impedance_min }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_loop_impedance_max is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Impedance smyčky max (Ω)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_loop_impedance_max }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_rcd_trip_time_ms is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Doba vypnutí proudového chrániče (ms)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_rcd_trip_time_ms }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_rcd_test_current_ma is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Zkušební proud proudového chrániče (mA)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_rcd_test_current_ma }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_earth_resistance is not none %}
+                    <div>
+                        <p class="text-sm text-gray-500">Odpor uzemnění (Ω)</p>
+                        <p class="font-medium text-gray-800">{{ switchboard.measurements.measurements_switchboard_earth_resistance }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 pt-4 border-t">
+                    <button onclick="if(confirm('Opravdu chcete smazat měření?')) { document.getElementById('delete-measurement-form').submit(); }" 
+                            class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        Smazat měření
+                    </button>
+                </div>
+                
+                <form id="delete-measurement-form" method="POST" action="/measurement/{{ switchboard.measurements.measurement_id }}/delete" style="display: none;">
+                </form>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <p class="text-sm">Zatím nejsou zadána měření</p>
+                    <p class="text-xs mt-1">Klikněte na tlačítko výše pro přidání měření</p>
                 </div>
             {% endif %}
         </div>

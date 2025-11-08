@@ -1,26 +1,16 @@
 {% extends "base.html" %}
-{% from "components/dropdown.html" import render_field_improved %}
+{% from "components/form_field.html" import render_field %}
 
 {% block title %}{% if device %}Editovat přístroj{% else %}Nový přístroj{% endif %} - Revize App{% endblock %}
-
-{% block sidebar_breadcrumbs %}
-{% set breadcrumbs = [
-    {'label': 'Dashboard', 'url': '/'},
-    {'label': switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id, 'url': '/revision/' ~ switchboard.revision.revision_id},
-    {'label': switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id, 'url': '/switchboard/' ~ switchboard.switchboard_id},
-    {'label': 'Nový přístroj' if not device else 'Editace přístroje', 'url': ''}
-] %}
-{{ super() }}
-{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
     <!-- Page Header -->
-    <div class="mb-4">
+    <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-800">
             {% if device %}Editovat přístroj{% else %}Nový přístroj{% endif %}
         </h2>
-        <p class="text-sm text-gray-600 mt-1">
+        <p class="text-gray-600 mt-1">
             Rozváděč: <a href="/switchboard/{{ switchboard.switchboard_id }}" class="text-primary hover:underline">
                 {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
             </a>
@@ -28,34 +18,38 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{% if device %}/device/{{ device.device_id }}/update{% else %}/switchboard/{{ switchboard.switchboard_id }}/device/create{% endif %}" class="flat-card">
+    <form method="POST" action="{% if device %}/device/{{ device.device_id }}/update{% else %}/switchboard/{{ switchboard.switchboard_id }}/device/create{% endif %}" class="bg-white rounded-lg shadow">
         
         <!-- Info box -->
-        <div class="px-4 py-3 bg-blue-50 border-b border-blue-100">
+        <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">
             <div class="flex items-start">
-                <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 <div class="text-sm text-blue-800">
-                    <p class="font-medium mb-1">Vyplňte údaje o přístroji</p>
-                    <p class="text-xs">Hierarchie: RCD → Jistič (MCB) → Pod-přístroj (stykač, motorový spouštěč)</p>
+                    <p class="font-medium mb-1">Vyplňte údaje o přístroji:</p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li>Všechna pole jsou volitelná kromě pozice</li>
+                        <li>Pokud chcete vytvořit podřízený přístroj (např. jistič pod RCD), vyberte nadřízený přístroj</li>
+                        <li>Hierarchie: RCD → Jistič (MCB) → Pod-přístroj (stykač, motorový spouštěč)</li>
+                    </ul>
                 </div>
             </div>
         </div>
 
-        <div class="p-4 space-y-6">
+        <div class="p-6 space-y-6">
             
             <!-- Základní údaje -->
             <div>
-                <h3 class="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Základní údaje</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Základní údaje</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     <!-- Parent Device -->
                     <div class="md:col-span-2">
-                        <label for="parent_device_id" class="form-label">
+                        <label for="parent_device_id" class="block text-sm font-medium text-gray-700 mb-1">
                             Nadřízený přístroj (volitelné)
                         </label>
-                        <select id="parent_device_id" name="parent_device_id" class="form-input">
+                        <select id="parent_device_id" name="parent_device_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                             <option value="">-- Žádný (kořenový přístroj) --</option>
                             {% for d in devices %}
                                 <option value="{{ d.device_id }}" {% if device and device.parent_device_id == d.device_id %}selected{% endif %}>
@@ -64,12 +58,12 @@
                                 </option>
                             {% endfor %}
                         </select>
-                        <p class="form-help">Vyberte, pokud chcete vytvořit podřízený přístroj (např. jistič pod RCD)</p>
+                        <p class="text-xs text-gray-500 mt-1">Vyberte, pokud chcete vytvořit podřízený přístroj (např. jistič pod RCD)</p>
                     </div>
                     
                     <!-- Position (Required) -->
                     <div>
-                        <label for="switchboard_device_position" class="form-label">
+                        <label for="switchboard_device_position" class="block text-sm font-medium text-gray-700 mb-1">
                             Pozice <span class="text-red-500">*</span>
                         </label>
                         <input type="text" 
@@ -78,14 +72,14 @@
                                value="{{ device.switchboard_device_position if device else '' }}"
                                placeholder="Např. 1-2"
                                required
-                               class="form-input">
-                        <p class="form-help">Pozice v rozváděči (např. 1-2, A1-A3)</p>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Pozice v rozváděči (např. 1-2, A1-A3)</p>
                     </div>
                     
-                    <!-- Type - VYLEPŠENÝ DROPDOWN -->
-                    {{ render_field_improved(
-                        field_name='switchboard_device_type',
-                        field_label='Typ přístroje',
+                    <!-- Type -->
+                    {{ render_field(
+                        'switchboard_device_type',
+                        'Typ přístroje',
                         current_value=(device.switchboard_device_type if device else ''),
                         entity_type='device',
                         dropdown_config=dropdown_config,
@@ -94,10 +88,10 @@
                         help_text='RCD (proudový chránič), MCB (jistič), Stykač, atd.'
                     ) }}
                     
-                    <!-- Manufacturer - VYLEPŠENÝ DROPDOWN -->
-                    {{ render_field_improved(
-                        field_name='switchboard_device_manufacturer',
-                        field_label='Výrobce',
+                    <!-- Manufacturer -->
+                    {{ render_field(
+                        'switchboard_device_manufacturer',
+                        'Výrobce',
                         current_value=(device.switchboard_device_manufacturer if device else ''),
                         entity_type='device',
                         dropdown_config=dropdown_config,
@@ -107,7 +101,7 @@
                     
                     <!-- Model -->
                     <div>
-                        <label for="switchboard_device_model" class="form-label">
+                        <label for="switchboard_device_model" class="block text-sm font-medium text-gray-700 mb-1">
                             Model
                         </label>
                         <input type="text" 
@@ -115,20 +109,20 @@
                                name="switchboard_device_model" 
                                value="{{ device.switchboard_device_model if device else '' }}"
                                placeholder="Např. S203-C16"
-                               class="form-input">
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     </div>
                 </div>
             </div>
             
             <!-- Elektrické parametry -->
             <div>
-                <h3 class="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Elektrické parametry</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Elektrické parametry</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
-                    <!-- Trip Characteristic - VYLEPŠENÝ DROPDOWN -->
-                    {{ render_field_improved(
-                        field_name='switchboard_device_trip_characteristic',
-                        field_label='Vypínací charakteristika',
+                    <!-- Trip Characteristic -->
+                    {{ render_field(
+                        'switchboard_device_trip_characteristic',
+                        'Vypínací charakteristika',
                         current_value=(device.switchboard_device_trip_characteristic if device else ''),
                         entity_type='device',
                         dropdown_config=dropdown_config,
@@ -139,7 +133,7 @@
                     
                     <!-- Rated Current -->
                     <div>
-                        <label for="switchboard_device_rated_current" class="form-label">
+                        <label for="switchboard_device_rated_current" class="block text-sm font-medium text-gray-700 mb-1">
                             Jmenovitý proud (A)
                         </label>
                         <input type="number" 
@@ -148,12 +142,12 @@
                                value="{{ device.switchboard_device_rated_current if device else '' }}"
                                step="0.1"
                                placeholder="Např. 16"
-                               class="form-input">
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     </div>
                     
                     <!-- Residual Current -->
                     <div>
-                        <label for="switchboard_device_residual_current_ma" class="form-label">
+                        <label for="switchboard_device_residual_current_ma" class="block text-sm font-medium text-gray-700 mb-1">
                             Vypínací proud RCD (mA)
                         </label>
                         <input type="number" 
@@ -162,13 +156,13 @@
                                value="{{ device.switchboard_device_residual_current_ma if device else '' }}"
                                step="0.1"
                                placeholder="Např. 30"
-                               class="form-input">
-                        <p class="form-help">Pro proudové chrániče (RCD)</p>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Pro proudové chrániče (RCD)</p>
                     </div>
                     
                     <!-- Poles -->
                     <div>
-                        <label for="switchboard_device_poles" class="form-label">
+                        <label for="switchboard_device_poles" class="block text-sm font-medium text-gray-700 mb-1">
                             Počet pólů
                         </label>
                         <input type="number" 
@@ -176,12 +170,12 @@
                                name="switchboard_device_poles" 
                                value="{{ device.switchboard_device_poles if device else '' }}"
                                placeholder="Např. 1, 2, 3, 4"
-                               class="form-input">
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     </div>
                     
                     <!-- Module Width -->
                     <div>
-                        <label for="switchboard_device_module_width" class="form-label">
+                        <label for="switchboard_device_module_width" class="block text-sm font-medium text-gray-700 mb-1">
                             Šířka modulu
                         </label>
                         <input type="number" 
@@ -190,34 +184,148 @@
                                value="{{ device.switchboard_device_module_width if device else '' }}"
                                step="0.1"
                                placeholder="Např. 1, 2, 4"
-                               class="form-input">
-                        <p class="form-help">Šířka v modulech (1 modul = 18mm)</p>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Šířka v modulech (1 modul = 18mm)</p>
+                    </div>
+                    
+                    <!-- Sub Devices -->
+                    <div class="md:col-span-2">
+                        <label for="switchboard_device_sub_devices" class="block text-sm font-medium text-gray-700 mb-1">
+                            Poznámka k podřazeným přístrojům
+                        </label>
+                        <textarea id="switchboard_device_sub_devices" 
+                                  name="switchboard_device_sub_devices" 
+                                  rows="2"
+                                  placeholder="Volitelný popis podřízených přístrojů"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">{{ device.switchboard_device_sub_devices if device else '' }}</textarea>
                     </div>
                 </div>
             </div>
-            
-            <!-- Poznámka -->
-            <div>
-                <label for="switchboard_device_sub_devices" class="form-label">
-                    Poznámka k podřazeným přístrojům
-                </label>
-                <textarea id="switchboard_device_sub_devices" 
-                          name="switchboard_device_sub_devices" 
-                          rows="2"
-                          placeholder="Volitelný popis podřízených přístrojů"
-                          class="form-input">{{ device.switchboard_device_sub_devices if device else '' }}</textarea>
-            </div>
         </div>
-        
+
         <!-- Form Actions -->
-        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end space-x-2">
-            <a href="/switchboard/{{ switchboard.switchboard_id }}" class="btn btn-secondary">
+        <div class="px-6 py-4 bg-gray-50 border-t flex items-center justify-between rounded-b-lg">
+            <a href="/switchboard/{{ switchboard.switchboard_id }}" class="text-gray-600 hover:text-gray-800 font-medium">
                 Zrušit
             </a>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
                 {% if device %}Uložit změny{% else %}Vytvořit přístroj{% endif %}
             </button>
         </div>
     </form>
 </div>
+
+<script>
+// Switch between dropdown modes
+function switchDropdownMode(fieldName, mode) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    
+    // Hide all mode contents
+    container.querySelectorAll('.mode-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active state from all buttons
+    container.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+    });
+    
+    // Show selected mode content
+    const selectedContent = container.querySelector(`.mode-${mode}[data-field="${fieldName}"]`);
+    selectedContent.classList.remove('hidden');
+    
+    // Add active state to selected button
+    const selectedBtn = container.querySelector(`.mode-btn-${mode}[data-field="${fieldName}"]`);
+    selectedBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+    selectedBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+    
+    // Disable/enable form fields based on mode
+    const selectField = container.querySelector(`select#${fieldName}`);
+    const textField = container.querySelector(`input#${fieldName}_text`);
+    
+    if (mode === 'select') {
+        selectField.disabled = false;
+        if (textField) textField.disabled = true;
+    } else if (mode === 'text') {
+        selectField.disabled = true;
+        if (textField) textField.disabled = false;
+    } else {
+        selectField.disabled = true;
+        if (textField) textField.disabled = true;
+    }
+}
+
+// Add new value to dropdown and select it
+async function addNewDropdownValue(fieldName, category) {
+    const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+    const newValueInput = container.querySelector(`#${fieldName}_new`);
+    const value = newValueInput.value.trim();
+    
+    if (!value) {
+        alert('Zadejte hodnotu');
+        return;
+    }
+    
+    try {
+        // Send request to add new value
+        const formData = new FormData();
+        formData.append('value', value);
+        
+        const response = await fetch(`/api/dropdown/${category}/add`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add new option to select
+            const selectField = container.querySelector(`select#${fieldName}`);
+            const newOption = document.createElement('option');
+            newOption.value = data.value;
+            newOption.text = data.value;
+            newOption.selected = true;
+            selectField.appendChild(newOption);
+            
+            // Switch back to select mode
+            switchDropdownMode(fieldName, 'select');
+            
+            // Clear input
+            newValueInput.value = '';
+            
+            // Show success message
+            alert(`Hodnota "${data.value}" byla přidána a vybrána`);
+        } else {
+            alert('Chyba při přidávání hodnoty: ' + (data.error || 'Neznámá chyba'));
+        }
+    } catch (error) {
+        console.error('Error adding dropdown value:', error);
+        alert('Chyba při přidávání hodnoty');
+    }
+}
+
+// Initialize dropdown widgets on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.dropdown-widget-container').forEach(container => {
+        const fieldName = container.getAttribute('data-field');
+        // Start with select mode by default
+        switchDropdownMode(fieldName, 'select');
+    });
+});
+</script>
+
+<style>
+.dropdown-widget-container {
+    position: relative;
+}
+
+.mode-btn {
+    cursor: pointer;
+}
+
+.mode-btn:hover {
+    opacity: 0.8;
+}
+</style>
 {% endblock %}

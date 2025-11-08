@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 import os
+import json
+from datetime import datetime
 
 from database import engine, get_db, Base
 from models import *
@@ -2383,6 +2385,155 @@ async def profile_page(
         "total_devices": total_devices,
         "sidebar_revisions": sidebar_revisions
     })
+
+
+# ========================================
+# QUICK ENTRY MODAL ENDPOINTS (Phase 2)
+# ========================================
+
+@app.get("/api/quick-entry/step1", response_class=HTMLResponse)
+async def quick_entry_step1_get(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Vrátí HTML pro krok 1 - základní info revize
+    """
+    user_id = get_current_user(request)
+    
+    return templates.TemplateResponse("modals/quick_entry_step1.html", {
+        "request": request
+    })
+
+
+@app.post("/api/quick-entry/step1", response_class=HTMLResponse)
+async def quick_entry_step1_post(
+    request: Request,
+    db: Session = Depends(get_db),
+    revision_name: str = Form(...),
+    revision_client: str = Form(...),
+    revision_address: str = Form(...),
+    revision_code: str = Form(None),
+    revision_start_date: str = Form(None),
+    revision_type: str = Form(None),
+    revision_technician: str = Form(None),
+    revision_description: str = Form(None)
+):
+    """
+    Uloží základní info revize do session
+    Vrátí HTML pro krok 2 - přidání rozváděčů
+    """
+    user_id = get_current_user(request)
+    
+    # Uložení do session
+    request.session['temp_revision'] = {
+        'revision_name': revision_name,
+        'revision_client': revision_client,
+        'revision_address': revision_address,
+        'revision_code': revision_code,
+        'revision_start_date': revision_start_date,
+        'revision_type': revision_type,
+        'revision_technician': revision_technician,
+        'revision_description': revision_description
+    }
+    
+    # Získání dropdown hodnot pro switchboard_type
+    switchboard_types = []
+    dropdown_config = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == "switchboard",
+        DropdownConfig.field_name == "switchboard_type",
+        DropdownConfig.dropdown_enabled == True
+    ).first()
+    
+    if dropdown_config and dropdown_config.dropdown_category:
+        dropdown_values = db.query(DropdownValue).filter(
+            DropdownValue.category == dropdown_config.dropdown_category
+        ).order_by(DropdownValue.display_order).all()
+        switchboard_types = [v.value for v in dropdown_values]
+    
+    return templates.TemplateResponse("modals/quick_entry_step2.html", {
+        "request": request,
+        "revision_name": revision_name,
+        "switchboard_types": switchboard_types
+    })
+
+
+@app.post("/api/quick-entry/complete", response_class=HTMLResponse)
+async def quick_entry_complete(
+    request: Request,
+    db: Session = Depends(get_db),
+    switchboards: str = Form(...)
+):
+    """
+    Vytvoří revizi + všechny rozváděče najednou
+    Vrátí success screen
+    """
+    user_id = get_current_user(request)
+    temp_revision = request.session.get('temp_revision', {})
+    
+    if not temp_revision:
+        # Pokud nejsou data v session, vrátit error
+        return HTMLResponse(
+            content="<div class='p-4 text-red-600'>Chyba: Session data nebyla nalezena. Zkuste to znovu.</div>",
+            status_code=400
+        )
+    
+    try:
+        # Vytvoření revize
+        new_revision = Revision(
+            user_id=user_id,
+            revision_name=temp_revision.get('revision_name'),
+            revision_client=temp_revision.get('revision_client'),
+            revision_address=temp_revision.get('revision_address'),
+            revision_code=temp_revision.get('revision_code'),
+            revision_type=temp_revision.get('revision_type'),
+            revision_technician=temp_revision.get('revision_technician'),
+            revision_description=temp_revision.get('revision_description'),
+            revision_date_of_creation=datetime.now().date()
+        )
+        
+        # Parse start_date pokud existuje
+        if temp_revision.get('revision_start_date'):
+            try:
+                new_revision.revision_start_date = datetime.strptime(
+                    temp_revision.get('revision_start_date'), 
+                    '%Y-%m-%d'
+                ).date()
+            except:
+                pass
+        
+        db.add(new_revision)
+        db.flush()  # Získání revision_id
+        
+        # Vytvoření rozváděčů
+        switchboards_data = json.loads(switchboards)
+        for sb_data in switchboards_data:
+            new_switchboard = Switchboard(
+                revision_id=new_revision.revision_id,
+                switchboard_name=sb_data.get('name'),
+                switchboard_type=sb_data.get('type') if sb_data.get('type') else None,
+                switchboard_order=sb_data.get('order', 0)
+            )
+            db.add(new_switchboard)
+        
+        db.commit()
+        
+        # Vyčištění session
+        request.session.pop('temp_revision', None)
+        
+        return templates.TemplateResponse("modals/quick_entry_success.html", {
+            "request": request,
+            "revision_id": new_revision.revision_id,
+            "revision_name": new_revision.revision_name,
+            "switchboards_count": len(switchboards_data)
+        })
+        
+    except Exception as e:
+        db.rollback()
+        return HTMLResponse(
+            content=f"<div class='p-4 text-red-600'>Chyba při vytváření revize: {str(e)}</div>",
+            status_code=500
+        )
 
 
 if __name__ == "__main__":

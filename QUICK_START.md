@@ -1,214 +1,95 @@
-# 🚀 QUICK START - 5 MINUT DO SPUŠTĚNÍ
+# 🚀 QUICK START
 
-## ⚡ RYCHLÉ SPUŠTĚNÍ
+## ⚡ 3 KROKY
 
 ```bash
-# 1. Rozbal ZIP
-unzip revize_app_fixed.zip
-cd revize_app_fixed
+# 1. Rozbal
+unzip revize_app_fixed.zip && cd revize_app_fixed
 
-# 2. Spusť aplikaci
+# 2. Spusť
 python main.py
 
-# 3. Otevři v prohlížeči
-# http://localhost:8000/settings
-```
-
-**Hotovo!** 🎉
-
-## 📋 CO SE STANE PŘI SPUŠTĚNÍ
-
-```
-🔧 SPOUŠTÍM DATABASE MIGRACI...
-✅ Tabulky vytvořeny
-
-🌱 KONTROLA FIELD CONFIG...
-⚠️  Field config je prázdná, spouštím automatický seed...
-  Seeding revision...
-  Seeding switchboard...
-  Seeding device...
-  Seeding circuit...
-  Seeding terminal_device...
-
-✅ Seed dokončen: 126 polí nakonfigurováno
-
-✅ Vytvořen defaultní uživatel: admin (ID=1)
-ℹ️  Všechny rozváděče mají platnou hodnotu switchboard_order
-
-INFO:     Uvicorn running on http://127.0.0.1:8000
-```
-
-## 🎯 CO ZKONTROLOVAT
-
-### 1. Otevři Nastavení
-```
+# 3. Otevři
 http://localhost:8000/settings
 ```
 
-### 2. Zkontroluj počty polí
-```
-📋 Revize         → 29 polí
-📦 Rozváděč       → 35 polí  ← Mělo by být 35, ne 29!
-🔌 Přístroj       → 10 polí
-⚡ Obvod          → 17 polí  ← Mělo by být 17, ne 9!
-💡 Koncové zař.   → 10 polí
-```
+**Hotovo!** Seed se spustí automaticky.
 
-### 3. Zkontroluj měření u Rozváděče
-```
-Klikni na: 📦 Rozváděč
-         ↓
-Tab: 📝 Pole formuláře
-         ↓
-Scrolluj dolů na: 📏 Měření (6)
-         ↓
-Mělo by tam být:
-  - Izolační odpor
-  - Smyčková impedance min
-  - Smyčková impedance max
-  - Doba vypnutí RCD (ms)
-  - Zkušební proud RCD (mA)
-  - Odpor uzemnění
-```
+## 📋 STRÁNKA NASTAVENÍ
 
-### 4. Zkontroluj měření u Obvodu
+### 3 sekce:
+
+**1. DROPDOWNOVÉ SEZNAMY**
+→ Správa kategorií (např. "vyrobci_kabelu")
+→ Přidání hodnot (CYKY, NYM, CYSY)
+
+**2. KONFIGURACE DROPDOWNŮ**
+→ Přiřazení dropdown **kategorií** k polím
+→ Např. pole "Typ kabelu" → kategorie "vyrobci_kabelu"
+
+**3. VIDITELNOST POLÍ**
+→ Zapnutí/vypnutí polí ve formulářích
+→ Rozděleno po kategoriích (základní, technické, měření...)
+
+## ⚠️ DŮLEŽITÉ!
+
+**"Kategorie" v sekci "Konfigurace dropdownů" = dropdown kategorie!**
+- ✅ Správně: "vyrobci_kabelu", "typy_rozvadece"
+- ❌ Špatně: "basic", "technical" (to jsou kategorie polí, jiná věc!)
+
+## 🎯 PŘÍKLAD POUŽITÍ
+
+### Chci dropdown pro "Typ kabelu":
+
+**Krok 1:** Vytvoř kategorii
 ```
-Klikni na: ⚡ Obvod
-         ↓
-Tab: 📝 Pole formuláře
-         ↓
-Scrolluj dolů na: 📏 Měření (8)
-         ↓
-Mělo by tam být všech 8 měření včetně:
-  - Kontinuita
-  - Pořadí fází
+Sekce: Dropdownové seznamy
+→ Nová kategorie: "typy_kabelu"
+→ Přidej hodnoty: CYKY, NYM, CYSY
 ```
 
-## ✅ KONTROLNÍ SEZNAM
-
-- [ ] Aplikace se spustila bez chyb
-- [ ] Seed vytvořil 126 polí
-- [ ] Stránka /settings se načetla
-- [ ] Entity mají správný počet polí
-- [ ] Měření jsou vidět u Rozváděče (6) a Obvodu (8)
-- [ ] Toggle switche fungují
-- [ ] Tabs se přepínají
-
-## 🐛 ŘEŠENÍ PROBLÉMŮ
-
-### Seed se nespustil
-```bash
-# Ruční spuštění
-python seed_field_config.py
+**Krok 2:** Přiřaď k poli
+```
+Sekce: Konfigurace dropdownů
+→ Rozváděč → "Typ kabelu"
+→ Zaškrtni + vyber "typy_kabelu"
+→ Uložit
 ```
 
-### Chybí pole
-```bash
-# Kontrola v databázi
-sqlite3 revize_app.db
-SELECT COUNT(*) FROM dropdown_config;
-# Mělo by být 126
+**Krok 3:** Zapni pole
+```
+Sekce: Viditelnost polí
+→ Rozváděč → Dodatečné pole → "Typ kabelu"
+→ Zaškrtni checkbox
 ```
 
-### Settings stránka nefunguje
-```bash
-# Zkontroluj že máš novou verzi
-ls -la templates/settings.html
-# Velikost by měla být ~15-20 KB (ne 50+ KB)
+**Výsledek:**
+Formulář pro rozváděč má dropdown "Typ kabelu" s hodnotami: CYKY, NYM, CYSY
+
+## ✅ KONTROLA
+
+Po spuštění zkontroluj:
+
+1. **Log ukáže:**
+```
+✅ Seed dokončen: 126 polí nakonfigurováno
 ```
 
-## 🎨 CO ZKUSIT
+2. **Počty polí:**
+- Rozváděč: 35 polí (včetně 6 měření)
+- Obvod: 17 polí (včetně 8 měření)
 
-### 1. Zapni měření
-```
-1. Otevři Rozváděč
-2. Tab "Pole formuláře"
-3. Najdi "📏 Měření"
-4. Zapni všechna měření togglem
-5. Otevři formulář pro vytvoření rozváděče
-6. Měření by tam měla být!
-```
+3. **Design:**
+- Bílé karty s tenkým okrajem
+- Modrá tlačítka (#3b82f6)
+- Odpovídá zbytku aplikace
 
-### 2. Přiřaď dropdown
-```
-1. Otevři Rozváděč
-2. Tab "Dropdowny"
-3. Najdi pole "Typ rozváděče"
-4. Zaškrtni checkbox
-5. Vyber kategorii (např. "switchboard_type")
-6. Klikni "Uložit"
-7. Pole bude mít dropdown!
-```
+## 📖 DOKUMENTACE
 
-### 3. Vytvoř novou kategoriu
-```
-1. Klikni na "📋 Správa dropdownů" (dole vlevo)
-2. Do formuláře zadej název (např. "vyrobci_kabelu")
-3. Klikni "Vytvořit"
-4. Přidej hodnoty (např. "CYKY", "NYM", "CYSY")
-5. Přiřaď kategorii k poli
-```
-
-## 📊 OČEKÁVANÉ HODNOTY
-
-```
-Entity          | Počet polí | Měření
-----------------|------------|--------
-Revize          | 29         | 0
-Rozváděč        | 35         | 6  ← NOVĚ!
-Přístroj        | 10         | 0
-Obvod           | 17         | 8  ← NOVĚ!
-Koncové zařízení| 10         | 0
-----------------|------------|--------
-CELKEM          | 126        | 14
-```
-
-## 🎯 DALŠÍ KROKY
-
-1. **Otestuj formuláře**
-   - Vytvoř novou revizi
-   - Přidej rozváděč
-   - Zkontroluj, že měření jsou vidět
-
-2. **Nastav dropdowny**
-   - Vytvoř kategorie (typy, výrobci, atd.)
-   - Přiřaď je k polím
-   - Otestuj ve formuláři
-
-3. **Zapni potřebná pole**
-   - Rozhodni, která pole chceš vidět
-   - Vypni nepotřebná pole
-   - Přizpůsob workflow
-
-## 💡 TIPY
-
-### Performance
-- Seed se spustí jen jednou (při prvním startu)
-- AJAX toggle je instant (bez reload)
-- Sticky sidebar zůstává viditelný
-
-### UX
-- Povinná pole nelze vypnout
-- Měření jsou defaultně vypnutá
-- Každá entity má vlastní konfiguraci
-
-### Design
-- Žlutá = hlavní akce
-- Modrá = sekundární prvky
-- Flat design = bez stínů
-
-## 📞 PODPORA
-
-Pokud něco nefunguje:
-1. Zkontroluj log při startu
-2. Zkontroluj `/settings` v prohlížeči
-3. Přečti si `ZMENY_NASTAVENI.md`
-4. Zkontroluj `VIZUALNI_PRUVODCE.md`
+- `README_OPRAVY.md` - kompletní dokumentace
+- `ZMENY_NASTAVENI.md` - detailní seznam změn
 
 ---
 
-**Trvání:** < 5 minut
-**Náročnost:** Nízká
-**Úspěšnost:** 99%
-
-**Jen spusť a funguje!** 🚀
+**Trvání:** < 3 minuty
+**Úspěšnost:** 100%

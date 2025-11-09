@@ -64,11 +64,49 @@ def run_database_migration():
     print("="*70)
     
     try:
-        # Vytvoř všechny tabulky (pokud neexistují)
-        Base.metadata.create_all(bind=engine)
-        print("✅ Tabulky vytvořeny/aktualizovány")
+        from sqlalchemy import text, inspect
         
-        # Seed field_categories pokud je tabulka prázdná
+        # 1. Vytvoř všechny tabulky (pokud neexistují)
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tabulky vytvořeny")
+        
+        # 2. Přidej chybějící sloupce do dropdown_config (Phase 4 & 4.5)
+        print("🔧 Kontroluji dropdown_config sloupce...")
+        inspector = inspect(engine)
+        
+        if 'dropdown_config' in inspector.get_table_names():
+            existing_columns = [col['name'] for col in inspector.get_columns('dropdown_config')]
+            
+            # Definice nových sloupců, které potřebujeme
+            required_columns = {
+                'field_label': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS field_label VARCHAR(255)",
+                'field_category': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS field_category VARCHAR(100)",
+                'display_order': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0",
+                'enabled': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE",
+                'is_required': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS is_required BOOLEAN DEFAULT FALSE",
+                'field_type': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS field_type VARCHAR(50) DEFAULT 'text'",
+                'custom_label': "ALTER TABLE dropdown_config ADD COLUMN IF NOT EXISTS custom_label VARCHAR(255)",
+            }
+            
+            with engine.connect() as conn:
+                added_count = 0
+                for col_name, alter_sql in required_columns.items():
+                    if col_name not in existing_columns:
+                        try:
+                            conn.execute(text(alter_sql))
+                            conn.commit()
+                            print(f"  ✅ Přidán sloupec: {col_name}")
+                            added_count += 1
+                        except Exception as e:
+                            print(f"  ⚠️  Chyba při přidávání {col_name}: {e}")
+                            conn.rollback()
+                
+                if added_count > 0:
+                    print(f"✅ Přidáno {added_count} nových sloupců do dropdown_config")
+                else:
+                    print("ℹ️  Všechny sloupce již existují v dropdown_config")
+        
+        # 3. Seed field_categories pokud je tabulka prázdná
         db = next(get_db())
         try:
             cat_count = db.query(FieldCategory).count()

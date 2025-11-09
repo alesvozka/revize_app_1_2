@@ -11,8 +11,9 @@ from datetime import datetime
 from database import engine, get_db, Base
 from models import *
 
-# Create all tables
-Base.metadata.create_all(bind=engine)
+# POZNÁMKA: Tabulky se vytváří pomocí migrate_db.py při deployment
+# Base.metadata.create_all(bind=engine) se už NEvolá zde!
+# Pokud chceš vytvořit tabulky lokálně, spusť: python migrate_db.py
 
 # Initialize default user if not exists
 def init_default_user():

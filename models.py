@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Boolean, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Boolean, ForeignKey, Float, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -246,6 +246,10 @@ class DropdownConfig(Base):
 # 11. FIELD_CATEGORIES (PHASE 4.5)
 class FieldCategory(Base):
     __tablename__ = "field_categories"
+    __table_args__ = (
+        # Zajistí, že každá kombinace entity_type + category_key je unikátní
+        UniqueConstraint('entity_type', 'category_key', name='uix_entity_category'),
+    )
     
     id = Column(Integer, primary_key=True, index=True)
     entity_type = Column(String(100), nullable=False)

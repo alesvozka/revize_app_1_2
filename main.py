@@ -981,35 +981,18 @@ async def quick_add_device(
             return float(value) if value else None
         return value
     
-    # Auto-determine order if not provided
-    order = get_value("device_order", int)
-    if order is None:
-        max_order = db.query(func.max(Device.device_order)).filter(
-            Device.switchboard_id == switchboard_id
-        ).scalar()
-        order = (max_order or 0) + 1
-    
-    # Create new device
-    new_device = Device(
+    # Create new device using SwitchboardDevice model
+    new_device = SwitchboardDevice(
         switchboard_id=switchboard_id,
-        device_name=get_value("device_name"),
-        device_type=get_value("device_type"),
-        device_order=order,
-        device_description=get_value("device_description"),
-        device_location=get_value("device_location"),
-        device_manufacturer=get_value("device_manufacturer"),
-        device_model=get_value("device_model"),
-        device_serial_number=get_value("device_serial_number"),
-        device_rated_current=get_value("device_rated_current", float),
-        device_rated_voltage=get_value("device_rated_voltage", float),
-        device_trip_characteristic=get_value("device_trip_characteristic"),
-        device_breaking_capacity=get_value("device_breaking_capacity", float),
-        device_poles=get_value("device_poles", int),
-        device_rated_residual_current=get_value("device_rated_residual_current", float),
-        device_trip_time=get_value("device_trip_time", float),
-        device_protection_class=get_value("device_protection_class"),
-        device_ip_rating=get_value("device_ip_rating"),
-        device_note=get_value("device_note")
+        switchboard_device_position=get_value("switchboard_device_position"),
+        switchboard_device_type=get_value("switchboard_device_type"),
+        switchboard_device_manufacturer=get_value("switchboard_device_manufacturer"),
+        switchboard_device_model=get_value("switchboard_device_model"),
+        switchboard_device_trip_characteristic=get_value("switchboard_device_trip_characteristic"),
+        switchboard_device_rated_current=get_value("switchboard_device_rated_current", float),
+        switchboard_device_residual_current_ma=get_value("switchboard_device_residual_current_ma", float),
+        switchboard_device_poles=get_value("switchboard_device_poles", int),
+        switchboard_device_module_width=get_value("switchboard_device_module_width", float)
     )
     
     db.add(new_device)

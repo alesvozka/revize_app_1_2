@@ -249,6 +249,14 @@ def run_field_config_seed(force=False):
                 ('switchboard_note', 'Poznámka', 'additional', 'textarea', False, False, 360),
                 ('switchboard_cable', 'Typ kabelu', 'additional', 'text', True, False, 370),
                 ('switchboard_cable_installation_method', 'Způsob uložení kabelu', 'additional', 'text', False, False, 380),
+                
+                # MEASUREMENTS
+                ('measurements_switchboard_insulation_resistance', 'Izolační odpor', 'measurements', 'number', False, False, 500),
+                ('measurements_switchboard_loop_impedance_min', 'Smyčková impedance min', 'measurements', 'number', False, False, 510),
+                ('measurements_switchboard_loop_impedance_max', 'Smyčková impedance max', 'measurements', 'number', False, False, 520),
+                ('measurements_switchboard_rcd_trip_time_ms', 'Doba vypnutí RCD (ms)', 'measurements', 'number', False, False, 530),
+                ('measurements_switchboard_rcd_test_current_ma', 'Zkušební proud RCD (mA)', 'measurements', 'number', False, False, 540),
+                ('measurements_switchboard_earth_resistance', 'Odpor uzemnění', 'measurements', 'number', False, False, 550),
             ],
             
             'device': [
@@ -281,6 +289,16 @@ def run_field_config_seed(force=False):
                 ('circuit_cable_termination', 'Zakončení kabelu', 'additional', 'text', False, False, 120),
                 ('circuit_cable', 'Typ kabelu', 'additional', 'text', True, False, 130),
                 ('circuit_cable_installation_method', 'Způsob uložení kabelu', 'additional', 'text', False, False, 140),
+                
+                # MEASUREMENTS
+                ('measurements_circuit_insulation_resistance', 'Izolační odpor', 'measurements', 'number', False, False, 200),
+                ('measurements_circuit_loop_impedance_min', 'Smyčková impedance min', 'measurements', 'number', False, False, 210),
+                ('measurements_circuit_loop_impedance_max', 'Smyčková impedance max', 'measurements', 'number', False, False, 220),
+                ('measurements_circuit_rcd_trip_time_ms', 'Doba vypnutí RCD (ms)', 'measurements', 'number', False, False, 230),
+                ('measurements_circuit_rcd_test_current_ma', 'Zkušební proud RCD (mA)', 'measurements', 'number', False, False, 240),
+                ('measurements_circuit_earth_resistance', 'Odpor uzemnění', 'measurements', 'number', False, False, 250),
+                ('measurements_circuit_continuity', 'Kontinuita', 'measurements', 'number', False, False, 260),
+                ('measurements_circuit_order_of_phases', 'Pořadí fází', 'measurements', 'text', False, False, 270),
             ],
             
             'terminal_device': [
@@ -3462,6 +3480,33 @@ async def add_dropdown_value_inline(category: str, request: Request, db: Session
     return {"success": False, "error": "Value is required"}
 
 
+# API endpoint for dropdown_widget_compact.html
+@app.post("/api/dropdown/{category}/add")
+async def add_dropdown_value_api(category: str, request: Request, db: Session = Depends(get_db)):
+    """API endpoint specifically for dropdown_widget_compact.html modal"""
+    form_data = await request.form()
+    value = form_data.get("value", "").strip()
+    
+    if value:
+        # Get max display_order for this category
+        max_order = db.query(func.max(DropdownSource.display_order)).filter(
+            DropdownSource.category == category
+        ).scalar() or 0
+        
+        new_source = DropdownSource(
+            category=category,
+            value=value,
+            display_order=max_order + 1
+        )
+        db.add(new_source)
+        db.commit()
+        db.refresh(new_source)
+        
+        return {"success": True, "id": new_source.id, "value": new_source.value}
+    
+    return {"success": False, "error": "Value is required"}
+
+
 # Update dropdown configuration
 @app.post("/settings/dropdown-config/update")
 async def dropdown_config_update(request: Request, db: Session = Depends(get_db)):
@@ -3617,6 +3662,28 @@ async def field_config_update(request: Request, db: Session = Depends(get_db)):
     
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/settings#field-visibility", status_code=303)
+
+
+# Toggle single field visibility (for AJAX)
+@app.post("/settings/field/toggle")
+async def field_toggle(request: Request, db: Session = Depends(get_db)):
+    """Toggle field visibility via AJAX"""
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    field_id = int(form_data.get('field_id'))
+    enabled = form_data.get('enabled') == 'true'
+    
+    config = db.query(DropdownConfig).filter(
+        DropdownConfig.id == field_id
+    ).first()
+    
+    if config and not config.is_required:
+        config.enabled = enabled
+        db.commit()
+        return {"success": True, "enabled": enabled}
+    
+    return {"success": False, "error": "Field not found or is required"}
 
 
 # Bulk update field visibility for entity

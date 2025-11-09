@@ -125,6 +125,14 @@ FIELD_CONFIGS = {
         ('switchboard_note', 'Poznámka', 'additional', 'textarea', False, False, 360),
         ('switchboard_cable', 'Typ kabelu', 'additional', 'text', True, False, 370),
         ('switchboard_cable_installation_method', 'Způsob uložení kabelu', 'additional', 'text', False, False, 380),
+        
+        # MEASUREMENTS
+        ('measurements_switchboard_insulation_resistance', 'Izolační odpor', 'measurements', 'number', False, False, 500),
+        ('measurements_switchboard_loop_impedance_min', 'Smyčková impedance min', 'measurements', 'number', False, False, 510),
+        ('measurements_switchboard_loop_impedance_max', 'Smyčková impedance max', 'measurements', 'number', False, False, 520),
+        ('measurements_switchboard_rcd_trip_time_ms', 'Doba vypnutí RCD (ms)', 'measurements', 'number', False, False, 530),
+        ('measurements_switchboard_rcd_test_current_ma', 'Zkušební proud RCD (mA)', 'measurements', 'number', False, False, 540),
+        ('measurements_switchboard_earth_resistance', 'Odpor uzemnění', 'measurements', 'number', False, False, 550),
     ],
     
     'device': [
@@ -157,6 +165,16 @@ FIELD_CONFIGS = {
         ('circuit_cable_termination', 'Zakončení kabelu', 'additional', 'text', False, False, 120),
         ('circuit_cable', 'Typ kabelu', 'additional', 'text', True, False, 130),
         ('circuit_cable_installation_method', 'Způsob uložení kabelu', 'additional', 'text', False, False, 140),
+        
+        # MEASUREMENTS
+        ('measurements_circuit_insulation_resistance', 'Izolační odpor', 'measurements', 'number', False, False, 200),
+        ('measurements_circuit_loop_impedance_min', 'Smyčková impedance min', 'measurements', 'number', False, False, 210),
+        ('measurements_circuit_loop_impedance_max', 'Smyčková impedance max', 'measurements', 'number', False, False, 220),
+        ('measurements_circuit_rcd_trip_time_ms', 'Doba vypnutí RCD (ms)', 'measurements', 'number', False, False, 230),
+        ('measurements_circuit_rcd_test_current_ma', 'Zkušební proud RCD (mA)', 'measurements', 'number', False, False, 240),
+        ('measurements_circuit_earth_resistance', 'Odpor uzemnění', 'measurements', 'number', False, False, 250),
+        ('measurements_circuit_continuity', 'Kontinuita', 'measurements', 'number', False, False, 260),
+        ('measurements_circuit_order_of_phases', 'Pořadí fází', 'measurements', 'text', False, False, 270),
     ],
     
     'terminal_device': [

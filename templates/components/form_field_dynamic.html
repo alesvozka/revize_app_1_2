@@ -6,8 +6,8 @@
 #}
 
 {% macro render_dynamic_field(field, entity_obj=None, dropdown_sources={}, error_fields=[]) %}
-  {# Get current value from entity object #}
-  {% set current_value = entity_obj[field.name] if entity_obj and field.name in entity_obj.__dict__ else '' %}
+  {# Get current value from entity object - using getattr for safe attribute access #}
+  {% set current_value = entity_obj | attr(field.name) if entity_obj and (field.name in entity_obj.__dict__ or hasattr(entity_obj, field.name)) else '' %}
   {% set has_error = field.name in error_fields %}
   
   <div class="form-group">

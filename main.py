@@ -3247,17 +3247,40 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
         configs_dict[key] = config
     
     # ✅ PHASE 4: Get configurable fields from database (not hardcoded!)
-    # Seskupíme pole podle entity_type
+    # DŮLEŽITÉ: Poskytujeme OBOJE struktury pro kompatibilitu
+    
+    # Dict struktura (entity -> field_name -> label)
     configurable_fields = {}
     for config in dropdown_configs:
         entity = config.entity_type
         if entity not in configurable_fields:
             configurable_fields[entity] = {}
         
-        # Přidáme pole s jeho labelem
-        # (použijeme custom_label pokud existuje, jinak field_label)
         label = config.custom_label if config.custom_label else config.field_label
         configurable_fields[entity][config.field_name] = label
+    
+    # List struktura (pro případy kde template iteruje přes list)
+    field_configs_list = []
+    for config in dropdown_configs:
+        label = config.custom_label if config.custom_label else config.field_label
+        field_configs_list.append({
+            'id': config.id,
+            'entity_type': config.entity_type,
+            'name': config.field_name,
+            'label': label,
+            'enabled': config.enabled,
+            'category': config.field_category,
+            'required': config.is_required,
+            'display_order': config.display_order,
+            'dropdown_enabled': config.dropdown_enabled,
+            'dropdown_category': config.dropdown_category
+        })
+    
+    # DEBUG: Print pro diagnostiku
+    print(f"🔍 DEBUG Settings: configurable_fields má {len(configurable_fields)} entit")
+    for entity, fields in configurable_fields.items():
+        print(f"  - {entity}: {len(fields)} polí")
+    print(f"🔍 DEBUG Settings: field_configs_list má {len(field_configs_list)} položek")
     
     return templates.TemplateResponse("settings.html", {
         "request": request,
@@ -3265,7 +3288,8 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
         "dropdown_sources": dropdown_sources,
         "dropdown_configs": dropdown_configs,
         "configs_dict": configs_dict,
-        "configurable_fields": configurable_fields,
+        "configurable_fields": configurable_fields,  # Dict struktura
+        "field_configs": field_configs_list,  # List struktura (backup)
         "sidebar_revisions": get_sidebar_revisions(db, user_id)
     })
 

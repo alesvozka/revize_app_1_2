@@ -238,19 +238,3 @@ class DropdownConfig(Base):
     enabled = Column(Boolean, default=True)  # Field visibility
     is_required = Column(Boolean, default=False)  # Is field required?
     field_type = Column(String(50), default='text')  # 'text', 'number', 'date', 'textarea'
-    
-    # PHASE 4.5: Custom label for field renaming
-    custom_label = Column(String(255), nullable=True)  # User-defined label override
-
-
-# 11. FIELD_CATEGORIES (PHASE 4.5)
-class FieldCategory(Base):
-    __tablename__ = "field_categories"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    entity_type = Column(String(100), nullable=False)
-    category_key = Column(String(100), nullable=False)
-    category_label = Column(String(255), nullable=False)
-    display_order = Column(Integer, default=0)
-    icon = Column(String(50), default='📋')
-    created_at = Column(DateTime(timezone=True), server_default=func.now())

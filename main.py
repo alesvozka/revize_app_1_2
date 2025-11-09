@@ -136,6 +136,38 @@ def get_field_dropdown_config(entity_type: str, db: Session):
     return result
 
 
+def get_entity_field_config(entity_type: str, db: Session):
+    """
+    PHASE 4: Get field configuration for an entity
+    PHASE 4.5: Includes custom_label for field renaming
+    Returns list of enabled fields with their configurations
+    
+    Returns:
+        list: [{'name': str, 'label': str, 'type': str, 'required': bool, ...}, ...]
+    """
+    fields = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == entity_type,
+        DropdownConfig.enabled == True
+    ).order_by(DropdownConfig.display_order).all()
+    
+    result = []
+    for field in fields:
+        # PHASE 4.5: Use custom_label if set, otherwise use field_label
+        display_label = field.custom_label if field.custom_label else field.field_label
+        
+        result.append({
+            'name': field.field_name,
+            'label': display_label,
+            'type': field.field_type,
+            'required': field.is_required,
+            'category': field.field_category,
+            'has_dropdown': field.dropdown_enabled,
+            'dropdown_category': field.dropdown_category
+        })
+    
+    return result
+
+
 def get_sidebar_revisions(db: Session, user_id: int):
     """Helper function to get revisions for sidebar"""
     return db.query(Revision).filter(
@@ -177,12 +209,17 @@ async def health_check():
 
 # Create - Show form
 @app.get("/revision/create", response_class=HTMLResponse)
-async def revision_create_form(request: Request):
+async def revision_create_form(request: Request, db: Session = Depends(get_db)):
     user_id = get_current_user(request)
+    
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('revision', db)
+    
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
-        "revision": None
+        "revision": None,
+        "field_configs": field_configs
     })
 
 
@@ -283,10 +320,14 @@ async def revision_edit_form(revision_id: int, request: Request, db: Session = D
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('revision', db)
+    
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
-        "revision": revision
+        "revision": revision,
+        "field_configs": field_configs
     })
 
 
@@ -572,6 +613,9 @@ async def switchboard_create_form(revision_id: int, request: Request, db: Sessio
     # Get dropdown configuration for switchboard
     dropdown_config = get_field_dropdown_config("switchboard", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('switchboard', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -588,7 +632,8 @@ async def switchboard_create_form(revision_id: int, request: Request, db: Sessio
         "revision": revision,
         "switchboard": None,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -1031,6 +1076,9 @@ async def switchboard_edit_form(switchboard_id: int, request: Request, db: Sessi
     # Get dropdown configuration for switchboard
     dropdown_config = get_field_dropdown_config("switchboard", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('switchboard', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -1047,7 +1095,8 @@ async def switchboard_edit_form(switchboard_id: int, request: Request, db: Sessi
         "revision": switchboard.revision,
         "switchboard": switchboard,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -1455,6 +1504,9 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
     # Get dropdown configuration for device
     dropdown_config = get_field_dropdown_config("device", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('device', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -1472,7 +1524,8 @@ async def device_create_form(switchboard_id: int, request: Request, db: Session 
         "device": None,
         "devices": devices,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -1549,6 +1602,9 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
     # Get dropdown configuration for device
     dropdown_config = get_field_dropdown_config("device", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('device', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -1566,7 +1622,8 @@ async def device_edit_form(device_id: int, request: Request, db: Session = Depen
         "device": device,
         "devices": devices,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -1897,6 +1954,9 @@ async def circuit_create_form(device_id: int, request: Request, db: Session = De
     # Get dropdown configuration for circuit
     dropdown_config = get_field_dropdown_config("circuit", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('circuit', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -1913,7 +1973,8 @@ async def circuit_create_form(device_id: int, request: Request, db: Session = De
         "circuit": None,
         "is_edit": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -2022,6 +2083,9 @@ async def circuit_edit_form(circuit_id: int, request: Request, db: Session = Dep
     # Get dropdown configuration for circuit
     dropdown_config = get_field_dropdown_config("circuit", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('circuit', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -2038,7 +2102,8 @@ async def circuit_edit_form(circuit_id: int, request: Request, db: Session = Dep
         "circuit": circuit,
         "is_edit": True,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -2651,6 +2716,9 @@ async def terminal_device_create_form(circuit_id: int, request: Request, db: Ses
     # Get dropdown configuration for terminal_device
     dropdown_config = get_field_dropdown_config("terminal_device", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('terminal_device', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -2667,7 +2735,8 @@ async def terminal_device_create_form(circuit_id: int, request: Request, db: Ses
         "terminal_device": None,
         "is_edit": False,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 
@@ -2761,6 +2830,9 @@ async def terminal_device_edit_form(terminal_device_id: int, request: Request, d
     # Get dropdown configuration for terminal_device
     dropdown_config = get_field_dropdown_config("terminal_device", db)
     
+    # PHASE 4: Get field configuration
+    field_configs = get_entity_field_config('terminal_device', db)
+    
     # Get all dropdown sources grouped by category
     categories = db.query(DropdownSource.category).distinct().all()
     dropdown_sources = {}
@@ -2777,7 +2849,9 @@ async def terminal_device_edit_form(terminal_device_id: int, request: Request, d
         "terminal_device": terminal,
         "is_edit": True,
         "dropdown_config": dropdown_config,
-        "dropdown_sources": dropdown_sources
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
+    })
     })
 
 
@@ -3127,6 +3201,354 @@ async def dropdown_config_update(request: Request, db: Session = Depends(get_db)
 
 
 # ========================================
+# PHASE 4: FIELD VISIBILITY CONFIGURATION
+# ========================================
+
+# Get form field configuration for an entity type
+@app.get("/api/form-config/{entity_type}")
+async def get_form_config(entity_type: str, db: Session = Depends(get_db)):
+    """
+    Returns field configuration for a given entity type
+    Only includes enabled fields, ordered by display_order
+    """
+    fields = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == entity_type,
+        DropdownConfig.enabled == True
+    ).order_by(DropdownConfig.display_order).all()
+    
+    return {
+        "entity_type": entity_type,
+        "fields": [
+            {
+                "name": f.field_name,
+                "label": f.field_label,
+                "type": f.field_type,
+                "required": f.is_required,
+                "category": f.field_category,
+                "has_dropdown": f.dropdown_enabled,
+                "dropdown_category": f.dropdown_category
+            }
+            for f in fields
+        ]
+    }
+
+
+# Get all field configurations for an entity (for settings page)
+@app.get("/api/field-config/{entity_type}/all")
+async def get_all_field_config(entity_type: str, db: Session = Depends(get_db)):
+    """
+    Returns ALL field configurations for an entity (including disabled)
+    For settings/configuration page
+    PHASE 4.5: Includes custom_label and category
+    """
+    fields = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == entity_type
+    ).order_by(DropdownConfig.field_category, DropdownConfig.display_order).all()
+    
+    # Group by category
+    by_category = {}
+    for field in fields:
+        category = field.field_category or 'uncategorized'
+        if category not in by_category:
+            by_category[category] = []
+        
+        # PHASE 4.5: Include custom_label
+        display_label = field.custom_label if field.custom_label else field.field_label
+        
+        by_category[category].append({
+            "id": field.id,
+            "name": field.field_name,
+            "label": display_label,
+            "type": field.field_type,
+            "enabled": field.enabled,
+            "required": field.is_required,
+            "display_order": field.display_order,
+            "has_dropdown": field.dropdown_enabled,
+            "dropdown_category": field.dropdown_category,
+            "category": field.field_category,  # PHASE 4.5
+            "custom_label": field.custom_label  # PHASE 4.5
+        })
+    
+    return {
+        "entity_type": entity_type,
+        "fields_by_category": by_category
+    }
+
+
+# Update field configuration (enable/disable, reorder)
+@app.post("/settings/field-config/update")
+async def field_config_update(request: Request, db: Session = Depends(get_db)):
+    """
+    Update field configuration (visibility and order)
+    Receives form data with field IDs and their new states
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    # Process each field configuration
+    for key, value in form_data.items():
+        if key.startswith('field_enabled_'):
+            # Extract field ID
+            field_id = int(key.replace('field_enabled_', ''))
+            enabled = value == 'on'
+            
+            # Update config
+            config = db.query(DropdownConfig).filter(
+                DropdownConfig.id == field_id
+            ).first()
+            
+            if config and not config.is_required:  # Can't disable required fields
+                config.enabled = enabled
+        
+        elif key.startswith('field_order_'):
+            # Extract field ID
+            field_id = int(key.replace('field_order_', ''))
+            try:
+                display_order = int(value)
+                
+                config = db.query(DropdownConfig).filter(
+                    DropdownConfig.id == field_id
+                ).first()
+                
+                if config:
+                    config.display_order = display_order
+            except ValueError:
+                pass
+    
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/settings#field-visibility", status_code=303)
+
+
+# Bulk update field visibility for entity
+@app.post("/settings/field-config/{entity_type}/bulk-update")
+async def field_config_bulk_update(
+    entity_type: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Bulk update field configurations for an entity
+    Used for quick enable/disable all additional fields
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    action = form_data.get("action")  # 'enable_all' or 'disable_all' or 'reset_defaults'
+    
+    if action == "enable_all":
+        # Enable all additional (non-required) fields
+        db.query(DropdownConfig).filter(
+            DropdownConfig.entity_type == entity_type,
+            DropdownConfig.is_required == False
+        ).update({"enabled": True})
+        
+    elif action == "disable_all":
+        # Disable all additional (non-required) fields
+        db.query(DropdownConfig).filter(
+            DropdownConfig.entity_type == entity_type,
+            DropdownConfig.is_required == False
+        ).update({"enabled": False})
+        
+    elif action == "reset_defaults":
+        # Reset to default configuration (from seed data)
+        # This would need to be implemented based on your defaults
+        pass
+    
+    db.commit()
+    
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/settings#field-visibility", status_code=303)
+
+
+# ========================================
+# PHASE 4.5: ADVANCED FIELD CONFIGURATION
+# ========================================
+
+# Rename field (custom label)
+@app.post("/settings/field-config/{field_id}/rename")
+async def field_config_rename(
+    field_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Update custom label for a field
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    custom_label = form_data.get("custom_label", "").strip()
+    
+    config = db.query(DropdownConfig).filter(
+        DropdownConfig.id == field_id
+    ).first()
+    
+    if config:
+        # If custom_label is empty, set to None to use default label
+        config.custom_label = custom_label if custom_label else None
+        db.commit()
+        return {"success": True, "custom_label": config.custom_label}
+    
+    return {"success": False, "error": "Field not found"}
+
+
+# Change field category
+@app.post("/settings/field-config/{field_id}/change-category")
+async def field_config_change_category(
+    field_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Change the category of a field
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    new_category = form_data.get("category", "").strip()
+    
+    config = db.query(DropdownConfig).filter(
+        DropdownConfig.id == field_id
+    ).first()
+    
+    if config:
+        config.field_category = new_category
+        db.commit()
+        return {"success": True, "category": new_category}
+    
+    return {"success": False, "error": "Field not found"}
+
+
+# Get all categories for entity
+@app.get("/api/field-categories/{entity_type}")
+async def get_field_categories(
+    entity_type: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all categories for a specific entity type
+    """
+    from models import FieldCategory
+    
+    categories = db.query(FieldCategory).filter(
+        FieldCategory.entity_type == entity_type
+    ).order_by(FieldCategory.display_order).all()
+    
+    return {
+        "entity_type": entity_type,
+        "categories": [
+            {
+                "id": c.id,
+                "key": c.category_key,
+                "label": c.category_label,
+                "icon": c.icon,
+                "order": c.display_order
+            }
+            for c in categories
+        ]
+    }
+
+
+# Create new category
+@app.post("/api/field-categories/create")
+async def create_field_category(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new field category for an entity
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    from models import FieldCategory
+    
+    entity_type = form_data.get("entity_type", "").strip()
+    category_key = form_data.get("category_key", "").strip()
+    category_label = form_data.get("category_label", "").strip()
+    icon = form_data.get("icon", "📋").strip()
+    
+    if not entity_type or not category_key or not category_label:
+        return {"success": False, "error": "Missing required fields"}
+    
+    # Check if category already exists
+    existing = db.query(FieldCategory).filter(
+        FieldCategory.entity_type == entity_type,
+        FieldCategory.category_key == category_key
+    ).first()
+    
+    if existing:
+        return {"success": False, "error": "Category already exists"}
+    
+    # Get max display order
+    max_order = db.query(func.max(FieldCategory.display_order)).filter(
+        FieldCategory.entity_type == entity_type
+    ).scalar() or 0
+    
+    # Create new category
+    new_category = FieldCategory(
+        entity_type=entity_type,
+        category_key=category_key,
+        category_label=category_label,
+        icon=icon,
+        display_order=max_order + 10
+    )
+    
+    db.add(new_category)
+    db.commit()
+    
+    return {
+        "success": True,
+        "category": {
+            "id": new_category.id,
+            "key": new_category.category_key,
+            "label": new_category.category_label,
+            "icon": new_category.icon
+        }
+    }
+
+
+# Delete category
+@app.post("/api/field-categories/{category_id}/delete")
+async def delete_field_category(
+    category_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a field category
+    Fields in this category will be moved to 'additional'
+    """
+    user_id = get_current_user(request)
+    
+    from models import FieldCategory
+    
+    category = db.query(FieldCategory).filter(
+        FieldCategory.id == category_id
+    ).first()
+    
+    if not category:
+        return {"success": False, "error": "Category not found"}
+    
+    category_key = category.category_key
+    entity_type = category.entity_type
+    
+    # Move all fields from this category to 'additional'
+    db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == entity_type,
+        DropdownConfig.field_category == category_key
+    ).update({"field_category": "additional"})
+    
+    # Delete category
+    db.delete(category)
+    db.commit()
+    
+    return {"success": True}
+
+
+# ========================================
 # PROFILE PAGE
 # ========================================
 
@@ -3177,11 +3599,17 @@ async def quick_entry_step1_get(
 ):
     """
     Vrátí HTML pro krok 1 - základní info revize
+    PHASE 4.5: Uses field_configs for dynamic form rendering
     """
     user_id = get_current_user(request)
     
+    # Get field configuration for Revision (basic fields only)
+    field_configs = get_entity_field_config('revision', db)
+    basic_fields = [f for f in field_configs if f.get('category') == 'basic' and f.get('enabled')]
+    
     return templates.TemplateResponse("modals/quick_entry_step1.html", {
-        "request": request
+        "request": request,
+        "field_configs": basic_fields
     })
 
 
@@ -3201,6 +3629,7 @@ async def quick_entry_step1_post(
     """
     Uloží základní info revize do session
     Vrátí HTML pro krok 2 - přidání rozváděčů
+    PHASE 4.5: Uses field_configs for switchboard fields
     """
     user_id = get_current_user(request)
     
@@ -3216,7 +3645,21 @@ async def quick_entry_step1_post(
         'revision_description': revision_description
     }
     
-    # Získání dropdown hodnot pro switchboard_type
+    # PHASE 4.5: Get field configuration for Switchboard (basic fields only)
+    field_configs = get_entity_field_config('switchboard', db)
+    basic_fields = [f for f in field_configs if f.get('category') == 'basic' and f.get('enabled')]
+    
+    # Get dropdown sources for dropdown-enabled fields
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order).all()
+        dropdown_sources[category] = sources
+    
+    # Legacy: také posílám switchboard_types pro zpětnou kompatibilitu
     switchboard_types = []
     dropdown_config = db.query(DropdownConfig).filter(
         DropdownConfig.entity_type == "switchboard",
@@ -3225,15 +3668,17 @@ async def quick_entry_step1_post(
     ).first()
     
     if dropdown_config and dropdown_config.dropdown_category:
-        dropdown_values = db.query(DropdownValue).filter(
-            DropdownValue.category == dropdown_config.dropdown_category
-        ).order_by(DropdownValue.display_order).all()
+        dropdown_values = db.query(DropdownSource).filter(
+            DropdownSource.category == dropdown_config.dropdown_category
+        ).order_by(DropdownSource.display_order).all()
         switchboard_types = [v.value for v in dropdown_values]
     
     return templates.TemplateResponse("modals/quick_entry_step2.html", {
         "request": request,
         "revision_name": revision_name,
-        "switchboard_types": switchboard_types
+        "field_configs": basic_fields,
+        "dropdown_sources": dropdown_sources,
+        "switchboard_types": switchboard_types  # Legacy
     })
 
 

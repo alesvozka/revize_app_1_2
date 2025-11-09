@@ -242,30 +242,242 @@
             </div>
         </div>
 
-        <!-- Additional Settings Sections Can Be Added Here -->
-        <!-- Example placeholder for future sections -->
-        <div class="bg-white border border-gray-200 rounded">
+        <!-- PHASE 4: Field Visibility Configuration -->
+        <div id="field-visibility" class="bg-white border border-gray-200 rounded">
             <div class="px-5 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Obecné nastavení</h3>
-                        <p class="text-sm text-gray-600 mt-1">Základní konfigurace aplikace</p>
+                        <h3 class="text-lg font-semibold text-gray-900">Konfigurace viditelnosti polí</h3>
+                        <p class="text-sm text-gray-600 mt-1">Zapnout/vypnout pole ve formulářích podle vašeho workflow</p>
                     </div>
-                    <button onclick="toggleSection('general')" class="text-gray-500 hover:text-gray-700 transition">
-                        <svg id="general-arrow" class="w-5 h-5 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="toggleSection('field-visibility-section')" class="text-gray-500 hover:text-gray-700 transition">
+                        <svg id="field-visibility-section-arrow" class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
                 </div>
             </div>
             
-            <div id="general-content" class="p-5 hidden">
-                <p class="text-sm text-gray-500">Tato sekce bude v budoucnu obsahovat další nastavení aplikace.</p>
+            <div id="field-visibility-section-content" class="p-5">
+                <!-- Info Box -->
+                <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                    <p class="text-sm text-blue-800">
+                        <strong>💡 Jak to funguje:</strong> Zde můžete zapnout/vypnout pole ve formulářích. Pole označená jako <strong>povinná</strong> nelze vypnout. Změny se projeví okamžitě ve všech formulářích.
+                    </p>
+                </div>
+
+                <!-- Entity Type Selector -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Vyberte entitu:</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="showFieldConfig('revision')" 
+                                id="entity-btn-revision"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            📋 Revize
+                        </button>
+                        <button onclick="showFieldConfig('switchboard')" 
+                                id="entity-btn-switchboard"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            📦 Rozváděč
+                        </button>
+                        <button onclick="showFieldConfig('device')" 
+                                id="entity-btn-device"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            🔌 Přístroj
+                        </button>
+                        <button onclick="showFieldConfig('circuit')" 
+                                id="entity-btn-circuit"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            ⚡ Obvod
+                        </button>
+                        <button onclick="showFieldConfig('terminal_device')" 
+                                id="entity-btn-terminal_device"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            💡 Koncové zařízení
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="field-config-loading" class="text-center py-8 hidden">
+                    <svg class="animate-spin h-8 w-8 mx-auto text-blue-600 mb-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-sm text-gray-500">Načítání konfigurace...</p>
+                </div>
+
+                <!-- Field Configuration Container -->
+                <div id="field-config-container" class="hidden">
+                    <!-- Quick Actions -->
+                    <div class="flex gap-2 mb-4">
+                        <button onclick="bulkAction('enable_all')" 
+                                class="px-3 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 transition">
+                            ✓ Zapnout všechna dodatečná pole
+                        </button>
+                        <button onclick="bulkAction('disable_all')" 
+                                class="px-3 py-1.5 text-xs bg-red-600 text-white font-medium rounded hover:bg-red-700 transition">
+                            ✗ Vypnout všechna dodatečná pole
+                        </button>
+                    </div>
+
+                    <!-- Form -->
+                    <form id="field-config-form" method="POST" action="{{ url_for('field_config_update') }}">
+                        <!-- Basic Fields (Cannot be disabled) -->
+                        <div class="mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                Základní pole (povinná - nelze vypnout)
+                            </h4>
+                            <div id="basic-fields" class="space-y-2">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Additional Fields (Can be disabled) -->
+                        <div class="mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                                Dodatečná pole (volitelná)
+                            </h4>
+                            <div id="additional-fields" class="space-y-2">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="flex justify-end">
+                            <button type="submit" 
+                                    class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition">
+                                💾 Uložit změny
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Empty State -->
+                <div id="field-config-empty" class="text-center py-8">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p class="text-gray-500 text-sm font-medium mb-1">Vyberte entitu výše</p>
+                    <p class="text-gray-400 text-xs">Pro zobrazení a úpravu konfigurace polí</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE 4.5: Custom Categories Management -->
+        <div id="custom-categories" class="bg-white border border-gray-200 rounded">
+            <div class="px-5 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Správa kategorií polí</h3>
+                        <p class="text-sm text-gray-600 mt-1">Vytváření a úprava vlastních kategorií pro organizaci polí</p>
+                    </div>
+                    <button onclick="toggleSection('custom-categories-section')" class="text-gray-500 hover:text-gray-700 transition">
+                        <svg id="custom-categories-section-arrow" class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="custom-categories-section-content" class="p-5">
+                <!-- Info Box -->
+                <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                    <p class="text-sm text-blue-800">
+                        <strong>💡 Info:</strong> Vytvořte vlastní kategorie pro lepší organizaci polí ve formulářích. Můžete například vytvořit kategorie "Elektrické parametry", "Administrativní údaje" atd.
+                    </p>
+                </div>
+
+                <!-- Entity Type Selector -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Vyberte entitu:</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="showCustomCategories('revision')" 
+                                id="cat-btn-revision"
+                                class="cat-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            📋 Revize
+                        </button>
+                        <button onclick="showCustomCategories('switchboard')" 
+                                id="cat-btn-switchboard"
+                                class="cat-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            📦 Rozváděč
+                        </button>
+                        <button onclick="showCustomCategories('device')" 
+                                id="cat-btn-device"
+                                class="cat-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            🔌 Přístroj
+                        </button>
+                        <button onclick="showCustomCategories('circuit')" 
+                                id="cat-btn-circuit"
+                                class="cat-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            ⚡ Obvod
+                        </button>
+                        <button onclick="showCustomCategories('terminal_device')" 
+                                id="cat-btn-terminal_device"
+                                class="cat-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            💡 Koncové zařízení
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Categories Container -->
+                <div id="categories-container" class="hidden">
+                    <!-- Add New Category Form -->
+                    <div class="bg-gray-50 border border-gray-200 rounded p-4 mb-6">
+                        <h4 class="text-sm font-semibold text-gray-800 mb-3">Přidat novou kategorii</h4>
+                        <form id="add-category-form" class="flex gap-2 items-center">
+                            <input type="text" 
+                                   id="new-category-key"
+                                   name="category_key" 
+                                   placeholder="Klíč (např. electrical_params)"
+                                   required
+                                   class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                            <input type="text" 
+                                   id="new-category-label"
+                                   name="category_label" 
+                                   placeholder="Název (např. Elektrické parametry)"
+                                   required
+                                   class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                            <input type="text" 
+                                   id="new-category-icon"
+                                   name="icon" 
+                                   value="📋"
+                                   class="w-16 px-3 py-2 text-sm border border-gray-300 rounded text-center">
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition whitespace-nowrap">
+                                + Přidat
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Existing Categories -->
+                    <div id="categories-list" class="space-y-2">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="categories-empty" class="text-center py-8">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    <p class="text-gray-500 text-sm font-medium mb-1">Vyberte entitu výše</p>
+                    <p class="text-gray-400 text-xs">Pro zobrazení a úpravu kategorií</p>
+                </div>
             </div>
         </div>
 
     </div>
 </div>
+
+<!-- PHASE 4.5: Sortable.js for Drag & Drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 <script>
 // Toggle section expand/collapse
@@ -310,6 +522,497 @@ function toggleDropdownConfig(configKey) {
     } else {
         categorySelect.disabled = true;
         categorySelect.classList.add('bg-gray-100', 'text-gray-400');
+    }
+}
+
+// ========================================
+// PHASE 4: Field Visibility Configuration
+// ========================================
+
+let currentEntityType = null;
+
+// Show field configuration for entity
+async function showFieldConfig(entityType) {
+    currentEntityType = entityType;
+    
+    // Update button states
+    document.querySelectorAll('.entity-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('border-gray-300', 'text-gray-700');
+    });
+    document.getElementById(`entity-btn-${entityType}`).classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+    document.getElementById(`entity-btn-${entityType}`).classList.remove('border-gray-300', 'text-gray-700');
+    
+    // Show loading
+    document.getElementById('field-config-empty').classList.add('hidden');
+    document.getElementById('field-config-container').classList.add('hidden');
+    document.getElementById('field-config-loading').classList.remove('hidden');
+    
+    try {
+        // Fetch field configuration
+        const response = await fetch(`/api/field-config/${entityType}/all`);
+        const data = await response.json();
+        
+        // Render fields
+        renderFieldConfig(data);
+        
+        // Show container
+        document.getElementById('field-config-loading').classList.add('hidden');
+        document.getElementById('field-config-container').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error loading field config:', error);
+        document.getElementById('field-config-loading').classList.add('hidden');
+        alert('Chyba při načítání konfigurace polí');
+    }
+}
+
+// Render field configuration
+function renderFieldConfig(data) {
+    const basicFieldsContainer = document.getElementById('basic-fields');
+    const additionalFieldsContainer = document.getElementById('additional-fields');
+    
+    basicFieldsContainer.innerHTML = '';
+    additionalFieldsContainer.innerHTML = '';
+    
+    const fieldsByCategory = data.fields_by_category;
+    
+    // Render basic fields
+    if (fieldsByCategory.basic) {
+        fieldsByCategory.basic.forEach(field => {
+            basicFieldsContainer.innerHTML += createFieldRow(field, true);
+        });
+    }
+    
+    // Render additional fields
+    if (fieldsByCategory.additional) {
+        fieldsByCategory.additional.forEach(field => {
+            additionalFieldsContainer.innerHTML += createFieldRow(field, false);
+        });
+    }
+    
+    // PHASE 4.5: Initialize Sortable.js for Drag & Drop
+    sortableInstance = null; // Reset instance
+    initializeSortable();
+}
+
+// Create field row HTML
+function createFieldRow(field, isBasic) {
+    const disabledAttr = field.required ? 'disabled' : '';
+    const checkedAttr = field.enabled || field.required ? 'checked' : '';
+    const requiredBadge = field.required ? '<span class="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded font-medium">POVINNÉ</span>' : '';
+    const disabledClass = field.required ? 'opacity-60 cursor-not-allowed' : '';
+    const dragHandle = !field.required ? `
+        <div class="drag-handle text-gray-400 hover:text-gray-600 cursor-move">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"/>
+            </svg>
+        </div>
+    ` : '<div class="w-5"></div>';
+    
+    // PHASE 4.5: Custom label (user can rename field)
+    const customLabel = field.custom_label || '';
+    const displayLabel = customLabel || field.label;
+    
+    return `
+        <div class="field-item draggable flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition ${disabledClass}"
+             data-field-id="${field.id}"
+             ${!field.required ? 'draggable="true"' : ''}>
+            
+            <!-- Drag Handle (PHASE 4.5) -->
+            ${dragHandle}
+            
+            <!-- Checkbox -->
+            <div class="flex items-center">
+                <input type="checkbox" 
+                       name="field_enabled_${field.id}" 
+                       id="field_${field.id}"
+                       ${checkedAttr}
+                       ${disabledAttr}
+                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            </div>
+            
+            <!-- Field Info & Custom Label -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <label for="field_${field.id}" class="block text-sm font-medium text-gray-700 cursor-pointer">
+                        ${displayLabel}
+                        ${requiredBadge}
+                    </label>
+                    
+                    <!-- PHASE 4.5: Custom Label Button -->
+                    <button type="button" 
+                            onclick="toggleCustomLabelInput(${field.id})"
+                            class="text-blue-600 hover:text-blue-800 text-xs"
+                            title="Přejmenovat pole">
+                        ✏️
+                    </button>
+                </div>
+                
+                <!-- PHASE 4.5: Custom Label Input (hidden by default) -->
+                <div id="custom-label-${field.id}" class="hidden mt-2">
+                    <div class="flex gap-2 items-center">
+                        <input type="text" 
+                               id="custom-label-input-${field.id}"
+                               value="${customLabel}"
+                               placeholder="${field.label}"
+                               class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                        <button type="button"
+                                onclick="saveCustomLabel(${field.id})"
+                                class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                            Uložit
+                        </button>
+                        <button type="button"
+                                onclick="toggleCustomLabelInput(${field.id})"
+                                class="px-3 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500">
+                            Zrušit
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-0.5">
+                    <code class="bg-gray-200 px-1 rounded">${field.name}</code>
+                    <span class="ml-2 text-gray-400">•</span>
+                    <span class="ml-2">Typ: ${field.type}</span>
+                </p>
+            </div>
+            
+            <!-- PHASE 4.5: Category Dropdown -->
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500 whitespace-nowrap">Kategorie:</label>
+                <select onchange="changeCategory(${field.id}, this.value)"
+                        class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                    <option value="basic" ${field.category === 'basic' ? 'selected' : ''}>📋 Základní</option>
+                    <option value="additional" ${field.category === 'additional' ? 'selected' : ''}>➕ Dodatečná</option>
+                    <option value="measurements" ${field.category === 'measurements' ? 'selected' : ''}>📊 Měření</option>
+                    <option value="technical" ${field.category === 'technical' ? 'selected' : ''}>🔧 Technické</option>
+                    <option value="administrative" ${field.category === 'administrative' ? 'selected' : ''}>📄 Administrativní</option>
+                </select>
+            </div>
+            
+            <!-- Display Order (hidden, updated by drag&drop) -->
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">Pořadí:</label>
+                <input type="number" 
+                       name="field_order_${field.id}"
+                       value="${field.display_order}"
+                       min="0"
+                       class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+        </div>
+    `;
+}
+
+// Bulk actions
+async function bulkAction(action) {
+    if (!currentEntityType) {
+        alert('Nejdříve vyberte entitu');
+        return;
+    }
+    
+    const confirmMessage = action === 'enable_all' 
+        ? 'Opravdu zapnout všechna dodatečná pole?' 
+        : 'Opravdu vypnout všechna dodatečná pole?';
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('action', action);
+        
+        const response = await fetch(`/settings/field-config/${currentEntityType}/bulk-update`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Reload configuration
+            await showFieldConfig(currentEntityType);
+        } else {
+            alert('Chyba při hromadné akci');
+        }
+    } catch (error) {
+        console.error('Error in bulk action:', error);
+        alert('Chyba při hromadné akci');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if there's a hash for field-visibility section
+    if (window.location.hash === '#field-visibility') {
+        const section = document.getElementById('field-visibility-section-content');
+        const arrow = document.getElementById('field-visibility-section-arrow');
+        if (section && section.classList.contains('hidden')) {
+            section.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        }
+    }
+});
+
+// ========================================
+// PHASE 4.5: ADVANCED FEATURES
+// ========================================
+
+// Initialize Sortable.js for Additional Fields (Drag & Drop)
+let sortableInstance = null;
+
+function initializeSortable() {
+    const sortableList = document.getElementById('additional-fields');
+    if (sortableList && !sortableInstance) {
+        sortableInstance = new Sortable(sortableList, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'bg-blue-100',
+            dragClass: 'opacity-50',
+            draggable: '.draggable',
+            
+            onEnd: function(evt) {
+                // Update hidden order inputs based on new position
+                const items = sortableList.querySelectorAll('.field-item');
+                items.forEach((item, index) => {
+                    const fieldId = item.dataset.fieldId;
+                    const orderInput = item.querySelector(`input[name="field_order_${fieldId}"]`);
+                    if (orderInput) {
+                        orderInput.value = index + 1;
+                    }
+                });
+                
+                // Auto-save the new order
+                autoSaveDragOrder(items);
+            }
+        });
+    }
+}
+
+// Auto-save drag & drop order
+async function autoSaveDragOrder(items) {
+    const updates = [];
+    items.forEach((item, index) => {
+        const fieldId = item.dataset.fieldId;
+        if (fieldId) {
+            updates.push({
+                id: fieldId,
+                order: index + 1
+            });
+        }
+    });
+    
+    // Send AJAX request to save order
+    try {
+        const formData = new FormData();
+        updates.forEach(update => {
+            formData.append(`field_order_${update.id}`, update.order);
+        });
+        
+        // Save using existing endpoint
+        await fetch('/settings/field-config/update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        console.log('Field order auto-saved');
+    } catch (error) {
+        console.error('Error auto-saving field order:', error);
+    }
+}
+
+// Toggle custom label input visibility
+function toggleCustomLabelInput(fieldId) {
+    const inputDiv = document.getElementById(`custom-label-${fieldId}`);
+    inputDiv.classList.toggle('hidden');
+}
+
+// Save custom label
+async function saveCustomLabel(fieldId) {
+    const inputEl = document.getElementById(`custom-label-input-${fieldId}`);
+    const customLabel = inputEl.value.trim();
+    
+    try {
+        const formData = new FormData();
+        formData.append('custom_label', customLabel);
+        
+        const response = await fetch(`/settings/field-config/${fieldId}/rename`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reload configuration to show new label
+            await showFieldConfig(currentEntityType);
+            alert('Název pole byl úspěšně změněn!');
+        } else {
+            alert('Chyba při ukládání: ' + (data.error || 'Neznámá chyba'));
+        }
+    } catch (error) {
+        console.error('Error saving custom label:', error);
+        alert('Chyba při ukládání názvu pole');
+    }
+}
+
+// Change field category
+async function changeCategory(fieldId, newCategory) {
+    if (!confirm(`Opravdu přesunout pole do kategorie "${newCategory}"?`)) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('category', newCategory);
+        
+        const response = await fetch(`/settings/field-config/${fieldId}/change-category`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reload field configuration to show in new category
+            await showFieldConfig(currentEntityType);
+        } else {
+            alert('Chyba při změně kategorie: ' + (data.error || 'Neznámá chyba'));
+        }
+    } catch (error) {
+        console.error('Error changing category:', error);
+        alert('Chyba při změně kategorie');
+    }
+}
+
+// ========================================
+// PHASE 4.5: CUSTOM CATEGORIES MANAGEMENT
+// ========================================
+
+let currentCategoryEntityType = null;
+
+// Show custom categories for entity
+async function showCustomCategories(entityType) {
+    currentCategoryEntityType = entityType;
+    
+    // Update button states
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('border-gray-300', 'text-gray-700');
+    });
+    document.getElementById(`cat-btn-${entityType}`).classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+    document.getElementById(`cat-btn-${entityType}`).classList.remove('border-gray-300', 'text-gray-700');
+    
+    // Show container, hide empty state
+    document.getElementById('categories-empty').classList.add('hidden');
+    document.getElementById('categories-container').classList.remove('hidden');
+    
+    try {
+        // Fetch categories for entity
+        const response = await fetch(`/api/field-categories/${entityType}`);
+        const data = await response.json();
+        
+        // Render categories
+        renderCategories(data.categories);
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        alert('Chyba při načítání kategorií');
+    }
+}
+
+// Render categories list
+function renderCategories(categories) {
+    const container = document.getElementById('categories-list');
+    
+    if (categories.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-gray-500 text-sm">
+                Zatím nejsou vytvořeny žádné vlastní kategorie.
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = categories.map(cat => `
+        <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition">
+            <span class="text-2xl">${cat.icon}</span>
+            <div class="flex-1">
+                <span class="text-sm font-medium text-gray-800">${cat.label}</span>
+                <span class="ml-2 text-xs text-gray-500">(${cat.key})</span>
+            </div>
+            <span class="text-xs text-gray-500">Pořadí: ${cat.order}</span>
+            <button type="button"
+                    onclick="deleteCategory(${cat.id}, '${cat.label}')"
+                    class="text-red-500 hover:text-red-700 text-sm px-3 py-1 border border-red-300 rounded hover:bg-red-50 transition">
+                🗑️ Smazat
+            </button>
+        </div>
+    `).join('');
+}
+
+// Add new category
+document.addEventListener('DOMContentLoaded', function() {
+    const addCategoryForm = document.getElementById('add-category-form');
+    if (addCategoryForm) {
+        addCategoryForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!currentCategoryEntityType) {
+                alert('Nejdříve vyberte entitu');
+                return;
+            }
+            
+            const formData = new FormData(addCategoryForm);
+            formData.append('entity_type', currentCategoryEntityType);
+            
+            try {
+                const response = await fetch('/api/field-categories/create', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear form
+                    addCategoryForm.reset();
+                    document.getElementById('new-category-icon').value = '📋';
+                    
+                    // Reload categories
+                    await showCustomCategories(currentCategoryEntityType);
+                    
+                    alert('Kategorie byla úspěšně vytvořena!');
+                } else {
+                    alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+                }
+            } catch (error) {
+                console.error('Error creating category:', error);
+                alert('Chyba při vytváření kategorie');
+            }
+        });
+    }
+});
+
+// Delete category
+async function deleteCategory(categoryId, categoryLabel) {
+    if (!confirm(`Opravdu smazat kategorii "${categoryLabel}"?\n\nPole v této kategorii budou přesunuta do "Dodatečná pole".`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/field-categories/${categoryId}/delete`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reload categories
+            await showCustomCategories(currentCategoryEntityType);
+            alert('Kategorie byla smazána');
+        } else {
+            alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+        }
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Chyba při mazání kategorie');
     }
 }
 </script>

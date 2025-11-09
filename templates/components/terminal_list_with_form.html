@@ -1,0 +1,46 @@
+<!-- Existing Terminal Devices List -->
+<div class="space-y-2 mb-3">
+    {% if terminals %}
+        {% for terminal in terminals|sort(attribute='terminal_order') %}
+        <a href="/terminal/{{ terminal.terminal_device_id }}" 
+           class="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900">{{ terminal.terminal_name or 'Zařízení #' + terminal.terminal_device_id|string }}</p>
+                    <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                        {% if terminal.terminal_type %}<span>{{ terminal.terminal_type }}</span>{% endif %}
+                        {% if terminal.terminal_power %}<span>• {{ terminal.terminal_power }} W</span>{% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 ml-4">
+                    <form method="POST" action="/terminal/{{ terminal.terminal_device_id }}/duplicate" class="inline">
+                        <button type="submit" class="p-2 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition" title="Duplikovat" onclick="event.stopPropagation();">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </button>
+                    </form>
+                    <form method="POST" action="/terminal/{{ terminal.terminal_device_id }}/delete" onsubmit="return confirm('Opravdu chcete smazat toto zařízení?')" class="inline">
+                        <button type="submit" class="p-2 text-red-600 bg-red-50 rounded hover:bg-red-100 transition" title="Smazat" onclick="event.stopPropagation();">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </form>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+            <p class="text-sm font-medium">Zatím nejsou přidána žádná zařízení</p>
+            <p class="text-xs mt-1">Začněte přidáním prvního zařízení</p>
+        </div>
+    {% endif %}
+</div>
+{% if not show_form %}
+<button hx-get="/circuit/{{ circuit_id }}/terminal/quick-add-form" hx-target="#quick-add-form-container" hx-swap="innerHTML" 
+    class="w-full py-2.5 px-3 text-primary font-medium flex items-center justify-center space-x-2 hover:bg-blue-50 rounded-lg transition border-2 border-dashed border-gray-300 hover:border-primary">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    <span>Přidat zařízení</span>
+</button>
+{% endif %}
+<div id="quick-add-form-container" class="mt-3"></div>

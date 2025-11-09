@@ -304,235 +304,30 @@
     <!-- Devices (Přístroje v rozváděči) -->
     <div class="bg-white border border-gray-200 rounded">
         <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-base font-semibold text-gray-900">Přístroje v rozváděči</h3>
+            <h3 class="text-base font-semibold text-gray-900">Přístroje v rozváděči ({{ switchboard.devices|length }})</h3>
+            <!-- Fallback link to full form -->
             <a href="/switchboard/{{ switchboard.switchboard_id }}/device/create" 
-               class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm font-medium btn-flat">
-                + Přidat přístroj
+               class="text-gray-500 hover:text-gray-700 text-sm">
+                Plný formulář →
             </a>
         </div>
-        <div class="overflow-x-auto">
-            {% if switchboard.devices %}
-                <!-- Modern flat table -->
-                <table class="w-full data-table">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Pozice</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Typ</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Proud</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Výrobce / Model</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Akce</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        {% for device in switchboard.devices %}
-                            {% if not device.parent_device_id %}
-                                <!-- Root device -->
-                                <tr class="hover:bg-gray-50 transition">
-                                    <td class="px-4 py-3">
-                                        <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded border border-gray-200 font-medium">
-                                            {{ device.switchboard_device_position }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <p class="font-medium text-gray-900 text-sm">{{ device.switchboard_device_type or 'Neznámý typ' }}</p>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {% if device.switchboard_device_rated_current %}
-                                            <span class="text-sm text-gray-700 font-medium">{{ device.switchboard_device_rated_current }}A</span>
-                                        {% else %}
-                                            <span class="text-sm text-gray-400">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <p class="text-sm text-gray-700">
-                                            {{ device.switchboard_device_manufacturer or '-' }}
-                                            {% if device.switchboard_device_model %}
-                                                <span class="text-gray-500">{{ device.switchboard_device_model }}</span>
-                                            {% endif %}
-                                        </p>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center justify-end space-x-1">
-                                            <a href="/device/{{ device.device_id }}" 
-                                               class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Detail a obvody">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                            </a>
-                                            <a href="/device/{{ device.device_id }}/edit" 
-                                               class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition" title="Editovat">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                </svg>
-                                            </a>
-                                            <button onclick="document.getElementById('duplicate-device-{{ device.device_id }}').submit();" 
-                                                    class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition" title="Duplikovat">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                </svg>
-                                            </button>
-                                            <form id="duplicate-device-{{ device.device_id }}" method="POST" action="/device/{{ device.device_id }}/duplicate" style="display: none;"></form>
-                                            <button onclick="if(confirm('Opravdu chcete smazat tento přístroj{% if device.child_devices %} a všechny podřízené přístroje{% endif %}?')) { document.getElementById('delete-device-{{ device.device_id }}').submit(); }" 
-                                                    class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Smazat">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
-                                            <form id="delete-device-{{ device.device_id }}" method="POST" action="/device/{{ device.device_id }}/delete" style="display: none;"></form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Child devices (1st level) -->
-                                {% if device.child_devices %}
-                                    {% for child in device.child_devices %}
-                                        <tr class="bg-gray-50 hover:bg-gray-100 transition">
-                                            <td class="px-4 py-3 pl-8">
-                                                <div class="flex items-center space-x-2">
-                                                    <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                    </svg>
-                                                    <span class="font-mono text-sm bg-white px-2 py-1 rounded border border-gray-200 font-medium">
-                                                        {{ child.switchboard_device_position }}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <p class="font-medium text-gray-900 text-sm">{{ child.switchboard_device_type or 'Neznámý typ' }}</p>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                {% if child.switchboard_device_rated_current %}
-                                                    <span class="text-sm text-gray-700 font-medium">{{ child.switchboard_device_rated_current }}A</span>
-                                                {% else %}
-                                                    <span class="text-sm text-gray-400">-</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <p class="text-sm text-gray-700">
-                                                    {{ child.switchboard_device_manufacturer or '-' }}
-                                                    {% if child.switchboard_device_model %}
-                                                        <span class="text-gray-500">{{ child.switchboard_device_model }}</span>
-                                                    {% endif %}
-                                                </p>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <div class="flex items-center justify-end space-x-1">
-                                                    <a href="/device/{{ child.device_id }}" 
-                                                       class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Detail a obvody">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                        </svg>
-                                                    </a>
-                                                    <a href="/device/{{ child.device_id }}/edit" 
-                                                       class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition" title="Editovat">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                        </svg>
-                                                    </a>
-                                                    <button onclick="document.getElementById('duplicate-device-{{ child.device_id }}').submit();" 
-                                                            class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition" title="Duplikovat">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <form id="duplicate-device-{{ child.device_id }}" method="POST" action="/device/{{ child.device_id }}/duplicate" style="display: none;"></form>
-                                                    <button onclick="if(confirm('Opravdu chcete smazat tento přístroj{% if child.child_devices %} a všechny podřízené přístroje{% endif %}?')) { document.getElementById('delete-device-{{ child.device_id }}').submit(); }" 
-                                                            class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Smazat">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <form id="delete-device-{{ child.device_id }}" method="POST" action="/device/{{ child.device_id }}/delete" style="display: none;"></form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        
-                                        <!-- Child devices (2nd level - grandchildren) -->
-                                        {% if child.child_devices %}
-                                            {% for grandchild in child.child_devices %}
-                                                <tr class="bg-gray-100 hover:bg-gray-150 transition">
-                                                    <td class="px-4 py-3 pl-12">
-                                                        <div class="flex items-center space-x-2">
-                                                            <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                            </svg>
-                                                            <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                            </svg>
-                                                            <span class="font-mono text-sm bg-white px-2 py-1 rounded border border-gray-200 font-medium">
-                                                                {{ grandchild.switchboard_device_position }}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        <p class="font-medium text-gray-900 text-sm">{{ grandchild.switchboard_device_type or 'Neznámý typ' }}</p>
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        {% if grandchild.switchboard_device_rated_current %}
-                                                            <span class="text-sm text-gray-700 font-medium">{{ grandchild.switchboard_device_rated_current }}A</span>
-                                                        {% else %}
-                                                            <span class="text-sm text-gray-400">-</span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        <p class="text-sm text-gray-700">
-                                                            {{ grandchild.switchboard_device_manufacturer or '-' }}
-                                                            {% if grandchild.switchboard_device_model %}
-                                                                <span class="text-gray-500">{{ grandchild.switchboard_device_model }}</span>
-                                                            {% endif %}
-                                                        </p>
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        <div class="flex items-center justify-end space-x-1">
-                                                            <a href="/device/{{ grandchild.device_id }}" 
-                                                               class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Detail a obvody">
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                                </svg>
-                                                            </a>
-                                                            <a href="/device/{{ grandchild.device_id }}/edit" 
-                                                               class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition" title="Editovat">
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                                </svg>
-                                                            </a>
-                                                            <button onclick="document.getElementById('duplicate-device-{{ grandchild.device_id }}').submit();" 
-                                                                    class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition" title="Duplikovat">
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                                </svg>
-                                                            </button>
-                                                            <form id="duplicate-device-{{ grandchild.device_id }}" method="POST" action="/device/{{ grandchild.device_id }}/duplicate" style="display: none;"></form>
-                                                            <button onclick="if(confirm('Opravdu chcete smazat tento přístroj?')) { document.getElementById('delete-device-{{ grandchild.device_id }}').submit(); }" 
-                                                                    class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Smazat">
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                                </svg>
-                                                            </button>
-                                                            <form id="delete-device-{{ grandchild.device_id }}" method="POST" action="/device/{{ grandchild.device_id }}/delete" style="display: none;"></form>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <div class="text-center py-12 text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                    <p class="text-sm font-medium">Zatím nejsou přidány žádné přístroje</p>
-                    <p class="text-xs mt-1 text-gray-400">Klikněte na tlačítko výše pro přidání přístroje</p>
-                </div>
-            {% endif %}
+        
+        <!-- HTMX Target for dynamic content -->
+        <div id="devices-section"
+             class="p-4"
+             hx-get="/switchboard/{{ switchboard.switchboard_id }}/device/list-with-form"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Loading state -->
+            <div class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-sm">Načítám přístroje...</p>
+            </div>
         </div>
     </div>
-
     <!-- Measurements (Měření) -->
     <div class="bg-white border border-gray-200 rounded">
         <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">

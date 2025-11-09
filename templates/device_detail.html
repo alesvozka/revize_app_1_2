@@ -125,94 +125,32 @@
         </div>
     </div>
 
-    <!-- Circuits List -->
-    <div class="bg-white rounded-lg shadow-sm p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Obvody</h3>
+    <!-- Circuits Section -->
+    <div class="bg-white border border-gray-200 rounded mt-6">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Obvody ({{ circuits|length }})</h3>
+            <!-- Fallback link to full form -->
             <a href="{{ url_for('circuit_create_form', device_id=device.device_id) }}" 
-               class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                + Přidat obvod
+               class="text-gray-500 hover:text-gray-700 text-sm">
+                Plný formulář →
             </a>
         </div>
-
-        {% if circuits %}
-        <div class="space-y-3">
-            {% for circuit in circuits %}
-            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h4 class="font-medium text-gray-900">
-                                Obvod: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded">{{ circuit.circuit_number or "—" }}</span>
-                            </h4>
-                            {% if circuit.circuit_room %}
-                            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                                {{ circuit.circuit_room }}
-                            </span>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 mt-2">
-                            {% if circuit.circuit_description %}
-                            <div class="md:col-span-2">
-                                <span class="font-medium">Popis:</span> {{ circuit.circuit_description }}
-                            </div>
-                            {% endif %}
-                            {% if circuit.circuit_cable %}
-                            <div>
-                                <span class="font-medium">Kabel:</span> 
-                                <span class="font-mono">{{ circuit.circuit_cable }}</span>
-                            </div>
-                            {% endif %}
-                            {% if circuit.circuit_number_of_outlets %}
-                            <div>
-                                <span class="font-medium">Počet zásuvek:</span> {{ circuit.circuit_number_of_outlets }}
-                            </div>
-                            {% endif %}
-                            {% if circuit.circuit_cable_termination %}
-                            <div>
-                                <span class="font-medium">Zakončení:</span> {{ circuit.circuit_cable_termination }}
-                            </div>
-                            {% endif %}
-                            {% if circuit.circuit_cable_installation_method %}
-                            <div>
-                                <span class="font-medium">Uložení:</span> {{ circuit.circuit_cable_installation_method }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-2 ml-4">
-                        <a href="{{ url_for('circuit_detail', circuit_id=circuit.circuit_id) }}" 
-                           class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
-                            📋 Detail
-                        </a>
-                        <a href="{{ url_for('circuit_edit_form', circuit_id=circuit.circuit_id) }}" 
-                           class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100">
-                            ✏️ Editovat
-                        </a>
-                        <form method="POST" action="{{ url_for('circuit_delete', circuit_id=circuit.circuit_id) }}" 
-                              onsubmit="return confirm('Opravdu chcete smazat tento obvod a všechna jeho měření?')" 
-                              class="inline">
-                            <button type="submit" 
-                                    class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">
-                                🗑️
-                            </button>
-                        </form>
-                    </div>
-                </div>
+        
+        <!-- HTMX Target for dynamic content -->
+        <div id="circuits-section"
+             class="p-4"
+             hx-get="/device/{{ device.device_id }}/circuit/list-with-form"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Loading state -->
+            <div class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-sm">Načítám obvody...</p>
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <div class="text-center py-12">
-            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-            <p class="text-gray-500 text-sm font-medium mb-1">Nejsou evidovány žádné obvody</p>
-            <p class="text-gray-400 text-xs">Klikněte na tlačítko "Přidat obvod" pro vytvoření prvního obvodu</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

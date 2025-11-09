@@ -203,113 +203,32 @@
         {% endif %}
     </div>
 
-    <!-- Terminal Devices -->
-    <div class="bg-white rounded-lg shadow-sm p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Koncová zařízení</h3>
+    <!-- Terminal Devices Section -->
+    <div class="bg-white border border-gray-200 rounded mt-6">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Koncová zařízení ({{ terminal_devices|length }})</h3>
+            <!-- Fallback link to full form -->
             <a href="{{ url_for('terminal_device_create_form', circuit_id=circuit.circuit_id) }}" 
-               class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                + Přidat zařízení
+               class="text-gray-500 hover:text-gray-700 text-sm">
+                Plný formulář →
             </a>
         </div>
         
-        {% if terminal_devices %}
-        <div class="space-y-3">
-            {% for device in terminal_devices %}
-            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h4 class="font-medium text-gray-900">{{ device.terminal_device_type or "Neznámé zařízení" }}</h4>
-                            {% if device.terminal_device_marking %}
-                            <span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded font-mono">
-                                {{ device.terminal_device_marking }}
-                            </span>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 mt-2">
-                            {% if device.terminal_device_manufacturer or device.terminal_device_model %}
-                            <div>
-                                <span class="font-medium">Výrobce/Model:</span>
-                                {{ device.terminal_device_manufacturer or "—" }}
-                                {% if device.terminal_device_model %} / {{ device.terminal_device_model }}{% endif %}
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_power %}
-                            <div>
-                                <span class="font-medium">Výkon:</span> {{ device.terminal_device_power }} W
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_ip_rating %}
-                            <div>
-                                <span class="font-medium">Krytí:</span> 
-                                <span class="font-mono">{{ device.terminal_device_ip_rating }}</span>
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_protection_class %}
-                            <div>
-                                <span class="font-medium">Třída ochrany:</span> 
-                                <span class="font-mono">{{ device.terminal_device_protection_class }}</span>
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_supply_type %}
-                            <div>
-                                <span class="font-medium">Napájení:</span> {{ device.terminal_device_supply_type }}
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_installation_method %}
-                            <div>
-                                <span class="font-medium">Instalace:</span> {{ device.terminal_device_installation_method }}
-                            </div>
-                            {% endif %}
-                            {% if device.terminal_device_serial_number %}
-                            <div class="md:col-span-2">
-                                <span class="font-medium">S/N:</span> 
-                                <span class="font-mono text-xs">{{ device.terminal_device_serial_number }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-2 ml-4">
-                        <a href="{{ url_for('terminal_device_detail', terminal_device_id=device.terminal_device_id) }}" 
-                           class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
-                            📋 Detail
-                        </a>
-                        <a href="{{ url_for('terminal_device_edit_form', terminal_device_id=device.terminal_device_id) }}" 
-                           class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100">
-                            ✏️ Editovat
-                        </a>
-                        <form method="POST" action="{{ url_for('terminal_device_duplicate', terminal_device_id=device.terminal_device_id) }}" 
-                              class="inline">
-                            <button type="submit" 
-                                    class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" title="Duplikovat">
-                                📋
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ url_for('terminal_device_delete', terminal_device_id=device.terminal_device_id) }}" 
-                              onsubmit="return confirm('Opravdu chcete smazat toto koncové zařízení?')" 
-                              class="inline">
-                            <button type="submit" 
-                                    class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">
-                                🗑️
-                            </button>
-                        </form>
-                    </div>
-                </div>
+        <!-- HTMX Target for dynamic content -->
+        <div id="terminals-section"
+             class="p-4"
+             hx-get="/circuit/{{ circuit.circuit_id }}/terminal/list-with-form"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Loading state -->
+            <div class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-sm">Načítám zařízení...</p>
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <div class="text-center py-12">
-            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-            </svg>
-            <p class="text-gray-500 text-sm font-medium mb-1">Nejsou evidována žádná koncová zařízení</p>
-            <p class="text-gray-400 text-xs">Klikněte na tlačítko "Přidat zařízení" pro vytvoření prvního koncového zařízení</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

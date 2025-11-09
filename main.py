@@ -3246,8 +3246,18 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
         key = f"{config.entity_type}_{config.field_name}"
         configs_dict[key] = config
     
-    # Get configurable fields
-    configurable_fields = get_dropdown_configurable_fields()
+    # ✅ PHASE 4: Get configurable fields from database (not hardcoded!)
+    # Seskupíme pole podle entity_type
+    configurable_fields = {}
+    for config in dropdown_configs:
+        entity = config.entity_type
+        if entity not in configurable_fields:
+            configurable_fields[entity] = {}
+        
+        # Přidáme pole s jeho labelem
+        # (použijeme custom_label pokud existuje, jinak field_label)
+        label = config.custom_label if config.custom_label else config.field_label
+        configurable_fields[entity][config.field_name] = label
     
     return templates.TemplateResponse("settings.html", {
         "request": request,

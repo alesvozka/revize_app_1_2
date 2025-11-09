@@ -57,12 +57,69 @@ def fix_switchboard_order_nulls():
     finally:
         db.close()
 
+def run_database_migration():
+    """Spustí database migraci při startu aplikace"""
+    print("\n" + "="*70)
+    print("🔧 SPOUŠTÍM DATABASE MIGRACI...")
+    print("="*70)
+    
+    try:
+        # Vytvoř všechny tabulky (pokud neexistují)
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tabulky vytvořeny/aktualizovány")
+        
+        # Seed field_categories pokud je tabulka prázdná
+        db = next(get_db())
+        try:
+            cat_count = db.query(FieldCategory).count()
+            if cat_count == 0:
+                print("🌱 Seed kategorií...")
+                entities = ['revision', 'switchboard', 'device', 'circuit', 'terminal_device']
+                default_categories = [
+                    ('basic', 'Základní pole', '📋', 10),
+                    ('additional', 'Dodatečná pole', '➕', 20),
+                    ('measurements', 'Měření', '📊', 30),
+                    ('technical', 'Technické specifikace', '🔧', 40),
+                    ('administrative', 'Administrativní údaje', '📄', 50),
+                ]
+                
+                for entity in entities:
+                    for cat_key, cat_label, icon, order in default_categories:
+                        category = FieldCategory(
+                            entity_type=entity,
+                            category_key=cat_key,
+                            category_label=cat_label,
+                            icon=icon,
+                            display_order=order
+                        )
+                        db.add(category)
+                
+                db.commit()
+                print(f"✅ Vloženo {len(entities) * len(default_categories)} kategorií")
+            else:
+                print(f"ℹ️  Kategorie již existují ({cat_count} záznamů)")
+                
+        finally:
+            db.close()
+            
+        print("="*70)
+        print("✅ MIGRACE DOKONČENA")
+        print("="*70 + "\n")
+        
+    except Exception as e:
+        print(f"❌ CHYBA PŘI MIGRACI: {e}")
+        import traceback
+        traceback.print_exc()
+        # Neopouštíme aplikaci - zkusíme běžet i s chybou
+
+
 # Initialize FastAPI app
 app = FastAPI(title="Revize App")
 
 # Create default user on startup
 @app.on_event("startup")
 async def startup_event():
+    run_database_migration()  # Spusť migraci PRVNÍ
     init_default_user()
     fix_switchboard_order_nulls()
 

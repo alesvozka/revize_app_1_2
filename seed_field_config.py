@@ -1,784 +1,261 @@
+#!/usr/bin/env python3
 """
-PHASE 4 SEED DATA: Initialize field configuration for all entities
+🌱 SEED FIELD CONFIG - Inicializace konfigurace polí
+====================================================
+Tento skript naplní dropdown_config tabulku výchozí konfigurací
+pro všech 5 entit v aplikaci.
+
+Použití:
+    python seed_field_config.py
+
+Co dělá:
+    1. Vytvoří konfiguraci pro všechna pole v každé entitě
+    2. Nastaví kategorie (basic, additional, measurements, technical, administrative)
+    3. Nastaví viditelnost (enabled/disabled)
+    4. Nastaví pořadí zobrazení (display_order)
 """
+
+import os
+import sys
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine
+
+# Import database
+from database import SessionLocal
 from models import DropdownConfig
 
-def get_all_field_configurations():
-    """
-    Returns complete field configuration for all entities
-    Format: entity_type -> field_name -> configuration dict
-    """
-    return {
-        "revision": {
-            # BASIC FIELDS (cannot be disabled)
-            "revision_name": {
-                "label": "Název revize",
-                "category": "basic",
-                "order": 1,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            "revision_client": {
-                "label": "Klient",
-                "category": "basic",
-                "order": 2,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            
-            # ADDITIONAL FIELDS (can be disabled)
-            "revision_code": {
-                "label": "Kód revize",
-                "category": "additional",
-                "order": 10,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "revision_owner": {
-                "label": "Vlastník",
-                "category": "additional",
-                "order": 11,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "revision_address": {
-                "label": "Adresa",
-                "category": "additional",
-                "order": 12,
-                "enabled": True,
-                "required": False,
-                "type": "textarea"
-            },
-            "revision_description": {
-                "label": "Popis",
-                "category": "additional",
-                "order": 13,
-                "enabled": True,
-                "required": False,
-                "type": "textarea"
-            },
-            "revision_type": {
-                "label": "Typ revize",
-                "category": "additional",
-                "order": 14,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "revision_date_of_previous_revision": {
-                "label": "Datum předchozí revize",
-                "category": "additional",
-                "order": 15,
-                "enabled": False,
-                "required": False,
-                "type": "date"
-            },
-            "revision_start_date": {
-                "label": "Datum zahájení",
-                "category": "additional",
-                "order": 16,
-                "enabled": True,
-                "required": False,
-                "type": "date"
-            },
-            "revision_end_date": {
-                "label": "Datum ukončení",
-                "category": "additional",
-                "order": 17,
-                "enabled": False,
-                "required": False,
-                "type": "date"
-            },
-            "revision_date_of_creation": {
-                "label": "Datum vytvoření",
-                "category": "additional",
-                "order": 18,
-                "enabled": True,
-                "required": False,
-                "type": "date"
-            },
-            "revision_recommended_date_for_next_revision": {
-                "label": "Doporučený termín další revize",
-                "category": "additional",
-                "order": 19,
-                "enabled": False,
-                "required": False,
-                "type": "date"
-            },
-            "revision_number_of_copies_technician": {
-                "label": "Počet vyhotovení - technik",
-                "category": "additional",
-                "order": 20,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "revision_number_of_copies_owner": {
-                "label": "Počet vyhotovení - vlastník",
-                "category": "additional",
-                "order": 21,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "revision_number_of_copies_contractor": {
-                "label": "Počet vyhotovení - dodavatel",
-                "category": "additional",
-                "order": 22,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "revision_number_of_copies_client": {
-                "label": "Počet vyhotovení - klient",
-                "category": "additional",
-                "order": 23,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "revision_attachment": {
-                "label": "Příloha",
-                "category": "additional",
-                "order": 24,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_attachment_submitter": {
-                "label": "Předkladatel přílohy",
-                "category": "additional",
-                "order": 25,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_attachment_producer": {
-                "label": "Zpracovatel přílohy",
-                "category": "additional",
-                "order": 26,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_attachment_date_of_creation": {
-                "label": "Datum vytvoření přílohy",
-                "category": "additional",
-                "order": 27,
-                "enabled": False,
-                "required": False,
-                "type": "date"
-            },
-            "revision_technician": {
-                "label": "Revizní technik",
-                "category": "additional",
-                "order": 28,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "revision_certificate_number": {
-                "label": "Číslo osvědčení",
-                "category": "additional",
-                "order": 29,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_authorization_number": {
-                "label": "Číslo autorizace",
-                "category": "additional",
-                "order": 30,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_project_documentation": {
-                "label": "Projektová dokumentace",
-                "category": "additional",
-                "order": 31,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-            "revision_contractor": {
-                "label": "Dodavatel",
-                "category": "additional",
-                "order": 32,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_short_description": {
-                "label": "Krátký popis",
-                "category": "additional",
-                "order": 33,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-            "revision_measuring_instrument_manufacturer_type": {
-                "label": "Měřící přístroj - výrobce/typ",
-                "category": "additional",
-                "order": 34,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_measuring_instrument_serial_number": {
-                "label": "Měřící přístroj - výrobní číslo",
-                "category": "additional",
-                "order": 35,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_measuring_instrument_calibration": {
-                "label": "Měřící přístroj - kalibrace",
-                "category": "additional",
-                "order": 36,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "revision_measuring_instrument_calibration_validity": {
-                "label": "Měřící přístroj - platnost kalibrace",
-                "category": "additional",
-                "order": 37,
-                "enabled": False,
-                "required": False,
-                "type": "date"
-            },
-            "revision_overall_assessment": {
-                "label": "Celkové hodnocení",
-                "category": "additional",
-                "order": 38,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-        },
-        
-        "switchboard": {
-            # BASIC FIELDS
-            "switchboard_name": {
-                "label": "Název rozváděče",
-                "category": "basic",
-                "order": 1,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            "switchboard_location": {
-                "label": "Umístění",
-                "category": "basic",
-                "order": 2,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            
-            # ADDITIONAL FIELDS
-            "switchboard_description": {
-                "label": "Popis",
-                "category": "additional",
-                "order": 10,
-                "enabled": True,
-                "required": False,
-                "type": "textarea"
-            },
-            "switchboard_type": {
-                "label": "Typ rozváděče",
-                "category": "additional",
-                "order": 11,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_serial_number": {
-                "label": "Výrobní číslo",
-                "category": "additional",
-                "order": 12,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_production_date": {
-                "label": "Datum výroby",
-                "category": "additional",
-                "order": 13,
-                "enabled": False,
-                "required": False,
-                "type": "date"
-            },
-            "switchboard_ip_rating": {
-                "label": "Stupeň krytí (IP)",
-                "category": "additional",
-                "order": 14,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_impact_protection": {
-                "label": "Mechanická odolnost (IK)",
-                "category": "additional",
-                "order": 15,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_protection_class": {
-                "label": "Třída ochrany",
-                "category": "additional",
-                "order": 16,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_rated_current": {
-                "label": "Jmenovitý proud (A)",
-                "category": "additional",
-                "order": 17,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "switchboard_rated_voltage": {
-                "label": "Jmenovité napětí (V)",
-                "category": "additional",
-                "order": 18,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "switchboard_manufacturer": {
-                "label": "Výrobce rozváděče",
-                "category": "additional",
-                "order": 19,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_manufacturer_address": {
-                "label": "Adresa výrobce",
-                "category": "additional",
-                "order": 20,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-            "switchboard_standards": {
-                "label": "Normy",
-                "category": "additional",
-                "order": 21,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-            "switchboard_enclosure_type": {
-                "label": "Typ skříně",
-                "category": "additional",
-                "order": 22,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_enclosure_manufacturer": {
-                "label": "Výrobce skříně",
-                "category": "additional",
-                "order": 23,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_enclosure_installation_method": {
-                "label": "Způsob instalace skříně",
-                "category": "additional",
-                "order": 24,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_superior_switchboard": {
-                "label": "Nadřazený rozváděč",
-                "category": "additional",
-                "order": 25,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_superior_circuit_breaker_rated_current": {
-                "label": "Nadřazený jistič - proud (A)",
-                "category": "additional",
-                "order": 26,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "switchboard_superior_circuit_breaker_trip_characteristic": {
-                "label": "Nadřazený jistič - charakteristika",
-                "category": "additional",
-                "order": 27,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_superior_circuit_breaker_manufacturer": {
-                "label": "Nadřazený jistič - výrobce",
-                "category": "additional",
-                "order": 28,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_superior_circuit_breaker_model": {
-                "label": "Nadřazený jistič - model",
-                "category": "additional",
-                "order": 29,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_main_switch": {
-                "label": "Hlavní vypínač",
-                "category": "additional",
-                "order": 30,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_note": {
-                "label": "Poznámka",
-                "category": "additional",
-                "order": 31,
-                "enabled": True,
-                "required": False,
-                "type": "textarea"
-            },
-            "switchboard_cable": {
-                "label": "Typ kabelu",
-                "category": "additional",
-                "order": 32,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_cable_installation_method": {
-                "label": "Způsob uložení kabelu",
-                "category": "additional",
-                "order": 33,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-        },
-        
-        "device": {
-            # BASIC FIELDS
-            "switchboard_device_position": {
-                "label": "Pozice",
-                "category": "basic",
-                "order": 1,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            "switchboard_device_type": {
-                "label": "Typ přístroje",
-                "category": "basic",
-                "order": 2,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            "switchboard_device_rated_current": {
-                "label": "Jmenovitý proud (A)",
-                "category": "basic",
-                "order": 3,
-                "enabled": True,
-                "required": False,
-                "type": "number"
-            },
-            
-            # ADDITIONAL FIELDS
-            "switchboard_device_manufacturer": {
-                "label": "Výrobce",
-                "category": "additional",
-                "order": 10,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_device_model": {
-                "label": "Model",
-                "category": "additional",
-                "order": 11,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_device_trip_characteristic": {
-                "label": "Vypínací charakteristika",
-                "category": "additional",
-                "order": 12,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "switchboard_device_residual_current_ma": {
-                "label": "Diferenciální proud (mA)",
-                "category": "additional",
-                "order": 13,
-                "enabled": True,
-                "required": False,
-                "type": "number"
-            },
-            "switchboard_device_sub_devices": {
-                "label": "Podřízené přístroje",
-                "category": "additional",
-                "order": 14,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-            "switchboard_device_poles": {
-                "label": "Počet pólů",
-                "category": "additional",
-                "order": 15,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "switchboard_device_module_width": {
-                "label": "Šířka modulu",
-                "category": "additional",
-                "order": 16,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-        },
-        
-        "circuit": {
-            # BASIC FIELDS
-            "circuit_number": {
-                "label": "Číslo obvodu",
-                "category": "basic",
-                "order": 1,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            "circuit_room": {
-                "label": "Místnost",
-                "category": "basic",
-                "order": 2,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            
-            # ADDITIONAL FIELDS
-            "circuit_description": {
-                "label": "Popis",
-                "category": "additional",
-                "order": 10,
-                "enabled": True,
-                "required": False,
-                "type": "textarea"
-            },
-            "circuit_description_from_switchboard": {
-                "label": "Popis z rozváděče",
-                "category": "additional",
-                "order": 11,
-                "enabled": False,
-                "required": False,
-                "type": "textarea"
-            },
-            "circuit_number_of_outlets": {
-                "label": "Počet zásuvek",
-                "category": "additional",
-                "order": 12,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "circuit_cable_termination": {
-                "label": "Ukončení kabelu",
-                "category": "additional",
-                "order": 13,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "circuit_cable": {
-                "label": "Typ kabelu",
-                "category": "additional",
-                "order": 14,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "circuit_cable_installation_method": {
-                "label": "Způsob uložení kabelu",
-                "category": "additional",
-                "order": 15,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-        },
-        
-        "terminal_device": {
-            # BASIC FIELDS
-            "terminal_device_type": {
-                "label": "Typ koncového zařízení",
-                "category": "basic",
-                "order": 1,
-                "enabled": True,
-                "required": True,
-                "type": "text"
-            },
-            "terminal_device_marking": {
-                "label": "Označení",
-                "category": "basic",
-                "order": 2,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            
-            # ADDITIONAL FIELDS
-            "terminal_device_manufacturer": {
-                "label": "Výrobce",
-                "category": "additional",
-                "order": 10,
-                "enabled": True,
-                "required": False,
-                "type": "text"
-            },
-            "terminal_device_model": {
-                "label": "Model",
-                "category": "additional",
-                "order": 11,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "terminal_device_power": {
-                "label": "Výkon (W)",
-                "category": "additional",
-                "order": 12,
-                "enabled": False,
-                "required": False,
-                "type": "number"
-            },
-            "terminal_device_ip_rating": {
-                "label": "Stupeň krytí (IP)",
-                "category": "additional",
-                "order": 13,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "terminal_device_protection_class": {
-                "label": "Třída ochrany",
-                "category": "additional",
-                "order": 14,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "terminal_device_serial_number": {
-                "label": "Výrobní číslo",
-                "category": "additional",
-                "order": 15,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "terminal_device_supply_type": {
-                "label": "Typ napájení",
-                "category": "additional",
-                "order": 16,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-            "terminal_device_installation_method": {
-                "label": "Způsob instalace",
-                "category": "additional",
-                "order": 17,
-                "enabled": False,
-                "required": False,
-                "type": "text"
-            },
-        },
-    }
+# Barvy pro výstup
+class Colors:
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
+def print_header(text):
+    print(f"\n{Colors.BOLD}{Colors.BLUE}{'='*70}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BLUE}{text}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BLUE}{'='*70}{Colors.RESET}\n")
+
+def print_success(text):
+    print(f"{Colors.GREEN}✓ {text}{Colors.RESET}")
+
+def print_info(text):
+    print(f"  {text}")
+
+def print_error(text):
+    print(f"{Colors.RED}✗ {text}{Colors.RESET}")
 
 
-def seed_field_configurations(db: Session):
-    """Initialize or update field configurations in database"""
-    
-    field_configs = get_all_field_configurations()
-    
-    total_added = 0
-    total_updated = 0
-    
-    for entity_type, fields in field_configs.items():
-        print(f"\n📋 Processing entity: {entity_type}")
+# ============================================================================
+# KONFIGURACE POLÍ PRO JEDNOTLIVÉ ENTITY
+# ============================================================================
+
+FIELD_CONFIGS = {
+    'revision': [
+        # BASIC FIELDS
+        ('revision_code', 'Kód revize', 'basic', 'text', False, False, 10),
+        ('revision_name', 'Název revize', 'basic', 'text', True, True, 20),
+        ('revision_owner', 'Vlastník', 'basic', 'text', True, False, 30),
+        ('revision_client', 'Klient', 'basic', 'text', True, False, 40),
+        ('revision_address', 'Adresa', 'basic', 'textarea', True, False, 50),
         
-        for field_name, config in fields.items():
-            # Check if config already exists
-            existing = db.query(DropdownConfig).filter(
-                DropdownConfig.entity_type == entity_type,
-                DropdownConfig.field_name == field_name
-            ).first()
+        # ADDITIONAL FIELDS
+        ('revision_description', 'Popis', 'additional', 'textarea', True, False, 100),
+        ('revision_type', 'Typ revize', 'additional', 'text', True, False, 110),
+        ('revision_date_of_previous_revision', 'Datum předchozí revize', 'additional', 'date', False, False, 120),
+        ('revision_start_date', 'Datum zahájení', 'additional', 'date', True, False, 130),
+        ('revision_end_date', 'Datum ukončení', 'additional', 'date', True, False, 140),
+        ('revision_date_of_creation', 'Datum vytvoření', 'additional', 'date', True, False, 150),
+        ('revision_recommended_date_for_next_revision', 'Doporučený termín další revize', 'additional', 'date', False, False, 160),
+        
+        # ADMINISTRATIVE FIELDS
+        ('revision_number_of_copies_technician', 'Počet kopií - technik', 'administrative', 'number', False, False, 200),
+        ('revision_number_of_copies_owner', 'Počet kopií - vlastník', 'administrative', 'number', False, False, 210),
+        ('revision_number_of_copies_contractor', 'Počet kopií - zhotovitel', 'administrative', 'number', False, False, 220),
+        ('revision_number_of_copies_client', 'Počet kopií - klient', 'administrative', 'number', False, False, 230),
+        ('revision_attachment', 'Příloha', 'administrative', 'text', False, False, 240),
+        ('revision_attachment_submitter', 'Odevzdavatel přílohy', 'administrative', 'text', False, False, 250),
+        ('revision_attachment_producer', 'Zhotovitel přílohy', 'administrative', 'text', False, False, 260),
+        ('revision_attachment_date_of_creation', 'Datum vytvoření přílohy', 'administrative', 'date', False, False, 270),
+        ('revision_technician', 'Technik', 'administrative', 'text', True, False, 280),
+        ('revision_certificate_number', 'Číslo osvědčení', 'administrative', 'text', False, False, 290),
+        ('revision_authorization_number', 'Číslo autorizace', 'administrative', 'text', False, False, 300),
+        ('revision_project_documentation', 'Projektová dokumentace', 'administrative', 'textarea', False, False, 310),
+        ('revision_contractor', 'Zhotovitel', 'administrative', 'text', False, False, 320),
+        ('revision_short_description', 'Krátký popis', 'administrative', 'textarea', False, False, 330),
+        
+        # TECHNICAL FIELDS
+        ('revision_measuring_instrument_manufacturer_type', 'Výrobce/typ měřicího přístroje', 'technical', 'text', False, False, 400),
+        ('revision_measuring_instrument_serial_number', 'Výrobní číslo měřicího přístroje', 'technical', 'text', False, False, 410),
+        ('revision_measuring_instrument_calibration', 'Kalibrace přístroje', 'technical', 'text', False, False, 420),
+        ('revision_measuring_instrument_calibration_validity', 'Platnost kalibrace', 'technical', 'date', False, False, 430),
+        ('revision_overall_assessment', 'Celkové hodnocení', 'technical', 'textarea', False, False, 440),
+    ],
+    
+    'switchboard': [
+        # BASIC FIELDS
+        ('switchboard_name', 'Název rozváděče', 'basic', 'text', True, True, 10),
+        ('switchboard_description', 'Popis', 'basic', 'textarea', True, False, 20),
+        ('switchboard_location', 'Umístění', 'basic', 'text', True, False, 30),
+        ('switchboard_type', 'Typ rozváděče', 'basic', 'text', True, False, 40),
+        
+        # TECHNICAL FIELDS
+        ('switchboard_serial_number', 'Výrobní číslo', 'technical', 'text', False, False, 100),
+        ('switchboard_production_date', 'Datum výroby', 'technical', 'date', False, False, 110),
+        ('switchboard_ip_rating', 'Stupeň krytí (IP)', 'technical', 'text', True, False, 120),
+        ('switchboard_impact_protection', 'Mechanická odolnost (IK)', 'technical', 'text', False, False, 130),
+        ('switchboard_protection_class', 'Třída ochrany', 'technical', 'text', False, False, 140),
+        ('switchboard_rated_current', 'Jmenovitý proud', 'technical', 'number', True, False, 150),
+        ('switchboard_rated_voltage', 'Jmenovité napětí', 'technical', 'number', True, False, 160),
+        ('switchboard_manufacturer', 'Výrobce rozváděče', 'technical', 'text', True, False, 170),
+        ('switchboard_manufacturer_address', 'Adresa výrobce', 'technical', 'textarea', False, False, 180),
+        ('switchboard_standards', 'Normy', 'technical', 'textarea', False, False, 190),
+        ('switchboard_enclosure_type', 'Typ skříně', 'technical', 'text', False, False, 200),
+        ('switchboard_enclosure_manufacturer', 'Výrobce skříně', 'technical', 'text', False, False, 210),
+        ('switchboard_enclosure_installation_method', 'Způsob instalace skříně', 'technical', 'text', False, False, 220),
+        
+        # ADDITIONAL FIELDS
+        ('switchboard_superior_switchboard', 'Nadřazený rozváděč', 'additional', 'text', False, False, 300),
+        ('switchboard_superior_circuit_breaker_rated_current', 'Jmenovitý proud nadřazeného jističe', 'additional', 'number', False, False, 310),
+        ('switchboard_superior_circuit_breaker_trip_characteristic', 'Vypínací charakteristika nadřazeného jističe', 'additional', 'text', False, False, 320),
+        ('switchboard_superior_circuit_breaker_manufacturer', 'Výrobce nadřazeného jističe', 'additional', 'text', False, False, 330),
+        ('switchboard_superior_circuit_breaker_model', 'Model nadřazeného jističe', 'additional', 'text', False, False, 340),
+        ('switchboard_main_switch', 'Hlavní vypínač', 'additional', 'text', False, False, 350),
+        ('switchboard_note', 'Poznámka', 'additional', 'textarea', False, False, 360),
+        ('switchboard_cable', 'Typ kabelu', 'additional', 'text', True, False, 370),
+        ('switchboard_cable_installation_method', 'Způsob uložení kabelu', 'additional', 'text', False, False, 380),
+    ],
+    
+    'device': [
+        # BASIC FIELDS
+        ('switchboard_device_position', 'Pozice', 'basic', 'text', True, False, 10),
+        ('switchboard_device_type', 'Typ zařízení', 'basic', 'text', True, True, 20),
+        ('switchboard_device_manufacturer', 'Výrobce', 'basic', 'text', True, False, 30),
+        ('switchboard_device_model', 'Model', 'basic', 'text', True, False, 40),
+        
+        # TECHNICAL FIELDS
+        ('switchboard_device_trip_characteristic', 'Vypínací charakteristika', 'technical', 'text', True, False, 100),
+        ('switchboard_device_rated_current', 'Jmenovitý proud', 'technical', 'number', True, False, 110),
+        ('switchboard_device_residual_current_ma', 'Rozdílový proud (mA)', 'technical', 'number', False, False, 120),
+        ('switchboard_device_poles', 'Počet pólů', 'technical', 'number', False, False, 130),
+        ('switchboard_device_module_width', 'Šířka modulu', 'technical', 'number', False, False, 140),
+        
+        # ADDITIONAL FIELDS
+        ('switchboard_device_sub_devices', 'Podřízená zařízení', 'additional', 'textarea', False, False, 200),
+    ],
+    
+    'circuit': [
+        # BASIC FIELDS
+        ('circuit_number', 'Číslo obvodu', 'basic', 'text', True, False, 10),
+        ('circuit_room', 'Místnost', 'basic', 'text', True, False, 20),
+        ('circuit_description', 'Popis', 'basic', 'textarea', True, False, 30),
+        
+        # ADDITIONAL FIELDS
+        ('circuit_description_from_switchboard', 'Popis z rozváděče', 'additional', 'textarea', False, False, 100),
+        ('circuit_number_of_outlets', 'Počet zásuvek', 'additional', 'number', False, False, 110),
+        ('circuit_cable_termination', 'Zakončení kabelu', 'additional', 'text', False, False, 120),
+        ('circuit_cable', 'Typ kabelu', 'additional', 'text', True, False, 130),
+        ('circuit_cable_installation_method', 'Způsob uložení kabelu', 'additional', 'text', False, False, 140),
+    ],
+    
+    'terminal_device': [
+        # BASIC FIELDS
+        ('terminal_device_type', 'Typ koncového zařízení', 'basic', 'text', True, True, 10),
+        ('terminal_device_manufacturer', 'Výrobce', 'basic', 'text', False, False, 20),
+        ('terminal_device_model', 'Model', 'basic', 'text', False, False, 30),
+        
+        # TECHNICAL FIELDS
+        ('terminal_device_marking', 'Označení', 'technical', 'text', False, False, 100),
+        ('terminal_device_power', 'Výkon', 'technical', 'number', False, False, 110),
+        ('terminal_device_ip_rating', 'Stupeň krytí (IP)', 'technical', 'text', False, False, 120),
+        ('terminal_device_protection_class', 'Třída ochrany', 'technical', 'text', False, False, 130),
+        ('terminal_device_serial_number', 'Výrobní číslo', 'technical', 'text', False, False, 140),
+        ('terminal_device_supply_type', 'Typ napájení', 'technical', 'text', False, False, 150),
+        ('terminal_device_installation_method', 'Způsob instalace', 'technical', 'text', False, False, 160),
+    ],
+}
+
+
+def seed_field_config():
+    """Naplní dropdown_config výchozí konfigurací"""
+    print_header("🌱 SEED FIELD CONFIG")
+    
+    db = SessionLocal()
+    try:
+        total_inserted = 0
+        total_updated = 0
+        total_skipped = 0
+        
+        for entity_type, fields in FIELD_CONFIGS.items():
+            print_info(f"\nProcessing entity: {entity_type}")
             
-            if existing:
-                # Update existing config
-                existing.field_label = config["label"]
-                existing.field_category = config["category"]
-                existing.display_order = config["order"]
-                existing.enabled = config["enabled"]
-                existing.is_required = config["required"]
-                existing.field_type = config["type"]
-                total_updated += 1
-                print(f"   ↻ Updated: {field_name}")
-            else:
-                # Create new config
-                new_config = DropdownConfig(
-                    entity_type=entity_type,
-                    field_name=field_name,
-                    field_label=config["label"],
-                    field_category=config["category"],
-                    display_order=config["order"],
-                    enabled=config["enabled"],
-                    is_required=config["required"],
-                    field_type=config["type"],
-                    dropdown_enabled=False,  # Will be configured separately
-                    dropdown_category=None
-                )
-                db.add(new_config)
-                total_added += 1
-                print(f"   ✓ Added: {field_name}")
+            for field_name, field_label, category, field_type, enabled, required, display_order in fields:
+                # Check if config already exists
+                existing = db.query(DropdownConfig).filter(
+                    DropdownConfig.entity_type == entity_type,
+                    DropdownConfig.field_name == field_name
+                ).first()
+                
+                if existing:
+                    # Update existing config
+                    existing.field_label = field_label
+                    existing.field_category = category
+                    existing.field_type = field_type
+                    existing.enabled = enabled
+                    existing.is_required = required
+                    existing.display_order = display_order
+                    total_updated += 1
+                else:
+                    # Create new config
+                    config = DropdownConfig(
+                        entity_type=entity_type,
+                        field_name=field_name,
+                        field_label=field_label,
+                        field_category=category,
+                        field_type=field_type,
+                        enabled=enabled,
+                        is_required=required,
+                        display_order=display_order,
+                        dropdown_enabled=False,  # Default: no dropdown
+                        dropdown_category=None
+                    )
+                    db.add(config)
+                    total_inserted += 1
+            
+            db.commit()
+            print_success(f"✓ Seeded {entity_type}: {len(fields)} fields")
+        
+        print_header("✅ SEED DOKONČEN")
+        print_success(f"Nově vytvořeno: {total_inserted} konfigurací")
+        print_success(f"Aktualizováno: {total_updated} konfigurací")
+        print_info(f"\nCelkem: {total_inserted + total_updated} konfigurací polí\n")
+        
+        return True
+        
+    except Exception as e:
+        print_error(f"Chyba při seed: {e}")
+        db.rollback()
+        import traceback
+        traceback.print_exc()
+        return False
+    finally:
+        db.close()
+
+
+def main():
+    """Hlavní funkce"""
+    print_header("🚀 REVIZE APP - SEED FIELD CONFIG")
+    print_info("Inicializace konfigurace polí pro všechny entity\n")
     
-    db.commit()
-    
-    print(f"\n✓ Field configurations seeded!")
-    print(f"  Added: {total_added}")
-    print(f"  Updated: {total_updated}")
+    if seed_field_config():
+        print_header("✅ SEED ÚSPĚŠNĚ DOKONČEN")
+        print_info("Můžeš nyní otevřít /settings a konfigurovat pole!\n")
+        return 0
+    else:
+        print_header("❌ SEED SELHAL")
+        return 1
 
 
 if __name__ == "__main__":
-    db = SessionLocal()
-    try:
-        seed_field_configurations(db)
-    finally:
-        db.close()
+    sys.exit(main())

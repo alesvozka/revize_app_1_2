@@ -147,10 +147,10 @@ def run_database_migration():
         # Neopouštíme aplikaci - zkusíme běžet i s chybou
 
 
-def run_field_config_seed():
+def run_field_config_seed(force=False):
     """
     Automatický seed konfigurace polí při startu
-    Spustí se pouze pokud je dropdown_config prázdná
+    Spustí se pouze pokud je dropdown_config prázdná (nebo force=True)
     """
     print("\n" + "="*70)
     print("🌱 KONTROLA FIELD CONFIG...")
@@ -161,10 +161,15 @@ def run_field_config_seed():
         # Zkontroluj jestli už máme nějakou konfiguraci
         config_count = db.query(DropdownConfig).count()
         
-        if config_count > 0:
+        if config_count > 0 and not force:
             print(f"ℹ️  Field config již existuje ({config_count} záznamů)")
             print("="*70 + "\n")
             return
+        
+        if force and config_count > 0:
+            print(f"⚠️  FORCE seed - smazání {config_count} existujících záznamů...")
+            db.query(DropdownConfig).delete()
+            db.commit()
         
         print("⚠️  Field config je prázdná, spouštím automatický seed...")
         print("")
@@ -4051,6 +4056,46 @@ async def quick_entry_complete(
             content=f"<div class='p-4 text-red-600'>Chyba při vytváření revize: {str(e)}</div>",
             status_code=500
         )
+
+
+# === ADMIN FORCE SEED ENDPOINT ===
+@app.get("/admin/force-seed-field-config")
+async def admin_force_seed(db: Session = Depends(get_db)):
+    """
+    🔧 ADMIN: Force seed field config
+    Smaže všechny existující záznamy a vytvoří je znovu
+    
+    POUŽITÍ:
+    1. Otevři: https://your-app.railway.app/admin/force-seed-field-config
+    2. Počkej na zprávu "success"
+    3. Refresh /settings
+    
+    ⚠️ POZOR: Toto smaže všechny custom úpravy field configu!
+    """
+    try:
+        # Spusť force seed
+        run_field_config_seed(force=True)
+        
+        # Zkontroluj kolik záznamů je teď v DB
+        count = db.query(DropdownConfig).count()
+        
+        # Zkontroluj kolik je pro revision
+        revision_count = db.query(DropdownConfig).filter(
+            DropdownConfig.entity_type == 'revision'
+        ).count()
+        
+        return {
+            "status": "success",
+            "message": "Field config byl úspěšně re-seedován!",
+            "total_fields": count,
+            "revision_fields": revision_count,
+            "next_step": "Otevři /settings a měla by se zobrazit pole!"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 if __name__ == "__main__":

@@ -1,0 +1,37 @@
+# =============================================================================
+# NIXPACKS CONFIGURATION FOR RAILWAY
+# =============================================================================
+# Tento soubor řekne Railway/Nixpacks, aby použil start.sh místo
+# automatického 'uvicorn main:app'
+#
+# Co se stane při deployi:
+# 1. Railway detekuje Python projekt
+# 2. Přečte tento nixpacks.toml
+# 3. Nainstaluje dependencies z requirements.txt
+# 4. Spustí bash start.sh (který spustí migraci + aplikaci)
+# =============================================================================
+
+[phases.setup]
+# Systémové balíčky potřebné pro build
+nixPkgs = ["python3", "postgresql_16.dev", "gcc"]
+
+[phases.install]
+# Instalace Python dependencies
+cmds = [
+    "python -m venv --copies /opt/venv",
+    ". /opt/venv/bin/activate && pip install -r requirements.txt"
+]
+
+[start]
+# ⚡ KRITICKÉ: Použij start.sh místo přímého uvicorn
+# start.sh spustí migraci a pak aplikaci
+cmd = "bash start.sh"
+
+# =============================================================================
+# POZNÁMKY:
+# =============================================================================
+# - Railway automaticky nastaví DATABASE_URL z PostgreSQL služby
+# - start.sh zkontroluje DATABASE_URL před migrací
+# - Migrace je idempotentní (můžeš spustit vícekrát)
+# - Pokud migrace selže, aplikace se nespustí (bezpečné)
+# =============================================================================

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}{{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }} - Revize App{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav class="hidden md:block border-b border-gray-100 -mx-4 md:-mx-6 px-4 md:px-6 mb-4" aria-label="Breadcrumb">
+    <div class="py-2">
+        <ol class="flex items-center space-x-2 text-xs text-gray-500 overflow-x-auto">
+            <li class="flex items-center whitespace-nowrap">
+                <a href="/" class="hover:text-primary transition-colors">Dashboard</a>
+                <svg class="w-3 h-3 mx-1.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </li>
+            <li class="flex items-center whitespace-nowrap">
+                <a href="/revision/{{ switchboard.revision.revision_id }}" class="hover:text-primary transition-colors">
+                    {{ switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id }}
+                </a>
+                <svg class="w-3 h-3 mx-1.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </li>
+            <li>
+                <span class="text-gray-700 truncate max-w-[200px]" title="{{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}">
+                    {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
+                </span>
+            </li>
+        </ol>
+    </div>
+</nav>
+
+<div class="max-w-6xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="mb-4">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
+                {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
+            </h2>
+            <p class="text-gray-600 mt-2 text-sm">
+                Revize: <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-primary hover:underline font-medium">
+                    {{ switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id }}
+                </a>
+            </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="if(confirm('Opravdu chcete smazat tento rozváděč?')) { document.getElementById('delete-form').submit(); }" 
+                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition font-medium btn-flat">
+                Smazat
+            </button>
+            <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Hidden delete form -->
+    <form id="delete-form" method="POST" action="/switchboard/{{ switchboard.switchboard_id }}/delete" style="display: none;"></form>
+
+    <!-- Card Layout -->
+    <div class="space-y-4">
+        
+        <!-- 📋 Základní informace Card -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">📋</span>
+                    <h3 class="font-semibold text-gray-900">Základní informace</h3>
+                </div>
+                <button 
+                    hx-get="/switchboard/{{ switchboard.switchboard_id }}/edit-card/basic"
+                    hx-target="#card-basic"
+                    hx-swap="outerHTML"
+                    class="text-gray-400 hover:text-primary transition p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div 
+                id="card-basic"
+                hx-get="/switchboard/{{ switchboard.switchboard_id }}/card/basic"
+                hx-trigger="load"
+                hx-swap="outerHTML">
+                <div class="p-4 text-center text-gray-400 text-sm">Načítám...</div>
+            </div>
+        </div>
+        
+        <!-- ⚡ Technické parametry Card -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">⚡</span>
+                    <h3 class="font-semibold text-gray-900">Technické parametry</h3>
+                </div>
+                <button 
+                    hx-get="/switchboard/{{ switchboard.switchboard_id }}/edit-card/technical"
+                    hx-target="#card-technical"
+                    hx-swap="outerHTML"
+                    class="text-gray-400 hover:text-primary transition p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div 
+                id="card-technical"
+                hx-get="/switchboard/{{ switchboard.switchboard_id }}/card/technical"
+                hx-trigger="load"
+                hx-swap="outerHTML">
+                <div class="p-4 text-center text-gray-400 text-sm">Načítám...</div>
+            </div>
+        </div>
+        
+        <!-- 🔌 Přístroje Card -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">🔌</span>
+                    <h3 class="font-semibold text-gray-900">Přístroje ({{ switchboard.devices|length }})</h3>
+                </div>
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/device/create" 
+                   class="text-gray-500 hover:text-primary transition text-sm font-medium">
+                    + Přidat
+                </a>
+            </div>
+            <div 
+                id="devices-section"
+                class="p-4"
+                hx-get="/switchboard/{{ switchboard.switchboard_id }}/device/list-with-form"
+                hx-trigger="load"
+                hx-swap="innerHTML">
+                <div class="text-center py-4 text-gray-400 text-sm">Načítám přístroje...</div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}

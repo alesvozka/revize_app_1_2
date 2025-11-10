@@ -1,0 +1,79 @@
+<div id="card-basic" class="p-4 bg-blue-50">
+    <form 
+        hx-post="/switchboard/{{ switchboard.switchboard_id }}/update-card/basic"
+        hx-target="#card-basic"
+        hx-swap="outerHTML"
+        class="space-y-3">
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Název *
+            </label>
+            <input 
+                type="text" 
+                name="switchboard_name" 
+                value="{{ switchboard.switchboard_name or '' }}"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Umístění
+            </label>
+            <input 
+                type="text" 
+                name="switchboard_location" 
+                value="{{ switchboard.switchboard_location or '' }}"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Pořadí
+            </label>
+            <input 
+                type="number" 
+                name="switchboard_order" 
+                value="{{ switchboard.switchboard_order if switchboard.switchboard_order is not none else '' }}"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Typ rozváděče
+            </label>
+            <input 
+                type="text" 
+                name="switchboard_type" 
+                value="{{ switchboard.switchboard_type or '' }}"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Popis
+            </label>
+            <textarea 
+                name="switchboard_description" 
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">{{ switchboard.switchboard_description or '' }}</textarea>
+        </div>
+        
+        <div class="flex items-center space-x-2 pt-2">
+            <button 
+                type="submit"
+                class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition font-medium">
+                💾 Uložit
+            </button>
+            <button 
+                type="button"
+                hx-get="/switchboard/{{ switchboard.switchboard_id }}/card/basic"
+                hx-target="#card-basic"
+                hx-swap="outerHTML"
+                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Zrušit
+            </button>
+        </div>
+    </form>
+</div>

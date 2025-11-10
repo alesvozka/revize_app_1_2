@@ -600,7 +600,7 @@ async def revision_create(request: Request, db: Session = Depends(get_db)):
     return RedirectResponse(url=f"/revision/{new_revision.revision_id}", status_code=303)
 
 
-# Read - Show detail
+# Read - Show detail (NEW CARD-BASED VERSION)
 @app.get("/revision/{revision_id}", response_class=HTMLResponse)
 async def revision_detail(revision_id: int, request: Request, db: Session = Depends(get_db)):
     user_id = get_current_user(request)
@@ -613,12 +613,116 @@ async def revision_detail(revision_id: int, request: Request, db: Session = Depe
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    return templates.TemplateResponse("revision_detail.html", {
+    return templates.TemplateResponse("revision_detail_redesigned.html", {
         "request": request,
         "user_id": user_id,
         "revision": revision,
         "sidebar_revisions": get_sidebar_revisions(db, user_id),
         "current_revision_for_sidebar": revision
+    })
+
+
+# PHASE 5: Card-based detail views - Get static card view
+@app.get("/revision/{revision_id}/card/{card_type}", response_class=HTMLResponse)
+async def get_revision_card(revision_id: int, card_type: str, request: Request, db: Session = Depends(get_db)):
+    """Return static view of a specific card"""
+    user_id = get_current_user(request)
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        return HTMLResponse(content="<div class='p-4 text-red-500'>Revize nenalezena</div>", status_code=404)
+    
+    template_name = f"cards/revision_static_{card_type}.html"
+    return templates.TemplateResponse(template_name, {
+        "request": request,
+        "revision": revision
+    })
+
+
+# PHASE 5: Get edit form for card
+@app.get("/revision/{revision_id}/edit-card/{card_type}", response_class=HTMLResponse)
+async def get_revision_card_edit(revision_id: int, card_type: str, request: Request, db: Session = Depends(get_db)):
+    """Return edit form for a specific card"""
+    user_id = get_current_user(request)
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        return HTMLResponse(content="<div class='p-4 text-red-500'>Revize nenalezena</div>", status_code=404)
+    
+    template_name = f"cards/revision_edit_{card_type}.html"
+    return templates.TemplateResponse(template_name, {
+        "request": request,
+        "revision": revision
+    })
+
+
+# PHASE 5: Update card data
+@app.post("/revision/{revision_id}/update-card/{card_type}", response_class=HTMLResponse)
+async def update_revision_card(revision_id: int, card_type: str, request: Request, db: Session = Depends(get_db)):
+    """Update card data and return static view"""
+    user_id = get_current_user(request)
+    revision = db.query(Revision).filter(
+        Revision.revision_id == revision_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not revision:
+        return HTMLResponse(content="<div class='p-4 text-red-500'>Revize nenalezena</div>", status_code=404)
+    
+    form_data = await request.form()
+    
+    # Helper function to convert empty strings to None
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Update fields based on card type
+    if card_type == 'basic':
+        revision.revision_name = get_value("revision_name")
+        revision.revision_owner = get_value("revision_owner")
+        revision.revision_client = get_value("revision_client")
+        revision.revision_address = get_value("revision_address")
+        revision.revision_type = get_value("revision_type")
+        revision.revision_description = get_value("revision_description")
+        revision.revision_short_description = get_value("revision_short_description")
+    
+    elif card_type == 'dates':
+        revision.revision_date_of_creation = get_value("revision_date_of_creation")
+        revision.revision_start_date = get_value("revision_start_date")
+        revision.revision_end_date = get_value("revision_end_date")
+        revision.revision_date_of_previous_revision = get_value("revision_date_of_previous_revision")
+        revision.revision_recommended_date_for_next_revision = get_value("revision_recommended_date_for_next_revision")
+    
+    elif card_type == 'admin':
+        revision.revision_code = get_value("revision_code")
+        revision.ico = get_value("ico")
+        revision.draftsman = get_value("draftsman")
+        revision.project_documentation_number = get_value("project_documentation_number")
+        revision.contract_number = get_value("contract_number")
+        revision.order_number = get_value("order_number")
+        revision.revision_notes = get_value("revision_notes")
+        revision.revision_project_documentation = get_value("revision_project_documentation")
+        revision.revision_overall_assessment = get_value("revision_overall_assessment")
+    
+    db.commit()
+    
+    # Return static view
+    template_name = f"cards/revision_static_{card_type}.html"
+    return templates.TemplateResponse(template_name, {
+        "request": request,
+        "revision": revision
     })
 
 
@@ -1351,7 +1455,7 @@ async def quick_add_device(
     })
 
 
-# Read - Show detail
+# Read - Show detail (NEW CARD-BASED VERSION)
 @app.get("/switchboard/{switchboard_id}", response_class=HTMLResponse)
 async def switchboard_detail(switchboard_id: int, request: Request, db: Session = Depends(get_db)):
     user_id = get_current_user(request)
@@ -1364,12 +1468,103 @@ async def switchboard_detail(switchboard_id: int, request: Request, db: Session 
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
-    return templates.TemplateResponse("switchboard_detail.html", {
+    return templates.TemplateResponse("switchboard_detail_redesigned.html", {
         "request": request,
         "user_id": user_id,
         "switchboard": switchboard,
         "sidebar_revisions": get_sidebar_revisions(db, user_id),
         "current_revision_for_sidebar": switchboard.revision
+    })
+
+
+# PHASE 5: Card-based detail views - Get static card view for switchboard
+@app.get("/switchboard/{switchboard_id}/card/{card_type}", response_class=HTMLResponse)
+async def get_switchboard_card(switchboard_id: int, card_type: str, request: Request, db: Session = Depends(get_db)):
+    """Return static view of a specific card"""
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        return HTMLResponse(content="<div class='p-4 text-red-500'>Rozváděč nenalezen</div>", status_code=404)
+    
+    template_name = f"cards/switchboard_static_{card_type}.html"
+    return templates.TemplateResponse(template_name, {
+        "request": request,
+        "switchboard": switchboard
+    })
+
+
+# PHASE 5: Get edit form for switchboard card
+@app.get("/switchboard/{switchboard_id}/edit-card/{card_type}", response_class=HTMLResponse)
+async def get_switchboard_card_edit(switchboard_id: int, card_type: str, request: Request, db: Session = Depends(get_db)):
+    """Return edit form for a specific card"""
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        return HTMLResponse(content="<div class='p-4 text-red-500'>Rozváděč nenalezen</div>", status_code=404)
+    
+    template_name = f"cards/switchboard_edit_{card_type}.html"
+    return templates.TemplateResponse(template_name, {
+        "request": request,
+        "switchboard": switchboard
+    })
+
+
+# PHASE 5: Update switchboard card data
+@app.post("/switchboard/{switchboard_id}/update-card/{card_type}", response_class=HTMLResponse)
+async def update_switchboard_card(switchboard_id: int, card_type: str, request: Request, db: Session = Depends(get_db)):
+    """Update card data and return static view"""
+    user_id = get_current_user(request)
+    switchboard = db.query(Switchboard).join(Revision).filter(
+        Switchboard.switchboard_id == switchboard_id,
+        Revision.user_id == user_id
+    ).first()
+    
+    if not switchboard:
+        return HTMLResponse(content="<div class='p-4 text-red-500'>Rozváděč nenalezen</div>", status_code=404)
+    
+    form_data = await request.form()
+    
+    # Helper function to convert empty strings to None
+    def get_value(key, convert_type=None):
+        value = form_data.get(key, "").strip()
+        if not value:
+            return None
+        if convert_type == int:
+            return int(value) if value else None
+        if convert_type == float:
+            return float(value) if value else None
+        return value
+    
+    # Update fields based on card type
+    if card_type == 'basic':
+        switchboard.switchboard_name = get_value("switchboard_name")
+        switchboard.switchboard_location = get_value("switchboard_location")
+        switchboard.switchboard_order = get_value("switchboard_order", int)
+        switchboard.switchboard_type = get_value("switchboard_type")
+        switchboard.switchboard_description = get_value("switchboard_description")
+    
+    elif card_type == 'technical':
+        switchboard.protection_class = get_value("protection_class")
+        switchboard.ip_rating = get_value("ip_rating")
+        switchboard.ik_rating = get_value("ik_rating")
+        switchboard.environment = get_value("environment")
+        switchboard.protective_device = get_value("protective_device")
+    
+    db.commit()
+    
+    # Return static view
+    template_name = f"cards/switchboard_static_{card_type}.html"
+    return templates.TemplateResponse(template_name, {
+        "request": request,
+        "switchboard": switchboard
     })
 
 
@@ -3335,7 +3530,7 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
         print(f"  - {entity}: {len(fields)} polí")
     print(f"🔍 DEBUG Settings: field_configs_list má {len(field_configs_list)} položek")
     
-    return templates.TemplateResponse("settings.html", {
+    return templates.TemplateResponse("settings_redesigned.html", {
         "request": request,
         "categories": categories,
         "dropdown_sources": dropdown_sources,

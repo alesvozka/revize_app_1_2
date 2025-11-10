@@ -29,7 +29,7 @@
         {% if field_configs %}
             {# PHASE 4: Dynamic form rendering #}
             {% from 'components/form_field_dynamic.html' import render_entity_form %}
-            {{ render_entity_form('revision', field_configs, revision) }}
+            {{ render_entity_form('revision', field_configs, revision, dropdown_sources) }}
         {% else %}
             {# Fallback: Minimal fields if no config loaded #}
             <div class="mb-6">

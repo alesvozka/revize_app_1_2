@@ -512,13 +512,28 @@ async def health_check():
 async def revision_create_form(request: Request, db: Session = Depends(get_db)):
     user_id = get_current_user(request)
     
+    # Get dropdown configuration for revision
+    dropdown_config = get_field_dropdown_config("revision", db)
+    
     # PHASE 4: Get field configuration
     field_configs = get_entity_field_config('revision', db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
     
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": None,
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources,
         "field_configs": field_configs
     })
 

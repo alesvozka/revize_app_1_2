@@ -623,11 +623,22 @@ async def revision_edit_form(revision_id: int, request: Request, db: Session = D
     # PHASE 4: Get field configuration
     field_configs = get_entity_field_config('revision', db)
     
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     return templates.TemplateResponse("revision_form.html", {
         "request": request,
         "user_id": user_id,
         "revision": revision,
-        "field_configs": field_configs
+        "field_configs": field_configs,
+        "dropdown_sources": dropdown_sources
     })
 
 

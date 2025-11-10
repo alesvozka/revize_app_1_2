@@ -4055,6 +4055,159 @@ async def field_config_change_category(
     return {"success": False, "error": "Field not found"}
 
 
+# 🔧 NEW: Reorder fields within same category
+@app.post("/settings/field-config/reorder")
+async def field_config_reorder(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Reorder fields within a category
+    Accepts array of field IDs in new order
+    """
+    user_id = get_current_user(request)
+    data = await request.json()
+    
+    entity_type = data.get("entity_type")
+    category = data.get("category")
+    field_order = data.get("field_order", [])  # Array of field IDs
+    
+    if not entity_type or not category or not field_order:
+        return {"success": False, "error": "Missing parameters"}
+    
+    try:
+        # Update display_order for each field
+        for index, field_id in enumerate(field_order):
+            config = db.query(DropdownConfig).filter(
+                DropdownConfig.id == field_id,
+                DropdownConfig.entity_type == entity_type,
+                DropdownConfig.field_category == category
+            ).first()
+            
+            if config:
+                config.display_order = (index + 1) * 10  # 10, 20, 30, ...
+        
+        db.commit()
+        return {"success": True, "message": "Pořadí aktualizováno"}
+    
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "error": str(e)}
+
+
+# 🔧 NEW: Rename field (custom label)
+@app.post("/settings/field-config/{field_id}/rename")
+async def field_config_rename(
+    field_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Rename a field by setting custom_label
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    custom_label = form_data.get("custom_label", "").strip()
+    
+    config = db.query(DropdownConfig).filter(
+        DropdownConfig.id == field_id
+    ).first()
+    
+    if not config:
+        return {"success": False, "error": "Field not found"}
+    
+    # Empty custom_label means reset to default
+    config.custom_label = custom_label if custom_label else None
+    db.commit()
+    
+    final_label = custom_label if custom_label else config.field_label
+    return {"success": True, "label": final_label}
+
+
+# 🔧 IMPROVED: Edit dropdown value (was missing)
+@app.post("/settings/dropdown/value/{value_id}/edit")
+async def dropdown_value_edit(
+    value_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Edit existing dropdown value
+    """
+    user_id = get_current_user(request)
+    form_data = await request.form()
+    
+    new_value = form_data.get("value", "").strip()
+    
+    if not new_value:
+        return {"success": False, "error": "Value cannot be empty"}
+    
+    source = db.query(DropdownSource).filter(
+        DropdownSource.id == value_id
+    ).first()
+    
+    if not source:
+        return {"success": False, "error": "Value not found"}
+    
+    source.value = new_value
+    db.commit()
+    
+    return {"success": True, "value": new_value}
+
+
+# 🔧 NEW: Move field up in order
+@app.post("/settings/field-config/{field_id}/move-up")
+async def field_config_move_up(field_id: int, request: Request, db: Session = Depends(get_db)):
+    """Move field up in display order within its category"""
+    user_id = get_current_user(request)
+    
+    field = db.query(DropdownConfig).filter(DropdownConfig.id == field_id).first()
+    if not field:
+        return {"success": False, "error": "Field not found"}
+    
+    # Find previous field in same entity + category
+    prev_field = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == field.entity_type,
+        DropdownConfig.field_category == field.field_category,
+        DropdownConfig.display_order < field.display_order
+    ).order_by(DropdownConfig.display_order.desc()).first()
+    
+    if prev_field:
+        # Swap display orders
+        field.display_order, prev_field.display_order = prev_field.display_order, field.display_order
+        db.commit()
+        return {"success": True, "message": "Pole přesunuto nahoru"}
+    
+    return {"success": False, "error": "Pole je již první"}
+
+
+# 🔧 NEW: Move field down in order
+@app.post("/settings/field-config/{field_id}/move-down")
+async def field_config_move_down(field_id: int, request: Request, db: Session = Depends(get_db)):
+    """Move field down in display order within its category"""
+    user_id = get_current_user(request)
+    
+    field = db.query(DropdownConfig).filter(DropdownConfig.id == field_id).first()
+    if not field:
+        return {"success": False, "error": "Field not found"}
+    
+    # Find next field in same entity + category
+    next_field = db.query(DropdownConfig).filter(
+        DropdownConfig.entity_type == field.entity_type,
+        DropdownConfig.field_category == field.field_category,
+        DropdownConfig.display_order > field.display_order
+    ).order_by(DropdownConfig.display_order.asc()).first()
+    
+    if next_field:
+        # Swap display orders
+        field.display_order, next_field.display_order = next_field.display_order, field.display_order
+        db.commit()
+        return {"success": True, "message": "Pole přesunuto dolů"}
+    
+    return {"success": False, "error": "Pole je již poslední"}
+
+
 # Get all categories for entity
 @app.get("/api/field-categories/{entity_type}")
 async def get_field_categories(

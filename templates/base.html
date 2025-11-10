@@ -447,6 +447,31 @@
             }
         }
 
+        // Handle clicks on dropdown options (using event delegation and capture phase)
+        document.addEventListener('click', function(e) {
+            // Handle dropdown option selection
+            const dropdownOption = e.target.closest('.dropdown-option');
+            if (dropdownOption && dropdownOption.dataset.field && dropdownOption.dataset.value) {
+                e.stopPropagation();
+                e.preventDefault();
+                const fieldName = dropdownOption.dataset.field;
+                const value = dropdownOption.dataset.value;
+                window.dropdownWidget.selectValue(fieldName, value);
+                return;
+            }
+            
+            // Handle "add new value" option
+            const addOption = e.target.closest('.dropdown-option-add');
+            if (addOption && addOption.dataset.field && addOption.dataset.category) {
+                e.stopPropagation();
+                e.preventDefault();
+                const fieldName = addOption.dataset.field;
+                const category = addOption.dataset.category;
+                window.dropdownWidget.openModal(fieldName, category);
+                return;
+            }
+        }, true); // Use capture phase to run before other listeners
+
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.dropdown-widget-container') && !e.target.closest('.modal-overlay')) {

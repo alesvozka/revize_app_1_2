@@ -18,9 +18,7 @@
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200 cursor-pointer"
                  onclick="toggleCard('dropdowns')">
                 <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                    </svg>
+                    <span class="text-xl">📋</span>
                     <div>
                         <h3 class="font-semibold text-gray-900">Dropdownové seznamy</h3>
                         <p class="text-xs text-gray-500 mt-0.5">Správa kategorií a hodnot pro dropdowny</p>
@@ -46,71 +44,49 @@
                                 + Přidat
                             </button>
                         </form>
-                        <p class="text-xs text-gray-500 mt-2"><svg class="w-4 h-4 text-blue-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>Kategorie slouží pro seskupení souvisejících hodnot</p>
+                        <p class="text-xs text-gray-500 mt-2">💡 Kategorie slouží pro seskupení souvisejících hodnot</p>
                     </div>
 
-                    <!-- Categories List -->
+                    <!-- Categories Grid -->
                     {% if categories %}
-                    <div class="space-y-3">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {% for category in categories %}
-                        <div class="border border-gray-200 rounded-lg overflow-hidden">
-                            <!-- Category Header -->
-                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
-                                 onclick="toggleDropdown('category-{{ loop.index }}')">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                                        </svg>
-                                        <h4 class="text-sm font-semibold text-gray-900">{{ category }}</h4>
-                                        <span class="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
-                                            {{ dropdown_sources[category]|length }} hodnot
-                                        </span>
-                                    </div>
-                                    <svg id="icon-category-{{ loop.index }}" class="w-4 h-4 transform transition-transform text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-semibold text-gray-900">
+                                    {{ category }}
+                                    <span class="ml-2 text-xs text-gray-500">({{ dropdown_sources[category]|length }})</span>
+                                </h4>
                             </div>
-                            
-                            <!-- Category Content -->
-                            <div id="content-category-{{ loop.index }}" class="hidden">
-                                <div class="p-4">
-                                    <!-- Add new value form -->
-                                    <form method="POST" action="{{ url_for('dropdown_value_create') }}" class="mb-3 flex gap-2">
-                                        <input type="hidden" name="category" value="{{ category }}">
-                                        <input type="text" 
-                                               name="value" 
-                                               placeholder="Nová hodnota..."
-                                               required
-                                               class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                                        <button type="submit" 
-                                                class="px-4 py-2 text-sm bg-primary text-white font-medium rounded-lg hover:bg-blue-600 transition btn-flat whitespace-nowrap flex items-center gap-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                            </svg>
-                                            Přidat
-                                        </button>
-                                    </form>
 
-                                    <!-- Values list -->
-                                    <div class="space-y-1.5 max-h-60 overflow-y-auto">
-                                        {% for source in dropdown_sources[category] %}
-                                        <div class="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition group">
-                                            <!-- Move buttons -->
-                                            <div class="flex flex-col gap-0.5">
-                                                <button onclick="location.href='/settings/dropdown/value/{{ source.id }}/move-up'" 
-                                                        class="text-gray-400 hover:text-primary transition p-0.5 opacity-0 group-hover:opacity-100"
-                                                        title="Posunout nahoru">
+                            <!-- Add new value form -->
+                            <form method="POST" action="{{ url_for('dropdown_value_create') }}" class="mb-3 flex gap-2">
+                                <input type="hidden" name="category" value="{{ category }}">
+                                <input type="text" 
+                                       name="value" 
+                                       placeholder="Nová hodnota..."
+                                       required
+                                       class="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <button type="submit" 
+                                        class="px-3 py-1.5 text-xs bg-primary text-white font-medium rounded-lg hover:bg-blue-600 transition btn-flat">
+                                    +
+                                </button>
+                            </form>
+
+                            <!-- Values list -->
+                            <div class="space-y-1.5 max-h-60 overflow-y-auto">
+                                {% for source in dropdown_sources[category] %}
+                                <div class="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition">
+                                    <!-- Move buttons -->
+                                    <div class="flex flex-col gap-0.5">
+                                        <button onclick="location.href='/settings/dropdown/value/{{ source.id }}/move-up'" 
+                                                class="text-gray-400 hover:text-gray-700 transition p-0.5">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path>
                                             </svg>
                                         </button>
-                                                <button onclick="location.href='/settings/dropdown/value/{{ source.id }}/move-down'" 
-                                                        class="text-gray-400 hover:text-primary transition p-0.5 opacity-0 group-hover:opacity-100"
-                                                        title="Posunout dolů">
+                                        <button onclick="location.href='/settings/dropdown/value/{{ source.id }}/move-down'" 
+                                                class="text-gray-400 hover:text-gray-700 transition p-0.5">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
                                             </svg>
@@ -120,18 +96,15 @@
                                     <!-- Value text -->
                                     <span class="flex-1 text-sm text-gray-900">{{ source.value }}</span>
                                     
-                                            <!-- Delete button -->
-                                            <button onclick="if(confirm('Smazat tuto hodnotu?')) location.href='/settings/dropdown/value/{{ source.id }}/delete'" 
-                                                    class="text-red-500 hover:text-red-700 transition p-1 opacity-0 group-hover:opacity-100"
-                                                    title="Smazat">
+                                    <!-- Delete button -->
+                                    <button onclick="if(confirm('Smazat tuto hodnotu?')) location.href='/settings/dropdown/value/{{ source.id }}/delete'" 
+                                            class="text-red-500 hover:text-red-700 transition p-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
                                     </button>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
                         </div>
                         {% endfor %}
@@ -154,10 +127,7 @@
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200 cursor-pointer"
                  onclick="toggleCard('config')">
                 <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
+                    <span class="text-xl">⚙️</span>
                     <div>
                         <h3 class="font-semibold text-gray-900">Konfigurace dropdownů pro pole</h3>
                         <p class="text-xs text-gray-500 mt-0.5">Přiřaďte dropdown kategorie k polím</p>
@@ -171,9 +141,7 @@
                 <div class="p-4">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                         <p class="text-sm text-blue-800">
-                            <strong><svg class="w-4 h-4 text-blue-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg><strong>Tip:</strong></strong> Zaškrtněte pole, vyberte dropdown kategorii (např. "vyrobci_kabelu") a uložte. Pole pak bude mít dropdown s hodnotami z této kategorie.
+                            <strong>💡 Tip:</strong> Zaškrtněte pole, vyberte dropdown kategorii (např. "vyrobci_kabelu") a uložte. Pole pak bude mít dropdown s hodnotami z této kategorie.
                         </p>
                     </div>
                     
@@ -181,21 +149,11 @@
                     {% for entity_type, fields in configurable_fields.items() %}
                     <div class="mb-6 {% if not loop.last %}pb-6 border-b border-gray-200{% endif %}">
                         <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            {% if entity_type == 'switchboard' %}<svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>Rozváděč
-                            {% elif entity_type == 'device' %}<svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                                </svg>Přístroj
-                            {% elif entity_type == 'circuit' %}<svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>Obvod
-                            {% elif entity_type == 'terminal_device' %}<svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                                </svg>Koncové zařízení
-                            {% elif entity_type == 'revision' %}<svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>Revize
+                            {% if entity_type == 'switchboard' %}📦 Rozváděč
+                            {% elif entity_type == 'device' %}🔌 Přístroj
+                            {% elif entity_type == 'circuit' %}⚡ Obvod
+                            {% elif entity_type == 'terminal_device' %}💡 Koncové zařízení
+                            {% elif entity_type == 'revision' %}📋 Revize
                             {% endif %}
                         </h4>
                         
@@ -264,10 +222,7 @@
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200 cursor-pointer"
                  onclick="toggleCard('visibility')">
                 <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                    </svg>
+                    <span class="text-xl">👁️</span>
                     <div>
                         <h3 class="font-semibold text-gray-900">Viditelnost polí</h3>
                         <p class="text-xs text-gray-500 mt-0.5">Zapněte/vypněte pole podle vašeho workflow</p>
@@ -292,37 +247,27 @@
                             <button onclick="showFieldConfig('revision')" 
                                     id="entity-btn-revision"
                                     class="entity-btn px-4 py-2 text-sm font-medium border rounded-lg transition">
-                                <svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>Revize
+                                📋 Revize
                             </button>
                             <button onclick="showFieldConfig('switchboard')" 
                                     id="entity-btn-switchboard"
                                     class="entity-btn px-4 py-2 text-sm font-medium border rounded-lg transition">
-                                <svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>Rozváděč
+                                📦 Rozváděč
                             </button>
                             <button onclick="showFieldConfig('device')" 
                                     id="entity-btn-device"
                                     class="entity-btn px-4 py-2 text-sm font-medium border rounded-lg transition">
-                                <svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                                </svg>Přístroj
+                                🔌 Přístroj
                             </button>
                             <button onclick="showFieldConfig('circuit')" 
                                     id="entity-btn-circuit"
                                     class="entity-btn px-4 py-2 text-sm font-medium border rounded-lg transition">
-                                <svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>Obvod
+                                ⚡ Obvod
                             </button>
                             <button onclick="showFieldConfig('terminal_device')" 
                                     id="entity-btn-terminal_device"
                                     class="entity-btn px-4 py-2 text-sm font-medium border rounded-lg transition">
-                                <svg class="w-4 h-4 text-primary inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                                </svg>Koncové zařízení
+                                💡 Koncové zařízení
                             </button>
                         </div>
                     </div>
@@ -339,22 +284,11 @@
                             {% if cat_fields %}
                             <div class="mb-6">
                                 <h5 class="text-sm font-semibold text-gray-700 mb-3">
-                                    {% if category == 'basic' %}<svg class="w-4 h-4 text-blue-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>Základní pole
-                                    {% elif category == 'additional' %}<svg class="w-4 h-4 text-purple-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                                    </svg>Dodatečné pole
-                                    {% elif category == 'technical' %}<svg class="w-4 h-4 text-orange-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>Technické pole
-                                    {% elif category == 'administrative' %}<svg class="w-4 h-4 text-green-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>Administrativní pole
-                                    {% elif category == 'measurements' %}<svg class="w-4 h-4 text-red-600 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>Měření
+                                    {% if category == 'basic' %}🔵 Základní pole
+                                    {% elif category == 'additional' %}📎 Dodatečné pole
+                                    {% elif category == 'technical' %}⚙️ Technické pole
+                                    {% elif category == 'administrative' %}📑 Administrativní pole
+                                    {% elif category == 'measurements' %}📏 Měření
                                     {% endif %}
                                     <span class="text-xs text-gray-500 ml-1">({{ cat_fields | length }})</span>
                                 </h5>

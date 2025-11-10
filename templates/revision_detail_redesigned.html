@@ -73,7 +73,9 @@
         <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
                 <div class="flex items-center space-x-2">
-                    <span class="text-xl">📋</span>
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
                     <h3 class="font-semibold text-gray-900">Základní informace</h3>
                 </div>
                 <button 
@@ -102,7 +104,9 @@
         <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
                 <div class="flex items-center space-x-2">
-                    <span class="text-xl">📅</span>
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
                     <h3 class="font-semibold text-gray-900">Termíny</h3>
                 </div>
                 <button 
@@ -132,7 +136,9 @@
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200 cursor-pointer"
                  onclick="toggleCard('admin')">
                 <div class="flex items-center space-x-2">
-                    <span class="text-xl">🏢</span>
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
                     <h3 class="font-semibold text-gray-900">Administrativní</h3>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -169,7 +175,9 @@
         <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
                 <div class="flex items-center space-x-2">
-                    <span class="text-xl">📦</span>
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
                     <h3 class="font-semibold text-gray-900">Rozváděče ({{ revision.switchboards|length }})</h3>
                 </div>
                 <a href="/revision/{{ revision.revision_id }}/switchboard/create" 

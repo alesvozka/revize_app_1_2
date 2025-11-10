@@ -450,10 +450,20 @@ def get_entity_field_config(entity_type: str, db: Session):
         DropdownConfig.enabled == True
     ).order_by(DropdownConfig.display_order).all()
     
+    # 🔍 DEBUG: Check for dropdowns
+    dropdown_count = sum(1 for f in fields if f.dropdown_enabled and f.dropdown_category)
+    print(f"🔍 DEBUG get_entity_field_config({entity_type}): "
+          f"{len(fields)} viditelných polí, {dropdown_count} s dropdownem")
+    
     result = []
     for field in fields:
         # PHASE 4.5: Use custom_label if set, otherwise use field_label
         display_label = field.custom_label if field.custom_label else field.field_label
+        
+        # 🔍 DEBUG: Log dropdown fields
+        if field.dropdown_enabled:
+            status = f"✅ kategorie: {field.dropdown_category}" if field.dropdown_category else "⚠️  BEZ kategorie"
+            print(f"  - {field.field_name}: dropdown {status}")
         
         result.append({
             'name': field.field_name,
@@ -655,10 +665,25 @@ async def get_revision_card_edit(revision_id: int, card_type: str, request: Requ
     if not revision:
         return HTMLResponse(content="<div class='p-4 text-red-500'>Revize nenalezena</div>", status_code=404)
     
+    # 🔧 BUGFIX: Add field configs and dropdown sources for dynamic rendering
+    field_configs = get_entity_field_config('revision', db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     template_name = f"cards/revision_edit_{card_type}.html"
     return templates.TemplateResponse(template_name, {
         "request": request,
-        "revision": revision
+        "revision": revision,
+        "field_configs": field_configs,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -1510,10 +1535,25 @@ async def get_switchboard_card_edit(switchboard_id: int, card_type: str, request
     if not switchboard:
         return HTMLResponse(content="<div class='p-4 text-red-500'>Rozváděč nenalezen</div>", status_code=404)
     
+    # 🔧 BUGFIX: Add field configs and dropdown sources for dynamic rendering
+    field_configs = get_entity_field_config('switchboard', db)
+    
+    # Get all dropdown sources grouped by category
+    categories = db.query(DropdownSource.category).distinct().all()
+    dropdown_sources = {}
+    for cat in categories:
+        category = cat[0]
+        sources = db.query(DropdownSource).filter(
+            DropdownSource.category == category
+        ).order_by(DropdownSource.display_order, DropdownSource.value).all()
+        dropdown_sources[category] = sources
+    
     template_name = f"cards/switchboard_edit_{card_type}.html"
     return templates.TemplateResponse(template_name, {
         "request": request,
-        "switchboard": switchboard
+        "switchboard": switchboard,
+        "field_configs": field_configs,
+        "dropdown_sources": dropdown_sources
     })
 
 
@@ -3742,6 +3782,10 @@ async def dropdown_config_update(request: Request, db: Session = Depends(get_db)
     field_name = form_data.get("field_name", "").strip()
     dropdown_enabled = form_data.get("dropdown_enabled") == "on"
     dropdown_category = form_data.get("dropdown_category", "").strip() or None
+    
+    # 🔧 BUGFIX: If dropdown is enabled but no category selected, disable it
+    if dropdown_enabled and not dropdown_category:
+        dropdown_enabled = False
     
     if entity_type and field_name:
         # Check if config exists

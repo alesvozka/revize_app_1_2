@@ -6,6 +6,9 @@
 #}
 
 {% macro render_dynamic_field(field, entity_obj=None, dropdown_sources={}, error_fields=[]) %}
+  {# 🔍 DEBUG: Output field info #}
+  <!-- DEBUG FIELD: {{ field.name }} | has_dropdown={{ field.has_dropdown }} | dropdown_category={{ field.dropdown_category }} -->
+  
   {# Get current value from entity object safely #}
   {% if entity_obj and field.name in entity_obj.__dict__ %}
     {% set current_value = entity_obj.__dict__[field.name] %}
@@ -17,16 +20,20 @@
   <div class="form-group">
     {# Render based on field type and dropdown config #}
     {% if field.has_dropdown and field.dropdown_category %}
+      <!-- DEBUG: Rendering dropdown widget for {{ field.name }} with category {{ field.dropdown_category }} -->
       {# Dropdown with widget - Set variables for inclusion #}
       {% set field_name = field.name %}
       {% set field_label = field.label %}
       {% if field.required %}{% set field_label = field_label ~ ' *' %}{% endif %}
       {% set category = field.dropdown_category %}
       {% set placeholder = 'Vyberte nebo zadejte hodnotu...' %}
+      {# BUGFIX: Pass current_value to the widget #}
+      {% set current_value = current_value %}
       
       {% include 'components/dropdown_widget_compact_fixed.html' with context %}
       
     {% else %}
+      <!-- DEBUG: Rendering standard input for {{ field.name }} (has_dropdown={{ field.has_dropdown }}, dropdown_category={{ field.dropdown_category }}) -->
       {# Regular fields without dropdown #}
       <label class="block text-sm font-medium text-gray-700 mb-1.5">
         {{ field.label }}

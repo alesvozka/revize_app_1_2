@@ -455,6 +455,17 @@ function toggleDropdownConfig(configKey) {
     const checkbox = document.getElementById(`enable_${configKey}`);
     const select = document.getElementById(`category_${configKey}`);
     select.disabled = !checkbox.checked;
+    
+    // 🔧 BUGFIX: Auto-select first category when enabling dropdown
+    if (checkbox.checked && (!select.value || select.value === '')) {
+        // Find first non-empty option
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value !== '') {
+                select.value = select.options[i].value;
+                break;
+            }
+        }
+    }
 }
 
 // Show field configuration for entity

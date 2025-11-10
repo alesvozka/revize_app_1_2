@@ -33,7 +33,7 @@ JavaScript je v base.html nebo separátním souboru
             {% if category and category != '' and dropdown_sources and dropdown_sources.get(category) %}
                 {% for source in dropdown_sources.get(category, []) %}
                 <div class="dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-900 {% if current_value == source.value %}bg-blue-50 font-medium{% endif %}"
-                     onclick="window.dropdownWidget.selectValue('{{ field_name }}', {{ source.value | tojson }})">
+                     onclick="event.stopPropagation(); window.dropdownWidget.selectValue('{{ field_name }}', {{ source.value | tojson }})">
                     {{ source.value }}
                 </div>
                 {% endfor %}
@@ -50,7 +50,7 @@ JavaScript je v base.html nebo separátním souboru
             
             <!-- Add new value option -->
             <div class="dropdown-option px-3 py-2 hover:bg-green-50 cursor-pointer text-green-700 font-medium flex items-center gap-2"
-                 onclick="window.dropdownWidget.openModal('{{ field_name }}', '{{ category }}')">
+                 onclick="event.stopPropagation(); window.dropdownWidget.openModal('{{ field_name }}', '{{ category }}')">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>

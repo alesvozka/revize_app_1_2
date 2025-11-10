@@ -620,6 +620,9 @@ async def revision_edit_form(revision_id: int, request: Request, db: Session = D
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/", status_code=303)
     
+    # Get dropdown configuration for revision
+    dropdown_config = get_field_dropdown_config("revision", db)
+    
     # PHASE 4: Get field configuration
     field_configs = get_entity_field_config('revision', db)
     
@@ -637,8 +640,9 @@ async def revision_edit_form(revision_id: int, request: Request, db: Session = D
         "request": request,
         "user_id": user_id,
         "revision": revision,
-        "field_configs": field_configs,
-        "dropdown_sources": dropdown_sources
+        "dropdown_config": dropdown_config,
+        "dropdown_sources": dropdown_sources,
+        "field_configs": field_configs
     })
 
 

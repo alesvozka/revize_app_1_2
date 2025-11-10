@@ -359,14 +359,30 @@
                                     <span class="text-xs text-gray-500 ml-1">({{ cat_fields | length }})</span>
                                 </h5>
                                 
-                                <div class="space-y-2">
+                                <div class="space-y-2 drop-zone" 
+                                     data-category="{{ category }}"
+                                     ondrop="dropField(event)" 
+                                     ondragover="allowDrop(event)"
+                                     ondragenter="handleDragEnter(event)"
+                                     ondragleave="handleDragLeave(event)">
                                     {% for field in cat_fields %}
-                                    <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition cursor-move"
+                                         draggable="true"
+                                         data-field-id="{{ field.id }}"
+                                         data-field-category="{{ category }}"
+                                         ondragstart="dragStart(event)"
+                                         ondragend="dragEnd(event)">
+                                        <!-- Drag handle icon -->
+                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                        </svg>
+                                        
                                         <!-- Toggle -->
                                         <input type="checkbox"
                                                {% if field.enabled %}checked{% endif %}
                                                {% if field.required %}disabled{% endif %}
                                                onchange="toggleField('{{ field.id }}', this.checked)"
+                                               onclick="event.stopPropagation()"
                                                class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary {% if field.required %}opacity-50 cursor-not-allowed{% endif %}">
                                         
                                         <!-- Field Info -->
@@ -425,6 +441,15 @@ function toggleCard(cardId) {
     icon.classList.toggle('rotate-180');
 }
 
+// Toggle dropdown category visibility (NEW - for collapsible categories)
+function toggleDropdown(dropdownId) {
+    const content = document.getElementById('content-' + dropdownId);
+    const icon = document.getElementById('icon-' + dropdownId);
+    
+    content.classList.toggle('hidden');
+    icon.classList.toggle('rotate-180');
+}
+
 // Toggle dropdown category select enable/disable
 function toggleDropdownConfig(configKey) {
     const checkbox = document.getElementById(`enable_${configKey}`);
@@ -471,6 +496,132 @@ async function toggleField(fieldId, enabled) {
     } catch (error) {
         console.error('Error toggling field:', error);
     }
+}
+
+// Drag & Drop functions for field reordering
+let draggedElement = null;
+
+function dragStart(e) {
+    draggedElement = e.target;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.innerHTML);
+    e.target.style.opacity = '0.5';
+    e.target.classList.add('border-primary');
+}
+
+function dragEnd(e) {
+    // Reset styles if drag was cancelled
+    if (draggedElement) {
+        draggedElement.style.opacity = '1';
+        draggedElement.classList.remove('border-primary');
+    }
+    
+    // Remove all drop zone highlights
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+        zone.classList.remove('bg-blue-50', 'border-2', 'border-blue-400', 'border-dashed');
+    });
+}
+
+function allowDrop(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragEnter(e) {
+    const dropZone = e.target.closest('.drop-zone');
+    if (dropZone && draggedElement) {
+        dropZone.classList.add('bg-blue-50', 'border-2', 'border-blue-400', 'border-dashed');
+    }
+}
+
+function handleDragLeave(e) {
+    const dropZone = e.target.closest('.drop-zone');
+    if (dropZone) {
+        dropZone.classList.remove('bg-blue-50', 'border-2', 'border-blue-400', 'border-dashed');
+    }
+}
+
+async function dropField(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!draggedElement) return;
+    
+    const dropZone = e.target.closest('.drop-zone');
+    if (!dropZone) return;
+    
+    // Remove highlight
+    dropZone.classList.remove('bg-blue-50', 'border-2', 'border-blue-400', 'border-dashed');
+    
+    const fieldId = draggedElement.getAttribute('data-field-id');
+    const oldCategory = draggedElement.getAttribute('data-field-category');
+    const newCategory = dropZone.getAttribute('data-category');
+    
+    // Reset opacity and border
+    draggedElement.style.opacity = '1';
+    draggedElement.classList.remove('border-primary');
+    
+    // Don't do anything if dropped in same category
+    if (oldCategory === newCategory) {
+        return;
+    }
+    
+    // Update via AJAX
+    try {
+        const formData = new FormData();
+        formData.append('category', newCategory);
+        
+        const response = await fetch(`/settings/field-config/${fieldId}/change-category`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Move the element visually
+            draggedElement.setAttribute('data-field-category', newCategory);
+            dropZone.appendChild(draggedElement);
+            
+            // Update counts
+            updateCategoryCounts();
+            
+            // Show success message briefly
+            const fieldLabel = draggedElement.querySelector('.text-sm').textContent;
+            console.log(`✓ Pole "${fieldLabel}" přesunuto do kategorie "${getCategoryLabel(newCategory)}"`);
+        } else {
+            alert('Nepodařilo se přesunout pole. Zkuste to znovu.');
+        }
+    } catch (error) {
+        console.error('Error moving field:', error);
+        alert('Chyba při přesouvání pole.');
+    }
+    
+    draggedElement = null;
+}
+
+function getCategoryLabel(category) {
+    const labels = {
+        'basic': 'Základní pole',
+        'additional': 'Dodatečné pole',
+        'technical': 'Technické pole',
+        'administrative': 'Administrativní pole',
+        'measurements': 'Měření'
+    };
+    return labels[category] || category;
+}
+
+function updateCategoryCounts() {
+    // Update category counts after drag & drop
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+        const category = zone.getAttribute('data-category');
+        const count = zone.querySelectorAll('[data-field-id]').length;
+        const header = zone.previousElementSibling;
+        if (header) {
+            const countSpan = header.querySelector('.text-xs');
+            if (countSpan) {
+                countSpan.textContent = `(${count})`;
+            }
+        }
+    });
 }
 
 // Initialize - show first entity

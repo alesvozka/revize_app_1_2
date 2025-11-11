@@ -170,7 +170,7 @@
                                 <!-- Switchboards under this revision -->
                                 {% if revision.switchboards %}
                                 <ul class="ml-6 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
-                                    {% for switchboard in revision.switchboards|sort(attribute='switchboard_order') %}
+                                    {% for switchboard in revision.switchboards|sort_with_none('switchboard_order') %}
                                     <li>
                                         <a href="/switchboard/{{ switchboard.switchboard_id }}" 
                                            class="flex items-center space-x-2 px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition">

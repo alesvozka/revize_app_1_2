@@ -371,6 +371,26 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 # Setup templates and static files
 templates = Jinja2Templates(directory="templates")
+
+# Custom Jinja2 filter for sorting with None values
+def sort_with_none(items, attribute, reverse=False):
+    """
+    Seřadí položky podle atributu, None hodnoty dá na konec.
+    Používá se jako: items|sort_with_none('attribute_name')
+    """
+    if not items:
+        return items
+    
+    def sort_key(item):
+        value = getattr(item, attribute, None)
+        # None hodnoty dáme na konec pomocí tuple (True/False, value)
+        # False (not None) má přednost před True (is None)
+        return (value is None, value if value is not None else 0)
+    
+    return sorted(items, key=sort_key, reverse=reverse)
+
+templates.env.filters['sort_with_none'] = sort_with_none
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Set default user (for now, without authentication)
@@ -1587,7 +1607,10 @@ async def update_switchboard_card(switchboard_id: int, card_type: str, request: 
     if card_type == 'basic':
         switchboard.switchboard_name = get_value("switchboard_name")
         switchboard.switchboard_location = get_value("switchboard_location")
-        switchboard.switchboard_order = get_value("switchboard_order", int)
+        # Zachovat původní order pokud není vyplněno nové
+        new_order = get_value("switchboard_order", int)
+        if new_order is not None:
+            switchboard.switchboard_order = new_order
         switchboard.switchboard_type = get_value("switchboard_type")
         switchboard.switchboard_description = get_value("switchboard_description")
     
@@ -1678,7 +1701,10 @@ async def switchboard_update(switchboard_id: int, request: Request, db: Session 
     switchboard.switchboard_name = get_value("switchboard_name")
     switchboard.switchboard_description = get_value("switchboard_description")
     switchboard.switchboard_location = get_value("switchboard_location")
-    switchboard.switchboard_order = get_value("switchboard_order", int)
+    # Zachovat původní order pokud není vyplněno nové
+    new_order = get_value("switchboard_order", int)
+    if new_order is not None:
+        switchboard.switchboard_order = new_order
     switchboard.switchboard_type = get_value("switchboard_type")
     switchboard.switchboard_serial_number = get_value("switchboard_serial_number")
     switchboard.switchboard_production_date = get_value("switchboard_production_date")

@@ -10,31 +10,14 @@ from datetime import datetime
 
 from database import engine, get_db, Base
 from models import *
-from app_startup import init_default_user, run_database_migration, run_field_config_seed, fix_switchboard_order_nulls
-
-# Initialize default user if not exists
-# Initialize FastAPI app
-app = FastAPI(title="Revize App")
-
-# Create default user on startup
-@app.on_event("startup")
-async def startup_event():
-    run_database_migration()     # 1. Migrace tabulek
-    run_field_config_seed()       # 2. AUTO SEED konfigurace polí ← NOVĚ!
-    init_default_user()           # 3. Výchozí uživatel
-    fix_switchboard_order_nulls() # 4. Opravy
+from app_startup import (
+    init_default_user,
+    fix_switchboard_order_nulls,
+    run_database_migration,
+    run_field_config_seed,
+)
 
 
-# Add session middleware
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable must be set")
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-
-# Setup templates and static files
-templates = Jinja2Templates(directory="templates")
-
-# Custom Jinja2 filter for sorting with None values
 def sort_with_none(items, attribute, reverse=False):
     """
     Seřadí položky podle atributu, None hodnoty dá na konec.

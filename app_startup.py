@@ -1,10 +1,12 @@
-"""App startup helpers: DB migration, field config seed, default user, data fixes.
+"""
+Startup & migration utilities for Revize App.
 
-Tento modul je oddělený od main.py, aby byl start aplikace přehlednější.
+Odděleno z main.py kvůli přehlednosti – zde jsou funkce, které se spouští
+při startu aplikace (migrace, seed, opravy).
 """
 
 from database import engine, get_db, Base
-from models import User, Switchboard, FieldCategory, DropdownConfig, DropdownSource
+from models import User, Switchboard, DropdownConfig, FieldCategory, DropdownSource
 
 
 def init_default_user():
@@ -29,6 +31,26 @@ def init_default_user():
         db.rollback()
     finally:
         db.close()
+
+
+def fix_switchboard_order_nulls():
+    """Opraví None hodnoty v switchboard_order na 0"""
+    db = next(get_db())
+    try:
+        switchboards = db.query(Switchboard).filter(Switchboard.switchboard_order == None).all()
+        if switchboards:
+            for switchboard in switchboards:
+                switchboard.switchboard_order = 0
+            db.commit()
+            print(f"✅ Opraveno {len(switchboards)} rozváděčů s None hodnotou v switchboard_order")
+        else:
+            print("ℹ️  Všechny rozváděče mají platnou hodnotu switchboard_order")
+    except Exception as e:
+        print(f"⚠️  Chyba při opravě switchboard_order: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 
 def run_database_migration():
     """Spustí database migraci při startu aplikace"""
@@ -122,6 +144,8 @@ def run_database_migration():
         import traceback
         traceback.print_exc()
         # Neopouštíme aplikaci - zkusíme běžet i s chybou
+
+
 
 def run_field_config_seed(force=False):
     """
@@ -349,22 +373,3 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 templates = Jinja2Templates(directory="templates")
 
 # Custom Jinja2 filter for sorting with None values
-
-def fix_switchboard_order_nulls():
-    """Opraví None hodnoty v switchboard_order na 0"""
-    db = next(get_db())
-    try:
-        switchboards = db.query(Switchboard).filter(Switchboard.switchboard_order == None).all()
-        if switchboards:
-            for switchboard in switchboards:
-                switchboard.switchboard_order = 0
-            db.commit()
-            print(f"✅ Opraveno {len(switchboards)} rozváděčů s None hodnotou v switchboard_order")
-        else:
-            print("ℹ️  Všechny rozváděče mají platnou hodnotu switchboard_order")
-    except Exception as e:
-        print(f"⚠️  Chyba při opravě switchboard_order: {e}")
-        db.rollback()
-    finally:
-        db.close()
-

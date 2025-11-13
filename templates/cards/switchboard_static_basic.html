@@ -1,0 +1,38 @@
+<div id="card-basic" class="p-4">
+    <dl class="space-y-3">
+        {% if switchboard.switchboard_name %}
+        <div>
+            <dt class="text-xs text-gray-500 uppercase font-medium">Název</dt>
+            <dd class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_name }}</dd>
+        </div>
+        {% endif %}
+        
+        {% if switchboard.switchboard_location %}
+        <div>
+            <dt class="text-xs text-gray-500 uppercase font-medium">Umístění</dt>
+            <dd class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_location }}</dd>
+        </div>
+        {% endif %}
+        
+        {% if switchboard.switchboard_order is not none %}
+        <div>
+            <dt class="text-xs text-gray-500 uppercase font-medium">Pořadí</dt>
+            <dd class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_order }}</dd>
+        </div>
+        {% endif %}
+        
+        {% if switchboard.switchboard_type %}
+        <div>
+            <dt class="text-xs text-gray-500 uppercase font-medium">Typ rozváděče</dt>
+            <dd class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_type }}</dd>
+        </div>
+        {% endif %}
+        
+        {% if switchboard.switchboard_description %}
+        <div>
+            <dt class="text-xs text-gray-500 uppercase font-medium">Popis</dt>
+            <dd class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_description }}</dd>
+        </div>
+        {% endif %}
+    </dl>
+</div>

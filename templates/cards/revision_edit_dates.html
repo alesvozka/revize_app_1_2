@@ -1,0 +1,48 @@
+<div id="card-dates" class="p-4 bg-blue-50">
+    <form 
+        hx-post="/revision/{{ revision.revision_id }}/update-card/dates"
+        hx-target="#card-dates"
+        hx-swap="outerHTML"
+        class="space-y-3">
+        
+        {% if field_configs %}
+            {# 🔧 DYNAMIC RENDERING with dropdown support #}
+            {% from 'components/form_field_dynamic.html' import render_dynamic_field %}
+            
+            {# Filter fields for 'additional' category (dates are usually here) #}
+            {% for field in field_configs %}
+                {% if field.category == 'additional' and field.type == 'date' %}
+                    {{ render_dynamic_field(field, revision, dropdown_sources) }}
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {# FALLBACK: Basic date fields if no config #}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Datum vytvoření
+                </label>
+                <input 
+                    type="date" 
+                    name="revision_date_of_creation" 
+                    value="{% if revision.revision_date_of_creation %}{{ revision.revision_date_of_creation.strftime('%Y-%m-%d') }}{% endif %}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+        {% endif %}
+        
+        <div class="flex items-center space-x-2 pt-2">
+            <button 
+                type="submit"
+                class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition font-medium">
+                💾 Uložit
+            </button>
+            <button 
+                type="button"
+                hx-get="/revision/{{ revision.revision_id }}/card/dates"
+                hx-target="#card-dates"
+                hx-swap="outerHTML"
+                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Zrušit
+            </button>
+        </div>
+    </form>
+</div>

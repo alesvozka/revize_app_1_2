@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}{{ revision.revision_name or 'Revize #' ~ revision.revision_id }} - Revize App{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation - HIDDEN on mobile, simple on desktop -->
+<nav class="hidden md:block border-b border-gray-100 -mx-4 md:-mx-6 px-4 md:px-6 mb-4" aria-label="Breadcrumb">
+    <div class="py-2">
+        <ol class="flex items-center space-x-2 text-xs text-gray-500">
+            <li class="flex items-center">
+                <a href="/" class="hover:text-primary transition-colors">
+                    Dashboard
+                </a>
+                <svg class="w-3 h-3 mx-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </li>
+            <li>
+                <span class="text-gray-700">
+                    {{ revision.revision_name or 'Revize #' ~ revision.revision_id }}
+                </span>
+            </li>
+        </ol>
+    </div>
+</nav>
+
+<div class="max-w-6xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <!-- Title and Status Badge -->
+        <div class="mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
+                    {{ revision.revision_name or 'Revize #' ~ revision.revision_id }}
+                </h2>
+                {% if revision.revision_end_date %}
+                    <span class="inline-flex w-fit px-3 py-1 text-sm font-medium rounded bg-purple-100 text-purple-700">
+                        Dokončeno
+                    </span>
+                {% else %}
+                    <span class="inline-flex w-fit px-3 py-1 text-sm font-medium rounded bg-green-100 text-green-700">
+                        Aktivní
+                    </span>
+                {% endif %}
+            </div>
+            {% if revision.revision_code %}
+                <p class="text-gray-600 mt-2 text-sm">Kód revize: <span class="font-medium">{{ revision.revision_code }}</span></p>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons - Mobile Friendly -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="if(confirm('Opravdu chcete smazat tuto revizi?')) { document.getElementById('delete-form').submit(); }" 
+                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition font-medium btn-flat">
+                Smazat
+            </button>
+            <a href="/" class="text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Hidden delete form -->
+    <form id="delete-form" method="POST" action="/revision/{{ revision.revision_id }}/delete" style="display: none;">
+    </form>
+
+    <!-- Card Layout -->
+    <div class="space-y-4">
+        
+        <!-- 📋 Základní informace Card -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="font-semibold text-gray-900">Základní informace</h3>
+                </div>
+                <button 
+                    hx-get="/revision/{{ revision.revision_id }}/edit-card/basic"
+                    hx-target="#card-basic"
+                    hx-swap="outerHTML"
+                    class="text-gray-400 hover:text-primary transition p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div 
+                id="card-basic"
+                hx-get="/revision/{{ revision.revision_id }}/card/basic"
+                hx-trigger="load"
+                hx-swap="outerHTML">
+                <!-- Loading state -->
+                <div class="p-4 text-center text-gray-400 text-sm">
+                    Načítám...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 📅 Termíny Card -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <h3 class="font-semibold text-gray-900">Termíny</h3>
+                </div>
+                <button 
+                    hx-get="/revision/{{ revision.revision_id }}/edit-card/dates"
+                    hx-target="#card-dates"
+                    hx-swap="outerHTML"
+                    class="text-gray-400 hover:text-primary transition p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div 
+                id="card-dates"
+                hx-get="/revision/{{ revision.revision_id }}/card/dates"
+                hx-trigger="load"
+                hx-swap="outerHTML">
+                <!-- Loading state -->
+                <div class="p-4 text-center text-gray-400 text-sm">
+                    Načítám...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🏢 Administrativní Card - Collapsible -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200 cursor-pointer"
+                 onclick="toggleCard('admin')">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <h3 class="font-semibold text-gray-900">Administrativní</h3>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button 
+                        hx-get="/revision/{{ revision.revision_id }}/edit-card/admin"
+                        hx-target="#card-admin"
+                        hx-swap="outerHTML"
+                        onclick="event.stopPropagation();"
+                        class="text-gray-400 hover:text-primary transition p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                    </button>
+                    <svg id="icon-admin" class="w-5 h-5 transform transition-transform text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+            </div>
+            <div id="content-admin" class="hidden">
+                <div 
+                    id="card-admin"
+                    hx-get="/revision/{{ revision.revision_id }}/card/admin"
+                    hx-trigger="revealed"
+                    hx-swap="outerHTML">
+                    <!-- Loading state -->
+                    <div class="p-4 text-center text-gray-400 text-sm">
+                        Načítám...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 📦 Rozváděče Card -->
+        <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    <h3 class="font-semibold text-gray-900">Rozváděče ({{ revision.switchboards|length }})</h3>
+                </div>
+                <a href="/revision/{{ revision.revision_id }}/switchboard/create" 
+                   class="text-gray-500 hover:text-primary transition text-sm font-medium">
+                    + Přidat
+                </a>
+            </div>
+            <div 
+                id="switchboards-section"
+                class="p-4"
+                hx-get="/revision/{{ revision.revision_id }}/switchboard/list-with-form"
+                hx-trigger="load"
+                hx-swap="innerHTML">
+                <!-- Loading state -->
+                <div class="text-center py-4 text-gray-400 text-sm">
+                    Načítám rozváděče...
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+function toggleCard(cardId) {
+    const content = document.getElementById('content-' + cardId);
+    const icon = document.getElementById('icon-' + cardId);
+    
+    content.classList.toggle('hidden');
+    icon.classList.toggle('rotate-180');
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,146 @@
+<!-- Quick Entry Modal - Main Container -->
+<div id="quick-entry-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Nová revize</h3>
+            <button 
+                onclick="closeQuickEntryModal()" 
+                class="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                aria-label="Zavřít">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Stepper -->
+        <div id="modal-stepper" class="px-4 py-3 border-b border-gray-100 bg-gray-50">
+            <div class="flex items-center justify-center gap-2">
+                <!-- Step 1 -->
+                <div class="flex items-center">
+                    <div id="stepper-step1" class="stepper-step-circle active flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-sm font-semibold">
+                        1
+                    </div>
+                    <span id="stepper-label1" class="ml-2 text-sm font-medium text-primary">Základní info</span>
+                </div>
+                
+                <!-- Connector -->
+                <div class="w-8 h-0.5 bg-gray-300 mx-1"></div>
+                
+                <!-- Step 2 -->
+                <div class="flex items-center">
+                    <div id="stepper-step2" class="stepper-step-circle flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-white text-sm font-semibold">
+                        2
+                    </div>
+                    <span id="stepper-label2" class="ml-2 text-sm font-medium text-gray-400">Rozváděče</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Body - HTMX swap target -->
+        <div id="modal-body" class="flex-1 overflow-y-auto">
+            <!-- Content will be loaded here via HTMX -->
+        </div>
+        
+    </div>
+</div>
+
+<script>
+// Global modal functions
+function openQuickEntryModal() {
+    const modal = document.getElementById('quick-entry-modal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Load step 1 via HTMX
+    htmx.ajax('GET', '/api/quick-entry/step1', {
+        target: '#modal-body',
+        swap: 'innerHTML'
+    });
+}
+
+function closeQuickEntryModal() {
+    const modal = document.getElementById('quick-entry-modal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    
+    // Reset stepper
+    updateStepper(1);
+    
+    // Clear modal body
+    document.getElementById('modal-body').innerHTML = '';
+}
+
+// Update stepper visual state
+function updateStepper(step) {
+    const step1Circle = document.getElementById('stepper-step1');
+    const step1Label = document.getElementById('stepper-label1');
+    const step2Circle = document.getElementById('stepper-step2');
+    const step2Label = document.getElementById('stepper-label2');
+    
+    if (step === 1) {
+        // Step 1 active
+        step1Circle.classList.add('active', 'bg-primary', 'text-white');
+        step1Circle.classList.remove('bg-green-500', 'bg-gray-300');
+        step1Label.classList.add('text-primary', 'font-medium');
+        step1Label.classList.remove('text-gray-400');
+        
+        // Step 2 inactive
+        step2Circle.classList.add('bg-gray-300');
+        step2Circle.classList.remove('active', 'bg-primary', 'bg-green-500', 'text-white');
+        step2Label.classList.add('text-gray-400');
+        step2Label.classList.remove('text-primary', 'font-medium');
+    } else if (step === 2) {
+        // Step 1 completed
+        step1Circle.classList.add('bg-green-500', 'text-white');
+        step1Circle.classList.remove('active', 'bg-primary', 'bg-gray-300');
+        step1Label.classList.add('text-green-600', 'font-medium');
+        step1Label.classList.remove('text-primary', 'text-gray-400');
+        
+        // Step 2 active
+        step2Circle.classList.add('active', 'bg-primary', 'text-white');
+        step2Circle.classList.remove('bg-gray-300', 'bg-green-500');
+        step2Label.classList.add('text-primary', 'font-medium');
+        step2Label.classList.remove('text-gray-400');
+    }
+}
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('quick-entry-modal');
+        if (!modal.classList.contains('hidden')) {
+            closeQuickEntryModal();
+        }
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('quick-entry-modal')?.addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeQuickEntryModal();
+    }
+});
+</script>
+
+<style>
+.stepper-step-circle {
+    transition: all 0.3s ease;
+}
+
+.stepper-step-circle.active {
+    transform: scale(1.1);
+}
+
+/* Smooth scroll for modal body */
+#modal-body {
+    scroll-behavior: smooth;
+}
+
+/* Safe area support */
+#quick-entry-modal .bg-white {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+</style>

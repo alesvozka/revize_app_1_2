@@ -1,0 +1,60 @@
+<!-- Breadcrumb Navigation Component -->
+{% if breadcrumbs %}
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-40" aria-label="Breadcrumb">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+        <ol class="flex items-center space-x-2 text-sm overflow-x-auto scrollbar-hide">
+            {% for crumb in breadcrumbs %}
+                {% if not loop.last %}
+                    <li class="flex items-center whitespace-nowrap">
+                        <a href="{{ crumb.url }}" 
+                           class="text-gray-600 hover:text-primary font-medium transition-colors active:text-blue-700">
+                            {{ crumb.label }}
+                        </a>
+                        <svg class="w-4 h-4 mx-2 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </li>
+                {% else %}
+                    <li class="flex items-center whitespace-nowrap">
+                        <span class="text-gray-900 font-semibold truncate max-w-[200px]" title="{{ crumb.label }}">
+                            {{ crumb.label }}
+                        </span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
+</nav>
+
+<style>
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile optimization */
+@media (max-width: 640px) {
+    nav[aria-label="Breadcrumb"] ol {
+        font-size: 0.813rem; /* 13px */
+    }
+    
+    nav[aria-label="Breadcrumb"] .truncate {
+        max-width: 150px;
+    }
+}
+</style>
+{% endif %}
+
+<!-- Usage example in templates:
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': 'Revize XYZ', 'url': '/revision/123'},
+    {'label': 'Rozváděč ABC', 'url': '/switchboard/456'},
+    {'label': 'Přístroj DEF', 'url': '#'}  # Current page - no URL
+] %}
+{% include 'components/breadcrumb.html' %}
+-->

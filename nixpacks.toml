@@ -1,0 +1,5 @@
+# Nixpacks Configuration for Railway
+# Jednoduše řekni Nixpacksu: "Spusť bash start.sh"
+
+[start]
+cmd = "bash start.sh"

@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}{{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }} - Revize App{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation - HIDDEN on mobile, simple on desktop -->
+<nav class="hidden md:block border-b border-gray-100 -mx-4 md:-mx-6 px-4 md:px-6 mb-4" aria-label="Breadcrumb">
+    <div class="py-2">
+        <ol class="flex items-center space-x-2 text-xs text-gray-500 overflow-x-auto">
+            <li class="flex items-center whitespace-nowrap">
+                <a href="/" class="hover:text-primary transition-colors">
+                    Dashboard
+                </a>
+                <svg class="w-3 h-3 mx-1.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </li>
+            <li class="flex items-center whitespace-nowrap">
+                <a href="/revision/{{ switchboard.revision.revision_id }}" class="hover:text-primary transition-colors">
+                    {{ switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id }}
+                </a>
+                <svg class="w-3 h-3 mx-1.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </li>
+            <li>
+                <span class="text-gray-700 truncate max-w-[200px]" title="{{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}">
+                    {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
+                </span>
+            </li>
+        </ol>
+    </div>
+</nav>
+
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">
+                    {{ switchboard.switchboard_name or 'Rozváděč #' ~ switchboard.switchboard_id }}
+                </h2>
+                <p class="text-gray-600 mt-2 text-sm">
+                    Revize: <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-primary hover:underline font-medium">
+                        {{ switchboard.revision.revision_name or 'Revize #' ~ switchboard.revision.revision_id }}
+                    </a>
+                </p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/edit" 
+                   class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition font-medium btn-flat">
+                    Editovat
+                </a>
+                <button onclick="if(confirm('Opravdu chcete smazat tento rozváděč?')) { document.getElementById('delete-form').submit(); }" 
+                        class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition font-medium btn-flat">
+                    Smazat
+                </button>
+                <a href="/revision/{{ switchboard.revision.revision_id }}" class="text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden delete form -->
+    <form id="delete-form" method="POST" action="/switchboard/{{ switchboard.switchboard_id }}/delete" style="display: none;">
+    </form>
+
+    <!-- Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        
+        <!-- Základní informace -->
+        <div class="bg-white border border-gray-200 rounded p-5">
+            <h3 class="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">Základní informace</h3>
+            <div class="space-y-3">
+                {% if switchboard.switchboard_location %}
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-medium">Umístění</p>
+                    <p class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_location }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_order is not none %}
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-medium">Pořadí</p>
+                    <p class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_order }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_type %}
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-medium">Typ rozváděče</p>
+                    <p class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_type }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_description %}
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-medium">Popis</p>
+                    <p class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Technické údaje -->
+        <div class="bg-white border border-gray-200 rounded p-5">
+            <h3 class="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">Technické údaje</h3>
+            <div class="space-y-3">
+                {% if switchboard.switchboard_serial_number %}
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-medium">Sériové číslo</p>
+                    <p class="font-medium text-gray-900 mt-1">{{ switchboard.switchboard_serial_number }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_production_date %}
+                <div>
+                    <p class="text-sm text-gray-500">Datum výroby</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_production_date.strftime('%d.%m.%Y') }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_rated_current is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Jmenovitý proud</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_rated_current }} A</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_rated_voltage is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Jmenovité napětí</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_rated_voltage }} V</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_ip_rating %}
+                <div>
+                    <p class="text-sm text-gray-500">Krytí IP</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_ip_rating }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_impact_protection %}
+                <div>
+                    <p class="text-sm text-gray-500">Ochrana proti nárazu</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_impact_protection }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_protection_class %}
+                <div>
+                    <p class="text-sm text-gray-500">Třída ochrany</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_protection_class }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Výrobce -->
+        {% if switchboard.switchboard_manufacturer or switchboard.switchboard_manufacturer_address or switchboard.switchboard_standards %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Výrobce</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_manufacturer %}
+                <div>
+                    <p class="text-sm text-gray-500">Výrobce rozváděče</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_manufacturer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_manufacturer_address %}
+                <div>
+                    <p class="text-sm text-gray-500">Adresa výrobce</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_manufacturer_address }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_standards %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Normy</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_standards }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Skříň rozváděče -->
+        {% if switchboard.switchboard_enclosure_type or switchboard.switchboard_enclosure_manufacturer or switchboard.switchboard_enclosure_installation_method %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Skříň rozváděče</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_enclosure_type %}
+                <div>
+                    <p class="text-sm text-gray-500">Typ skříně</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_enclosure_type }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_enclosure_manufacturer %}
+                <div>
+                    <p class="text-sm text-gray-500">Výrobce skříně</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_enclosure_manufacturer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_enclosure_installation_method %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Způsob instalace skříně</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_enclosure_installation_method }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Nadřazený rozváděč -->
+        {% if switchboard.switchboard_superior_switchboard or switchboard.switchboard_superior_circuit_breaker_rated_current or switchboard.switchboard_superior_circuit_breaker_trip_characteristic or switchboard.switchboard_superior_circuit_breaker_manufacturer or switchboard.switchboard_superior_circuit_breaker_model %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Nadřazený rozváděč</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_superior_switchboard %}
+                <div>
+                    <p class="text-sm text-gray-500">Nadřazený rozváděč</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_switchboard }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_rated_current is not none %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - jmenovitý proud</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_rated_current }} A</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_trip_characteristic %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - charakteristika</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_trip_characteristic }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_manufacturer %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - výrobce</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_manufacturer }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_superior_circuit_breaker_model %}
+                <div>
+                    <p class="text-sm text-gray-500">Jistič - model</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_superior_circuit_breaker_model }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Hlavní vypínač a kabel -->
+        {% if switchboard.switchboard_main_switch or switchboard.switchboard_cable or switchboard.switchboard_cable_installation_method %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Hlavní vypínač a kabel</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if switchboard.switchboard_main_switch %}
+                <div>
+                    <p class="text-sm text-gray-500">Hlavní vypínač</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_main_switch }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_cable %}
+                <div>
+                    <p class="text-sm text-gray-500">Kabel</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_cable }}</p>
+                </div>
+                {% endif %}
+                
+                {% if switchboard.switchboard_cable_installation_method %}
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-500">Způsob instalace kabelu</p>
+                    <p class="font-medium text-gray-800">{{ switchboard.switchboard_cable_installation_method }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Poznámka -->
+        {% if switchboard.switchboard_note %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Poznámka</h3>
+            <div>
+                <p class="font-medium text-gray-800">{{ switchboard.switchboard_note }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Devices (Přístroje v rozváděči) -->
+    <div class="bg-white border border-gray-200 rounded">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Přístroje v rozváděči ({{ switchboard.devices|length }})</h3>
+            <!-- Fallback link to full form -->
+            <a href="/switchboard/{{ switchboard.switchboard_id }}/device/create" 
+               class="text-gray-500 hover:text-gray-700 text-sm">
+                Plný formulář →
+            </a>
+        </div>
+        
+        <!-- HTMX Target for dynamic content -->
+        <div id="devices-section"
+             class="p-4"
+             hx-get="/switchboard/{{ switchboard.switchboard_id }}/device/list-with-form"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Loading state -->
+            <div class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-sm">Načítám přístroje...</p>
+            </div>
+        </div>
+    </div>
+    <!-- Measurements (Měření) -->
+    <div class="bg-white border border-gray-200 rounded">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Měření rozváděče</h3>
+            {% if switchboard.measurements %}
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/measurement/edit" 
+                   class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm font-medium btn-flat">
+                    Editovat měření
+                </a>
+            {% else %}
+                <a href="/switchboard/{{ switchboard.switchboard_id }}/measurement/create" 
+                   class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition text-sm font-medium btn-flat">
+                    + Přidat měření
+                </a>
+            {% endif %}
+        </div>
+        <div class="p-5">
+            {% if switchboard.measurements %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% if switchboard.measurements.measurements_switchboard_insulation_resistance is not none %}
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-medium">Izolační odpor (MΩ)</p>
+                        <p class="font-medium text-gray-900 mt-1">{{ switchboard.measurements.measurements_switchboard_insulation_resistance }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_loop_impedance_min is not none %}
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-medium">Impedance smyčky min (Ω)</p>
+                        <p class="font-medium text-gray-900 mt-1">{{ switchboard.measurements.measurements_switchboard_loop_impedance_min }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_loop_impedance_max is not none %}
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-medium">Impedance smyčky max (Ω)</p>
+                        <p class="font-medium text-gray-900 mt-1">{{ switchboard.measurements.measurements_switchboard_loop_impedance_max }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_rcd_trip_time_ms is not none %}
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-medium">Doba vypnutí proudového chrániče (ms)</p>
+                        <p class="font-medium text-gray-900 mt-1">{{ switchboard.measurements.measurements_switchboard_rcd_trip_time_ms }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_rcd_test_current_ma is not none %}
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-medium">Zkušební proud proudového chrániče (mA)</p>
+                        <p class="font-medium text-gray-900 mt-1">{{ switchboard.measurements.measurements_switchboard_rcd_test_current_ma }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if switchboard.measurements.measurements_switchboard_earth_resistance is not none %}
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-medium">Odpor uzemnění (Ω)</p>
+                        <p class="font-medium text-gray-900 mt-1">{{ switchboard.measurements.measurements_switchboard_earth_resistance }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <button onclick="if(confirm('Opravdu chcete smazat měření?')) { document.getElementById('delete-measurement-form').submit(); }" 
+                            class="text-red-600 hover:text-red-700 text-sm font-medium">
+                        Smazat měření
+                    </button>
+                </div>
+                
+                <form id="delete-measurement-form" method="POST" action="/measurement/{{ switchboard.measurements.measurement_id }}/delete" style="display: none;">
+                </form>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <p class="text-sm">Zatím nejsou zadána měření</p>
+                    <p class="text-xs mt-1">Klikněte na tlačítko výše pro přidání měření</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

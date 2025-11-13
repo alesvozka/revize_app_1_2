@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}{{ revision.revision_name }} - Revize App{% endblock %}
+
+{% block content %}
+<!-- UNIFIED REVISION DETAIL VIEW -->
+<!-- Používá dynamické karty podle field_config -->
+<!-- Respektuje enabled/disabled nastavení -->
+
+<div class="max-w-7xl mx-auto">
+    <!-- Breadcrumb -->
+    <nav class="mb-4 text-sm">
+        <ol class="flex items-center space-x-2 text-gray-500">
+            <li><a href="/" class="hover:text-primary">Dashboard</a></li>
+            <li><span class="mx-2">/</span></li>
+            <li class="text-gray-900 font-medium">{{ revision.revision_name or 'Revize' }}</li>
+        </ol>
+    </nav>
+    
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        {{ revision.revision_name or 'Bez názvu' }}
+                    </h1>
+                    {% if revision.revision_end_date %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                            Ukončeno
+                        </span>
+                    {% else %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                            Aktivní
+                        </span>
+                    {% endif %}
+                </div>
+                {% if revision.revision_client %}
+                    <p class="text-gray-600">{{ revision.revision_client }}</p>
+                {% endif %}
+                {% if revision.revision_address %}
+                    <p class="text-sm text-gray-500 mt-1">📍 {{ revision.revision_address }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex gap-2">
+                <a href="/revision/{{ revision.revision_id }}/edit" 
+                   class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    ✏️ Editovat
+                </a>
+                <button 
+                    onclick="if(confirm('Opravdu smazat tuto revizi?')) window.location.href='/revision/{{ revision.revision_id }}/delete'"
+                    class="px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                    🗑️ Smazat
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Bar -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white border border-gray-200 rounded-lg p-4">
+            <div class="text-sm text-gray-500">Rozváděče</div>
+            <div class="text-2xl font-bold text-gray-900">{{ revision.switchboards|length }}</div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-lg p-4">
+            <div class="text-sm text-gray-500">Datum vytvoření</div>
+            <div class="text-lg font-medium text-gray-900">
+                {{ revision.revision_date_of_creation.strftime('%d.%m.%Y') if revision.revision_date_of_creation else '—' }}
+            </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-lg p-4">
+            <div class="text-sm text-gray-500">Datum zahájení</div>
+            <div class="text-lg font-medium text-gray-900">
+                {{ revision.revision_start_date.strftime('%d.%m.%Y') if revision.revision_start_date else '—' }}
+            </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-lg p-4">
+            <div class="text-sm text-gray-500">Datum ukončení</div>
+            <div class="text-lg font-medium text-gray-900">
+                {{ revision.revision_end_date.strftime('%d.%m.%Y') if revision.revision_end_date else '—' }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- UNIFIED DYNAMIC CARDS SECTION -->
+    <div class="space-y-4">
+        {% if field_configs %}
+            {# Import makra pro dynamické karty #}
+            {% from 'components/dynamic_cards.html' import render_entity_cards %}
+            
+            {# Vygeneruj všechny karty dynamicky #}
+            {# Collapsible: technical a administrative #}
+            {{ render_entity_cards('revision', revision, field_configs, ['technical', 'administrative']) }}
+        {% else %}
+            {# Fallback pokud field_configs nejsou k dispozici #}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p class="text-yellow-800">
+                    ⚠️ Konfigurace polí není k dispozici. Spusť <code>python seed_field_config.py</code>
+                </p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- 📦 Rozváděče Card (samostatná, není v field_config) -->
+    <div class="card bg-white border border-gray-200 rounded-lg overflow-hidden mt-4">
+        <div class="card-header bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200">
+            <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <h3 class="font-semibold text-gray-900">Rozváděče</h3>
+                <span class="text-sm text-gray-500">({{ revision.switchboards|length }})</span>
+            </div>
+            <a href="/revision/{{ revision.revision_id }}/switchboard/new" 
+               class="text-primary hover:text-primary-dark transition text-sm font-medium">
+                ➕ Přidat rozváděč
+            </a>
+        </div>
+        <div class="p-4">
+            {% if revision.switchboards %}
+                <div class="space-y-2">
+                    {% for switchboard in revision.switchboards|sort(attribute='switchboard_order') %}
+                        <a href="/switchboard/{{ switchboard.switchboard_id }}" 
+                           class="block p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-gray-50 transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-gray-900">
+                                        {{ switchboard.switchboard_name or 'Bez názvu' }}
+                                    </div>
+                                    {% if switchboard.switchboard_location %}
+                                        <div class="text-sm text-gray-500">📍 {{ switchboard.switchboard_location }}</div>
+                                    {% endif %}
+                                </div>
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    <p class="text-gray-500 mb-4">Zatím žádné rozváděče</p>
+                    <a href="/revision/{{ revision.revision_id }}/switchboard/new" 
+                       class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">
+                        ➕ Přidat první rozváděč
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

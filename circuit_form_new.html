@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{% if circuit %}Editace obvodu{% else %}Nový obvod{% endif %} - Revize App{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">
+                    {% if circuit %}Editace obvodu{% else %}Nový obvod{% endif %}
+                </h2>
+                <p class="text-gray-600 mt-1">
+                    Přístroj: {{ device.switchboard_device_position }} - {{ device.switchboard_device_type or 'Neznámý' }}
+                </p>
+            </div>
+            <a href="/device/{{ device.device_id }}" class="text-gray-600 hover:text-gray-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{% if circuit %}/circuit/{{ circuit.circuit_id }}/update{% else %}/device/{{ device.device_id }}/circuit/create{% endif %}" class="bg-white rounded-lg shadow p-6">
+        
+        {% if field_configs %}
+            {# PHASE 4: Dynamic form rendering #}
+            {% from 'components/form_field_dynamic.html' import render_entity_form %}
+            {{ render_entity_form('circuit', field_configs, circuit, dropdown_sources) }}
+        {% else %}
+            {# Fallback #}
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Základní informace</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Číslo obvodu *</label>
+                        <input type="text" name="circuit_number" value="{% if circuit %}{{ circuit.circuit_number or '' }}{% endif %}" 
+                               required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Submit Buttons -->
+        <div class="flex gap-3 pt-6 border-t">
+            <button type="submit" class="flex-1 bg-primary text-white px-6 py-2.5 rounded-lg hover:bg-primary-dark transition-colors font-medium">
+                {% if circuit %}💾 Uložit změny{% else %}➕ Vytvořit obvod{% endif %}
+            </button>
+            <a href="/device/{{ device.device_id }}" 
+               class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center">
+                Zrušit
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

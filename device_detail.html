@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Detail přístroje{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        Přístroj: {{ device.switchboard_device_position or "—" }}
+                    </h1>
+                    {% if device.switchboard_device_type %}
+                    <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                        {{ device.switchboard_device_type }}
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-gray-600">
+                    Rozváděč: 
+                    <a href="{{ url_for('switchboard_detail', switchboard_id=device.switchboard.switchboard_id) }}" 
+                       class="text-blue-600 hover:text-blue-800 font-medium">
+                        {{ device.switchboard.switchboard_name or "—" }}
+                    </a>
+                </p>
+                <p class="text-sm text-gray-600">
+                    Revize: 
+                    <a href="{{ url_for('revision_detail', revision_id=device.switchboard.revision.revision_id) }}" 
+                       class="text-blue-600 hover:text-blue-800 font-medium">
+                        {{ device.switchboard.revision.revision_name or "—" }}
+                    </a>
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('device_edit_form', device_id=device.device_id) }}" 
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    ✏️ Editovat
+                </a>
+            </div>
+        </div>
+        <a href="{{ url_for('switchboard_detail', switchboard_id=device.switchboard.switchboard_id) }}" 
+           class="inline-block text-sm text-blue-600 hover:text-blue-800">
+            ← Zpět na rozváděč
+        </a>
+    </div>
+
+    <!-- Device Info -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+            Parametry přístroje
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if device.parent_device %}
+            <div class="md:col-span-2 lg:col-span-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <dt class="text-sm font-medium text-blue-700">Nadřízený přístroj</dt>
+                <dd class="mt-1 text-base text-blue-900 font-medium">
+                    → {{ device.parent_device.switchboard_device_position or "—" }}
+                    {% if device.parent_device.switchboard_device_type %}
+                        ({{ device.parent_device.switchboard_device_type }})
+                    {% endif %}
+                </dd>
+            </div>
+            {% endif %}
+            
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Pozice</dt>
+                <dd class="mt-1 text-base text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">{{ device.switchboard_device_position or "—" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Typ přístroje</dt>
+                <dd class="mt-1 text-base text-gray-900">{{ device.switchboard_device_type or "—" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Výrobce</dt>
+                <dd class="mt-1 text-base text-gray-900">{{ device.switchboard_device_manufacturer or "—" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Model</dt>
+                <dd class="mt-1 text-base text-gray-900">{{ device.switchboard_device_model or "—" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Vypínací charakteristika</dt>
+                <dd class="mt-1 text-base text-gray-900 font-mono">{{ device.switchboard_device_trip_characteristic or "—" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Jmenovitý proud</dt>
+                <dd class="mt-1 text-base text-gray-900">
+                    {% if device.switchboard_device_rated_current %}
+                        {{ device.switchboard_device_rated_current }} <span class="text-sm text-gray-500">A</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </dd>
+            </div>
+            {% if device.switchboard_device_residual_current_ma %}
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Vypínací proud RCD</dt>
+                <dd class="mt-1 text-base text-gray-900">
+                    {{ device.switchboard_device_residual_current_ma }} <span class="text-sm text-gray-500">mA</span>
+                </dd>
+            </div>
+            {% endif %}
+            {% if device.switchboard_device_poles %}
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Počet pólů</dt>
+                <dd class="mt-1 text-base text-gray-900">{{ device.switchboard_device_poles }}</dd>
+            </div>
+            {% endif %}
+            {% if device.switchboard_device_module_width %}
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Šířka modulu</dt>
+                <dd class="mt-1 text-base text-gray-900">
+                    {{ device.switchboard_device_module_width }} <span class="text-sm text-gray-500">modulů</span>
+                </dd>
+            </div>
+            {% endif %}
+            {% if device.switchboard_device_sub_devices %}
+            <div class="md:col-span-2 lg:col-span-3">
+                <dt class="text-sm font-medium text-gray-500">Poznámka k podřazeným přístrojům</dt>
+                <dd class="mt-1 text-base text-gray-900">{{ device.switchboard_device_sub_devices }}</dd>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Circuits Section -->
+    <div class="bg-white border border-gray-200 rounded mt-6">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Obvody ({{ circuits|length }})</h3>
+            <!-- Fallback link to full form -->
+            <a href="{{ url_for('circuit_create_form', device_id=device.device_id) }}" 
+               class="text-gray-500 hover:text-gray-700 text-sm">
+                Plný formulář →
+            </a>
+        </div>
+        
+        <!-- HTMX Target for dynamic content -->
+        <div id="circuits-section"
+             class="p-4"
+             hx-get="/device/{{ device.device_id }}/circuit/list-with-form"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Loading state -->
+            <div class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-sm">Načítám obvody...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

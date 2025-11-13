@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "components/dropdown.html" import render_field_improved %}
+
+{% block title %}{% if switchboard %}Editovat rozváděč{% else %}Nový rozváděč{% endif %} - Revize App{% endblock %}
+
+{% block sidebar_breadcrumbs %}
+{% set breadcrumbs = [
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': switchboard.revision.revision_name if switchboard else 'Revize', 'url': '/revision/' ~ (switchboard.revision.revision_id if switchboard else revision_id)},
+    {'label': 'Nový rozváděč' if not switchboard else 'Editace rozváděče', 'url': ''}
+] %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">
+            {% if switchboard %}Editovat rozváděč{% else %}Nový rozváděč{% endif %}
+        </h2>
+    </div>
+
+    <form method="POST" action="{% if switchboard %}/switchboard/{{ switchboard.switchboard_id }}/update{% else %}/revision/{{ revision_id }}/switchboard/create{% endif %}" class="flat-card">
+        <div class="p-4 space-y-6">
+            <div>
+                <h3 class="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Základní údaje</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Název rozváděče <span class="text-red-500">*</span></label>
+                        <input type="text" name="switchboard_name" value="{% if switchboard %}{{ switchboard.switchboard_name or '' }}{% endif %}" required class="form-input" placeholder="Např. RH01">
+                    </div>
+                    <div>
+                        <label class="form-label">Umístění</label>
+                        <input type="text" name="switchboard_location" value="{% if switchboard %}{{ switchboard.switchboard_location or '' }}{% endif %}" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Pořadí</label>
+                        <input type="number" name="switchboard_order" value="{% if switchboard and switchboard.switchboard_order is not none %}{{ switchboard.switchboard_order }}{% endif %}" class="form-input">
+                    </div>
+                    {{ render_field_improved(
+                        field_name='switchboard_type',
+                        field_label='Typ rozváděče',
+                        current_value=(switchboard.switchboard_type if switchboard else ''),
+                        entity_type='switchboard',
+                        dropdown_config=dropdown_config,
+                        dropdown_sources=dropdown_sources
+                    ) }}
+                    <div class="md:col-span-2">
+                        <label class="form-label">Popis</label>
+                        <textarea name="switchboard_description" rows="2" class="form-input">{% if switchboard %}{{ switchboard.switchboard_description or '' }}{% endif %}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Technické údaje</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Sériové číslo</label>
+                        <input type="text" name="switchboard_serial_number" value="{% if switchboard %}{{ switchboard.switchboard_serial_number or '' }}{% endif %}" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Jmenovitý proud (A)</label>
+                        <input type="number" name="switchboard_rated_current" value="{% if switchboard and switchboard.switchboard_rated_current %}{{ switchboard.switchboard_rated_current }}{% endif %}" step="0.1" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Jmenovité napětí (V)</label>
+                        <input type="number" name="switchboard_rated_voltage" value="{% if switchboard and switchboard.switchboard_rated_voltage %}{{ switchboard.switchboard_rated_voltage }}{% endif %}" step="0.1" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Krytí IP</label>
+                        <input type="text" name="switchboard_ip_rating" value="{% if switchboard %}{{ switchboard.switchboard_ip_rating or '' }}{% endif %}" class="form-input">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end space-x-2">
+            <a href="{% if switchboard %}/switchboard/{{ switchboard.switchboard_id }}{% else %}/revision/{{ revision_id }}{% endif %}" class="btn btn-secondary">Zrušit</a>
+            <button type="submit" class="btn btn-primary">
+                {% if switchboard %}Uložit změny{% else %}Vytvořit rozváděč{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

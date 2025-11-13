@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Nastavení - Revize App{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">Nastavení</h2>
+            <p class="text-sm text-gray-500 mt-1">Konfigurace aplikace a správa formulářových polí</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="space-y-6">
+        
+        <!-- 1. DROPDOWN SOURCES - Správa hodnot -->
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="px-5 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Dropdownové seznamy</h3>
+                <p class="text-sm text-gray-500 mt-1">Správa kategorií a hodnot pro dropdowny ve formulářích</p>
+            </div>
+            
+            <div class="p-5">
+                <!-- Add New Category -->
+                <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">Nová kategorie</h4>
+                    <form method="POST" action="{{ url_for('dropdown_category_create') }}" class="flex gap-3">
+                        <input type="text" 
+                               name="category" 
+                               placeholder="např. vyrobci_kabelu, typy_rozvadece"
+                               required
+                               class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <button type="submit" 
+                                class="bg-primary text-white px-5 py-2 rounded hover:bg-blue-600 transition font-medium btn-flat whitespace-nowrap">
+                            + Přidat
+                        </button>
+                    </form>
+                    <p class="text-xs text-gray-500 mt-2">Kategorie slouží pro seskupení souvisejících hodnot (např. všichni výrobci kabelů)</p>
+                </div>
+
+                <!-- Categories Grid -->
+                {% if categories %}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {% for category in categories %}
+                    <div class="border border-gray-200 rounded p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-semibold text-gray-900">
+                                {{ category }}
+                                <span class="ml-2 text-xs text-gray-500">({{ dropdown_sources[category]|length }})</span>
+                            </h4>
+                        </div>
+
+                        <!-- Add new value form -->
+                        <form method="POST" action="{{ url_for('dropdown_value_create') }}" class="mb-3 flex gap-2">
+                            <input type="hidden" name="category" value="{{ category }}">
+                            <input type="text" 
+                                   name="value" 
+                                   placeholder="Nová hodnota..."
+                                   required
+                                   class="flex-1 px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <button type="submit" 
+                                    class="px-3 py-1.5 text-xs bg-primary text-white font-medium rounded hover:bg-blue-600 transition btn-flat">
+                                +
+                            </button>
+                        </form>
+
+                        <!-- Values list -->
+                        <div class="space-y-1.5 max-h-60 overflow-y-auto">
+                            {% for source in dropdown_sources[category] %}
+                            <div class="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition">
+                                <!-- Move buttons -->
+                                <div class="flex flex-col gap-0.5">
+                                    <button onclick="location.href='/settings/dropdown/value/{{ source.id }}/move-up'" 
+                                            class="text-gray-400 hover:text-gray-700 transition p-0.5">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path>
+                                        </svg>
+                                    </button>
+                                    <button onclick="location.href='/settings/dropdown/value/{{ source.id }}/move-down'" 
+                                            class="text-gray-400 hover:text-gray-700 transition p-0.5">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <!-- Value text -->
+                                <span class="flex-1 text-sm text-gray-900">{{ source.value }}</span>
+                                
+                                <!-- Delete button -->
+                                <button onclick="if(confirm('Smazat tuto hodnotu?')) location.href='/settings/dropdown/value/{{ source.id }}/delete'" 
+                                        class="text-red-500 hover:text-red-700 transition p-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="bg-gray-50 border border-gray-200 rounded p-8 text-center">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="text-gray-500 text-sm font-medium mb-1">Zatím nejsou vytvořeny žádné kategorie</p>
+                    <p class="text-gray-400 text-xs">Začněte přidáním nové kategorie výše</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. DROPDOWN CONFIG - Přiřazení dropdownů k polím -->
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="px-5 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Konfigurace dropdownů pro pole</h3>
+                <p class="text-sm text-gray-500 mt-1">Přiřaďte dropdown kategorie k jednotlivým polím ve formulářích</p>
+            </div>
+            
+            <div class="p-5">
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-6">
+                    <p class="text-sm text-blue-800">
+                        <strong>💡 Tip:</strong> Zaškrtněte pole, vyberte dropdown kategorii (např. "vyrobci_kabelu") a uložte. Pole pak bude mít dropdown s hodnotami z této kategorie.
+                    </p>
+                </div>
+                
+                <!-- Configuration by Entity -->
+                {% for entity_type, fields in configurable_fields.items() %}
+                <div class="mb-6 {% if not loop.last %}pb-6 border-b border-gray-200{% endif %}">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        {% if entity_type == 'switchboard' %}📦 Rozváděč
+                        {% elif entity_type == 'device' %}🔌 Přístroj
+                        {% elif entity_type == 'circuit' %}⚡ Obvod
+                        {% elif entity_type == 'terminal_device' %}💡 Koncové zařízení
+                        {% elif entity_type == 'revision' %}📋 Revize
+                        {% endif %}
+                    </h4>
+                    
+                    <div class="space-y-2">
+                        {% for field_name, field_label in fields.items() %}
+                        {% set config_key = entity_type ~ '_' ~ field_name %}
+                        {% set config = configs_dict.get(config_key) %}
+                        
+                        <form method="POST" action="{{ url_for('dropdown_config_update') }}" 
+                              class="border border-gray-200 rounded p-3 hover:bg-gray-50 transition-colors">
+                            <input type="hidden" name="entity_type" value="{{ entity_type }}">
+                            <input type="hidden" name="field_name" value="{{ field_name }}">
+                            
+                            <div class="flex items-center gap-3">
+                                <!-- Enable/Disable Checkbox -->
+                                <div class="flex items-center">
+                                    <input type="checkbox" 
+                                           name="dropdown_enabled" 
+                                           id="enable_{{ config_key }}"
+                                           onchange="toggleDropdownConfig('{{ config_key }}')"
+                                           {% if config and config.dropdown_enabled %}checked{% endif %}
+                                           class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                </div>
+                                
+                                <!-- Field Info -->
+                                <div class="flex-1 min-w-0">
+                                    <label for="enable_{{ config_key }}" class="block text-sm font-medium text-gray-700 cursor-pointer truncate">
+                                        {{ field_label }}
+                                    </label>
+                                    <p class="text-xs text-gray-500 truncate"><code class="bg-gray-100 px-1 rounded">{{ field_name }}</code></p>
+                                </div>
+                                
+                                <!-- Category Selection (dropdown kategorie!) -->
+                                <div class="flex-1">
+                                    <select name="dropdown_category" 
+                                            id="category_{{ config_key }}"
+                                            {% if not config or not config.dropdown_enabled %}disabled{% endif %}
+                                            class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400">
+                                        <option value="">-- Vyberte kategorii --</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category }}" 
+                                                {% if config and config.dropdown_category == category %}selected{% endif %}>
+                                            {{ category }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <!-- Save Button -->
+                                <button type="submit" 
+                                        class="px-4 py-1.5 bg-primary text-white text-sm font-medium rounded hover:bg-blue-600 transition whitespace-nowrap btn-flat">
+                                    💾 Uložit
+                                </button>
+                            </div>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3. FIELD VISIBILITY - Zapnutí/vypnutí polí -->
+        <div class="bg-white border border-gray-200 rounded">
+            <div class="px-5 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Viditelnost polí</h3>
+                <p class="text-sm text-gray-500 mt-1">Zapněte/vypněte pole podle vašeho workflow</p>
+            </div>
+            
+            <div class="p-5">
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-6">
+                    <p class="text-sm text-blue-800">
+                        <strong>💡 Jak to funguje:</strong> Vypnutá pole se nezobrazí ve formulářích. Povinná pole nelze vypnout.
+                    </p>
+                </div>
+
+                <!-- Entity Type Selector -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Vyberte entitu:</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="showFieldConfig('revision')" 
+                                id="entity-btn-revision"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            📋 Revize
+                        </button>
+                        <button onclick="showFieldConfig('switchboard')" 
+                                id="entity-btn-switchboard"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            📦 Rozváděč
+                        </button>
+                        <button onclick="showFieldConfig('device')" 
+                                id="entity-btn-device"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            🔌 Přístroj
+                        </button>
+                        <button onclick="showFieldConfig('circuit')" 
+                                id="entity-btn-circuit"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            ⚡ Obvod
+                        </button>
+                        <button onclick="showFieldConfig('terminal_device')" 
+                                id="entity-btn-terminal_device"
+                                class="entity-btn px-4 py-2 text-sm font-medium border border-gray-300 rounded hover:bg-gray-50 transition">
+                            💡 Koncové zařízení
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Field Configuration Panels -->
+                {% for entity_type in ['revision', 'switchboard', 'device', 'circuit', 'terminal_device'] %}
+                <div id="field-config-{{ entity_type }}" class="field-config-panel hidden">
+                    {% set entity_fields = field_configs | selectattr('entity_type', 'equalto', entity_type) | list %}
+                    
+                    {% if entity_fields %}
+                    <!-- Group by category -->
+                    {% for category in ['basic', 'additional', 'technical', 'administrative', 'measurements'] %}
+                        {% set cat_fields = entity_fields | selectattr('category', 'equalto', category) | list %}
+                        {% if cat_fields %}
+                        <div class="mb-6">
+                            <h5 class="text-sm font-semibold text-gray-700 mb-3">
+                                {% if category == 'basic' %}🔵 Základní pole
+                                {% elif category == 'additional' %}📎 Dodatečné pole
+                                {% elif category == 'technical' %}⚙️ Technické pole
+                                {% elif category == 'administrative' %}📑 Administrativní pole
+                                {% elif category == 'measurements' %}📏 Měření
+                                {% endif %}
+                                <span class="text-xs text-gray-500 ml-1">({{ cat_fields | length }})</span>
+                            </h5>
+                            
+                            <div class="space-y-2">
+                                {% for field in cat_fields %}
+                                <div class="flex items-center gap-3 p-3 rounded border border-gray-200 hover:bg-gray-50 transition">
+                                    <!-- Toggle -->
+                                    <input type="checkbox"
+                                           {% if field.enabled %}checked{% endif %}
+                                           {% if field.required %}disabled{% endif %}
+                                           onchange="toggleField('{{ field.id }}', this.checked)"
+                                           class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary {% if field.required %}opacity-50 cursor-not-allowed{% endif %}">
+                                    
+                                    <!-- Field Info -->
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-medium text-gray-900">{{ field.label }}</span>
+                                            {% if field.required %}
+                                            <span class="px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700">
+                                                Povinné
+                                            </span>
+                                            {% endif %}
+                                            {% if field.dropdown_enabled %}
+                                            <span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                                                Dropdown
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-xs text-gray-500 font-mono">{{ field.name }}</p>
+                                    </div>
+                                    
+                                    <!-- Status indicator -->
+                                    <div class="text-sm">
+                                        {% if field.enabled %}
+                                        <span class="inline-flex w-2 h-2 rounded-full bg-green-500"></span>
+                                        {% else %}
+                                        <span class="inline-flex w-2 h-2 rounded-full bg-gray-300"></span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-8 text-gray-500">
+                        <p>Žádná pole k dispozici</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Toggle dropdown category select enable/disable
+function toggleDropdownConfig(configKey) {
+    const checkbox = document.getElementById(`enable_${configKey}`);
+    const select = document.getElementById(`category_${configKey}`);
+    select.disabled = !checkbox.checked;
+}
+
+// Show field configuration for entity
+function showFieldConfig(entityType) {
+    // Hide all panels
+    document.querySelectorAll('.field-config-panel').forEach(panel => {
+        panel.classList.add('hidden');
+    });
+    
+    // Show selected panel
+    document.getElementById(`field-config-${entityType}`).classList.remove('hidden');
+    
+    // Update button styles
+    document.querySelectorAll('.entity-btn').forEach(btn => {
+        btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+        btn.classList.add('border-gray-300', 'hover:bg-gray-50');
+    });
+    
+    const selectedBtn = document.getElementById(`entity-btn-${entityType}`);
+    selectedBtn.classList.remove('border-gray-300', 'hover:bg-gray-50');
+    selectedBtn.classList.add('bg-primary', 'text-white', 'border-primary');
+}
+
+// Toggle field visibility via AJAX
+async function toggleField(fieldId, enabled) {
+    try {
+        const formData = new FormData();
+        formData.append('field_id', fieldId);
+        formData.append('enabled', enabled);
+        
+        const response = await fetch('/settings/field/toggle', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            console.log('Field toggled:', fieldId, enabled);
+        }
+    } catch (error) {
+        console.error('Error toggling field:', error);
+    }
+}
+
+// Initialize - show first entity
+document.addEventListener('DOMContentLoaded', function() {
+    showFieldConfig('revision');
+});
+</script>
+
+{% endblock %}

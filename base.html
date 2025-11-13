@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <title>{% block title %}Revize App{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        accent: '#10b981',
+                        danger: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Hide scrollbar for sidebar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 2px;
+        }
+        
+        /* Table styles */
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+        
+        /* Flat button styles */
+        .btn-flat {
+            border: none;
+            box-shadow: none;
+            transition: all 0.15s ease;
+        }
+        
+        .btn-flat:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Mobile-first touch optimizations */
+        @media (max-width: 768px) {
+            /* Minimum touch target size: 44x44px (Apple HIG) */
+            button, a, input[type="button"], input[type="submit"] {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Larger form inputs for mobile */
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"],
+            input[type="number"],
+            input[type="date"],
+            textarea,
+            select {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 12px;
+            }
+            
+            /* Better spacing for mobile */
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+        
+        /* Safe area insets for notched devices */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            body {
+                padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* Smooth transitions */
+        * {
+            -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Revision Card Styles */
+        .revision-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .revision-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Line clamp utilities */
+        .line-clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Layout Container -->
+    <div class="flex flex-col md:flex-row h-screen">
+        <!-- DESKTOP SIDEBAR (hidden on mobile) -->
+        <aside id="sidebar" class="hidden md:flex md:flex-col bg-white border-r border-gray-200 transition-all duration-300 w-64">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h1 class="text-xl font-bold text-gray-800">Revize App</h1>
+                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Sidebar Navigation -->
+            <nav class="flex-1 overflow-y-auto sidebar-scroll p-3">
+                <ul class="space-y-1">
+                    <!-- Dashboard -->
+                    <li>
+                        <a href="/" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span class="sidebar-text font-medium">Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Revize with tree structure -->
+                    {% if sidebar_revisions is defined and sidebar_revisions %}
+                    <li class="border-t border-gray-200 pt-3 mt-3">
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Revize
+                        </div>
+                        <ul class="mt-2 space-y-1">
+                            {% for revision in sidebar_revisions %}
+                            <li>
+                                <a href="/revision/{{ revision.revision_id }}" 
+                                   class="flex items-center space-x-2 px-3 py-2 text-sm rounded hover:bg-blue-50 text-gray-700 hover:text-blue-700 transition">
+                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <span class="truncate">{{ revision.revision_name or ('Revize #' ~ revision.revision_id) }}</span>
+                                </a>
+                                
+                                <!-- Switchboards under this revision -->
+                                {% if revision.switchboards %}
+                                <ul class="ml-6 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                                    {% for switchboard in revision.switchboards|sort_with_none('switchboard_order') %}
+                                    <li>
+                                        <a href="/switchboard/{{ switchboard.switchboard_id }}" 
+                                           class="flex items-center space-x-2 px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition">
+                                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                            </svg>
+                                            <span class="truncate">{{ switchboard.switchboard_name or ('Rozváděč #' ~ switchboard.switchboard_id) }}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Nastavení -->
+                    <li class="border-t border-gray-200 pt-3 mt-3">
+                        <a href="/settings" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span class="sidebar-text font-medium">Nastavení</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+        
+        <!-- MOBILE HEADER (visible only on mobile) -->
+        <header class="md:hidden bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-bold text-gray-800">Revize App</h1>
+                <a href="/settings" 
+                   class="p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </a>
+            </div>
+        </header>
+        
+        <!-- MAIN CONTENT AREA (shared for both desktop and mobile) -->
+        <main class="flex-1 overflow-y-auto pb-20 md:pb-0 bg-gray-50">
+            <div class="container mx-auto p-4 md:p-6 max-w-7xl">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+        
+        <!-- MOBILE SIDEBAR (visible only on mobile) -->
+        <div class="md:hidden">
+            {% include 'components/mobile_sidebar.html' %}
+        </div>
+        
+        <!-- MOBILE BOTTOM NAVIGATION with FAB (visible only on mobile) -->
+        <div class="md:hidden">
+            {% include 'components/bottom_nav.html' %}
+        </div>
+    </div>
+    
+    <!-- Quick Entry Modal (Phase 2) -->
+    {% include 'modals/quick_entry_modal.html' %}
+    
+    <!-- Modal for adding new dropdown value (shared by all dropdowns) -->
+    <div id="form-add-value-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center" onclick="closeFormAddValueModal(event)">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onclick="event.stopPropagation()">
+            <div class="modal-header px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Přidat novou hodnotu</h3>
+                <button onclick="closeFormAddValueModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body px-6 py-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nová hodnota
+                </label>
+                <input type="text" 
+                       id="form-modal-new-value"
+                       placeholder="Zadejte hodnotu..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-2">
+                    Hodnota bude uložena do databáze a automaticky vybrána
+                </p>
+            </div>
+            
+            <div class="modal-footer px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="closeFormAddValueModal()" 
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition">
+                    Zrušit
+                </button>
+                <button onclick="saveFormNewValue()" 
+                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium">
+                    Přidat a vybrat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Toggle sidebar collapse
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const texts = document.querySelectorAll('.sidebar-text');
+            
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                texts.forEach(text => text.classList.add('hidden'));
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
+                texts.forEach(text => text.classList.remove('hidden'));
+            }
+        }
+
+        // ========================================
+        // COMPACT DROPDOWN FUNCTIONS
+        // ========================================
+        
+        // State for modal
+        let currentFormModalField = null;
+        let currentFormModalCategory = null;
+
+        // Toggle dropdown
+        function toggleFormDropdown(fieldName) {
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (!container) return;
+            
+            const dropdown = container.querySelector('.dropdown-options');
+            const arrow = container.querySelector('.dropdown-arrow');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-options').forEach(d => {
+                if (d !== dropdown) d.classList.add('hidden');
+            });
+            document.querySelectorAll('.dropdown-arrow').forEach(a => {
+                if (a !== arrow) a.classList.remove('rotate-180');
+            });
+            
+            // Toggle this dropdown
+            dropdown.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Select value from dropdown
+        function selectFormDropdownValue(fieldName, value) {
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (!container) return;
+            
+            const input = container.querySelector(`#${fieldName}`);
+            const dropdown = container.querySelector('.dropdown-options');
+            const arrow = container.querySelector('.dropdown-arrow');
+            
+            // Set value
+            input.value = value;
+            
+            // Update option styling
+            container.querySelectorAll('.dropdown-option').forEach(opt => {
+                opt.classList.remove('bg-blue-50', 'font-medium');
+            });
+            
+            // Close dropdown
+            dropdown.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+            
+            // Focus input
+            input.focus();
+        }
+
+        // Open modal for adding new value
+        function openFormAddValueModal(fieldName, category) {
+            currentFormModalField = fieldName;
+            currentFormModalCategory = category;
+            
+            // Close dropdown first
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (container) {
+                const dropdown = container.querySelector('.dropdown-options');
+                const arrow = container.querySelector('.dropdown-arrow');
+                dropdown.classList.add('hidden');
+                arrow.classList.remove('rotate-180');
+            }
+            
+            // Show modal
+            const modal = document.getElementById('form-add-value-modal');
+            const input = document.getElementById('form-modal-new-value');
+            modal.classList.remove('hidden');
+            input.value = '';
+            input.focus();
+        }
+
+        // Close modal
+        function closeFormAddValueModal(event) {
+            // If event is provided and target is not the overlay, don't close
+            if (event && event.target !== event.currentTarget) {
+                return;
+            }
+            
+            const modal = document.getElementById('form-add-value-modal');
+            modal.classList.add('hidden');
+            currentFormModalField = null;
+            currentFormModalCategory = null;
+        }
+
+        // Save new value from modal
+        async function saveFormNewValue() {
+            const input = document.getElementById('form-modal-new-value');
+            const value = input.value.trim();
+            
+            if (!value) {
+                alert('Zadejte hodnotu');
+                input.focus();
+                return;
+            }
+            
+            if (!currentFormModalField || !currentFormModalCategory) {
+                alert('Chyba: Neznámé pole nebo kategorie');
+                return;
+            }
+            
+            try {
+                // Send request to add new value
+                const formData = new FormData();
+                formData.append('value', value);
+                
+                const response = await fetch(`/api/dropdown/${currentFormModalCategory}/add`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Find the container and dropdown
+                    const container = document.querySelector(`.dropdown-widget-container[data-field="${currentFormModalField}"]`);
+                    const dropdown = container.querySelector('.dropdown-options');
+                    const fieldInput = container.querySelector(`#${currentFormModalField}`);
+                    
+                    // Add new option to dropdown (before the separator)
+                    const separator = dropdown.querySelector('.border-t');
+                    const newOption = document.createElement('div');
+                    newOption.className = 'dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-900';
+                    newOption.setAttribute('onclick', `selectFormDropdownValue('${currentFormModalField}', '${data.value}')`);
+                    newOption.textContent = data.value;
+                    
+                    if (separator) {
+                        dropdown.insertBefore(newOption, separator);
+                    } else {
+                        dropdown.insertBefore(newOption, dropdown.lastElementChild);
+                    }
+                    
+                    // Set the new value in the input
+                    fieldInput.value = data.value;
+                    
+                    // Close modal
+                    closeFormAddValueModal();
+                    
+                    // Show success message
+                    alert(`Hodnota "${data.value}" byla přidána a vybrána`);
+                } else {
+                    alert('Chyba při přidávání hodnoty: ' + (data.error || 'Neznámá chyba'));
+                }
+            } catch (error) {
+                console.error('Error adding dropdown value:', error);
+                alert('Chyba při přidávání hodnoty');
+            }
+        }
+
+        // Handle clicks on dropdown options (using event delegation and capture phase)
+        document.addEventListener('click', function(e) {
+            // Handle dropdown option selection
+            const dropdownOption = e.target.closest('.dropdown-option');
+            if (dropdownOption && dropdownOption.dataset.field && dropdownOption.dataset.value) {
+                e.stopPropagation();
+                e.preventDefault();
+                const fieldName = dropdownOption.dataset.field;
+                const value = dropdownOption.dataset.value;
+                window.dropdownWidget.selectValue(fieldName, value);
+                return;
+            }
+            
+            // Handle "add new value" option
+            const addOption = e.target.closest('.dropdown-option-add');
+            if (addOption && addOption.dataset.field && addOption.dataset.category) {
+                e.stopPropagation();
+                e.preventDefault();
+                const fieldName = addOption.dataset.field;
+                const category = addOption.dataset.category;
+                window.dropdownWidget.openModal(fieldName, category);
+                return;
+            }
+        }, true); // Use capture phase to run before other listeners
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-widget-container') && !e.target.closest('.modal-overlay')) {
+                document.querySelectorAll('.dropdown-options').forEach(d => {
+                    d.classList.add('hidden');
+                });
+                document.querySelectorAll('.dropdown-arrow').forEach(a => {
+                    a.classList.remove('rotate-180');
+                });
+            }
+        });
+
+        // Handle Enter key in modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalInput = document.getElementById('form-modal-new-value');
+            if (modalInput) {
+                modalInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveFormNewValue();
+                    }
+                });
+            }
+        });
+
+        // Handle Escape key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('form-add-value-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeFormAddValueModal();
+                }
+            }
+        });
+    </script>
+    
+    <style>
+        .dropdown-widget-container {
+            position: relative;
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-option {
+            transition: background-color 0.15s ease;
+        }
+
+        .modal-overlay {
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            animation: slideUp 0.2s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    
+    <!-- Global Dropdown Widget Modal (once per page) -->
+    <div id="add-value-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center" onclick="window.dropdownWidget.closeModal(event)">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onclick="event.stopPropagation()">
+            <div class="modal-header px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Přidat novou hodnotu</h3>
+                <button onclick="window.dropdownWidget.closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body px-6 py-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nová hodnota
+                </label>
+                <input type="text" 
+                       id="modal-new-value"
+                       placeholder="Zadejte hodnotu..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-2">
+                    Hodnota bude uložena do databáze a automaticky vybrána
+                </p>
+            </div>
+            
+            <div class="modal-footer px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="window.dropdownWidget.closeModal()" 
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition">
+                    Zrušit
+                </button>
+                <button onclick="window.dropdownWidget.saveNewValue()" 
+                        class="px-4 py-2 bg-primary text-white rounded hover:bg-blue-600 transition font-medium">
+                    Přidat a vybrat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Dropdown Widget JavaScript -->
+    <script>
+    // Global dropdown widget object (singleton)
+    window.dropdownWidget = {
+        currentModalField: null,
+        currentModalCategory: null,
+        
+        // Toggle dropdown
+        toggle: function(fieldName) {
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (!container) return;
+            
+            const dropdown = container.querySelector('.dropdown-options');
+            const arrow = container.querySelector('.dropdown-arrow');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-options').forEach(d => {
+                if (d !== dropdown) d.classList.add('hidden');
+            });
+            document.querySelectorAll('.dropdown-arrow').forEach(a => {
+                if (a !== arrow) a.classList.remove('rotate-180');
+            });
+            
+            // Toggle this dropdown
+            dropdown.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        },
+        
+        // Select value from dropdown
+        selectValue: function(fieldName, value) {
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (!container) return;
+            
+            const input = container.querySelector(`#${fieldName}`);
+            const dropdown = container.querySelector('.dropdown-options');
+            const arrow = container.querySelector('.dropdown-arrow');
+            
+            // Set value
+            input.value = value;
+            
+            // Update option styling
+            container.querySelectorAll('.dropdown-option').forEach(opt => {
+                opt.classList.remove('bg-blue-50', 'font-medium');
+            });
+            
+            // Close dropdown
+            dropdown.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+            
+            // Focus input
+            input.focus();
+        },
+        
+        // Open modal for adding new value
+        openModal: function(fieldName, category) {
+            this.currentModalField = fieldName;
+            this.currentModalCategory = category;
+            
+            // Close dropdown first
+            const container = document.querySelector(`.dropdown-widget-container[data-field="${fieldName}"]`);
+            if (container) {
+                const dropdown = container.querySelector('.dropdown-options');
+                const arrow = container.querySelector('.dropdown-arrow');
+                dropdown.classList.add('hidden');
+                arrow.classList.remove('rotate-180');
+            }
+            
+            // Show modal
+            const modal = document.getElementById('add-value-modal');
+            const input = document.getElementById('modal-new-value');
+            modal.classList.remove('hidden');
+            input.value = '';
+            input.focus();
+        },
+        
+        // Close modal
+        closeModal: function(event) {
+            // If event is provided and target is not the overlay, don't close
+            if (event && event.target !== event.currentTarget) {
+                return;
+            }
+            
+            const modal = document.getElementById('add-value-modal');
+            modal.classList.add('hidden');
+            this.currentModalField = null;
+            this.currentModalCategory = null;
+        },
+        
+        // Save new value from modal
+        saveNewValue: async function() {
+            const input = document.getElementById('modal-new-value');
+            const value = input.value.trim();
+            
+            if (!value) {
+                alert('Zadejte hodnotu');
+                input.focus();
+                return;
+            }
+            
+            if (!this.currentModalField || !this.currentModalCategory) {
+                alert('Chyba: Neznámé pole nebo kategorie');
+                return;
+            }
+            
+            try {
+                // Send request to add new value
+                const formData = new FormData();
+                formData.append('value', value);
+                
+                const response = await fetch(`/api/dropdown/${this.currentModalCategory}/add`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Find the container and dropdown
+                    const container = document.querySelector(`.dropdown-widget-container[data-field="${this.currentModalField}"]`);
+                    const dropdown = container.querySelector('.dropdown-options');
+                    const fieldInput = container.querySelector(`#${this.currentModalField}`);
+                    
+                    // Add new option to dropdown (before the separator)
+                    const separator = dropdown.querySelector('.border-t');
+                    const newOption = document.createElement('div');
+                    newOption.className = 'dropdown-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-gray-900';
+                    newOption.setAttribute('onclick', `window.dropdownWidget.selectValue('${this.currentModalField}', ${JSON.stringify(data.value)})`);
+                    newOption.textContent = data.value;
+                    
+                    if (separator) {
+                        dropdown.insertBefore(newOption, separator);
+                    } else {
+                        dropdown.insertBefore(newOption, dropdown.lastElementChild);
+                    }
+                    
+                    // Set the new value in the input
+                    fieldInput.value = data.value;
+                    
+                    // Close modal
+                    this.closeModal();
+                    
+                    // Show success message
+                    alert(`Hodnota "${data.value}" byla přidána a vybrána`);
+                } else {
+                    alert('Chyba při přidávání hodnoty: ' + (data.error || 'Neznámá chyba'));
+                }
+            } catch (error) {
+                console.error('Error adding dropdown value:', error);
+                alert('Chyba při přidávání hodnoty');
+            }
+        }
+    };
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-widget-container') && !e.target.closest('.modal-overlay')) {
+            document.querySelectorAll('.dropdown-options').forEach(d => {
+                d.classList.add('hidden');
+            });
+            document.querySelectorAll('.dropdown-arrow').forEach(a => {
+                a.classList.remove('rotate-180');
+            });
+        }
+    });
+    
+    // Handle Enter key in modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalInput = document.getElementById('modal-new-value');
+        if (modalInput) {
+            modalInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    window.dropdownWidget.saveNewValue();
+                }
+            });
+        }
+    });
+    
+    // Handle Escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('add-value-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                window.dropdownWidget.closeModal();
+            }
+        }
+    });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

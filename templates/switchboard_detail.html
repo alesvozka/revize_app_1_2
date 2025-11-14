@@ -129,7 +129,7 @@
                 <th>Pozice</th>
                 <th>Popis</th>
                 <th>Parametry</th>
-                <th>Akce</th>
+                <th class="text-nowrap">Akce</th>
               </tr>
             </thead>
             <tbody>
@@ -158,7 +158,13 @@
                       Póly: {{ dev.switchboard_device_poles or "-" }}
                     </td>
                     <td class="text-nowrap">
-                      <button type="button" class="btn btn-sm btn-outline-primary me-1 btn-device-edit">Upravit</button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-success me-1 btn-device-add-child"
+                              title="Přidat podřízený přístroj">+</button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-primary me-1 btn-device-edit">
+                        Upravit
+                      </button>
                       <form action="/devices/{{ dev.device_id }}/delete" method="post" class="d-inline"
                             onsubmit="return confirm('Smazat tento chránič?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Smazat</button>
@@ -187,7 +193,8 @@
                 <th>Pozice</th>
                 <th>Popis</th>
                 <th>Parametry</th>
-                <th>Akce</th>
+                <th>RCD</th>
+                <th class="text-nowrap">Akce</th>
               </tr>
             </thead>
             <tbody>
@@ -222,8 +229,30 @@
                       {% endif %}
                       Póly: {{ dev.switchboard_device_poles or "-" }} / Moduly: {{ dev.switchboard_device_module_width or "-" }}
                     </td>
+                    <td>
+                      <form action="/devices/{{ dev.device_id }}/set-parent" method="post" class="mb-0">
+                        <select name="parent_device_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                          <option value="">(bez RCD)</option>
+                          {% for rcd in devices %}
+                            {% if rcd.switchboard_device_residual_current_ma is not none
+                                  or (rcd.switchboard_device_type and 'RCD' in rcd.switchboard_device_type) %}
+                              <option value="{{ rcd.device_id }}"
+                                      {% if dev.parent_device_id == rcd.device_id %}selected{% endif %}>
+                                {{ rcd.switchboard_device_position or 'RCD' }}
+                              </option>
+                            {% endif %}
+                          {% endfor %}
+                        </select>
+                      </form>
+                    </td>
                     <td class="text-nowrap">
-                      <button type="button" class="btn btn-sm btn-outline-primary me-1 btn-device-edit">Upravit</button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-success me-1 btn-device-add-child"
+                              title="Přidat podřízený přístroj">+</button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-primary me-1 btn-device-edit">
+                        Upravit
+                      </button>
                       <form action="/devices/{{ dev.device_id }}/delete" method="post" class="d-inline"
                             onsubmit="return confirm('Smazat tento přístroj?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Smazat</button>
@@ -297,6 +326,15 @@
   </div>
 </div>
 
+<style>
+  @media (min-width: 768px) {
+    #deviceDrawer.offcanvas-end {
+      width: 40vw;
+      max-width: 640px;
+    }
+  }
+</style>
+
 <script>
 (function() {
   if (typeof window === 'undefined') return;
@@ -328,7 +366,7 @@
     const idField = document.getElementById('device-id-field');
     const parentField = document.getElementById('parent-device-id-field');
     if (idField) idField.value = row.getAttribute('data-device-id') || '';
-    if (parentField) parentField.value = '';  // parent řešíme zatím ručně
+    if (parentField) parentField.value = row.getAttribute('data-parent-id') || '';
 
     const setField = (name, value) => {
       const input = form.querySelector('[name="' + name + '"]');
@@ -356,8 +394,7 @@
     const rows = document.querySelectorAll('.device-row');
     rows.forEach(row => {
       row.addEventListener('click', function(e) {
-        // neklikat, pokud šlo o kliknutí na tlačítko
-        if (e.target.closest('button') || e.target.closest('form')) {
+        if (e.target.closest('button') || e.target.closest('form') || e.target.tagName === 'SELECT') {
           return;
         }
         clearDeviceForm();
@@ -378,6 +415,29 @@
           const drawer = getDrawer();
           if (drawer) drawer.show();
         }
+      });
+    });
+
+    const childButtons = document.querySelectorAll('.btn-device-add-child');
+    childButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const row = btn.closest('tr');
+        if (!row) return;
+        clearDeviceForm();
+        const form = document.getElementById('device-form');
+        if (!form) return;
+        const parentField = document.getElementById('parent-device-id-field');
+        if (parentField) {
+          parentField.value = row.getAttribute('data-device-id') || '';
+        }
+        const posField = form.querySelector('[name="switchboard_device_position"]');
+        if (posField) {
+          const base = row.getAttribute('data-device-position') || '';
+          posField.value = base ? (base + '.') : '';
+        }
+        const drawer = getDrawer();
+        if (drawer) drawer.show();
       });
     });
 

@@ -2,21 +2,30 @@
 {% block title %}Revize – formulář{% endblock %}
 {% block content %}
 <h1 class="h3 mb-3">
-    {% if revision %}Upravit revizi{% else %}Nová revize{% endif %}
+  {% if revision %}Upravit revizi{% else %}Nová revize{% endif %}
 </h1>
+
 <form method="post">
   <div class="mb-3">
     <label class="form-label">Název revize</label>
-    <input type="text" name="title" class="form-control" required value="{{ revision.title if revision else '' }}">
+    <input type="text" name="revision_name" class="form-control" required
+           value="{{ revision.revision_name if revision else '' }}">
   </div>
   <div class="mb-3">
-    <label class="form-label">Místo</label>
-    <input type="text" name="location" class="form-control" value="{{ revision.location if revision else '' }}">
+    <label class="form-label">Kód revize</label>
+    <input type="text" name="revision_code" class="form-control"
+           value="{{ revision.revision_code if revision else '' }}">
   </div>
   <div class="mb-3">
-    <label class="form-label">Popis</label>
-    <textarea name="description" class="form-control" rows="4">{{ revision.description if revision else '' }}</textarea>
+    <label class="form-label">Adresa</label>
+    <input type="text" name="revision_address" class="form-control"
+           value="{{ revision.revision_address if revision else '' }}">
   </div>
+  <div class="mb-3">
+    <label class="form-label">Stručný popis</label>
+    <textarea name="revision_short_description" class="form-control" rows="3">{{ revision.revision_short_description if revision else '' }}</textarea>
+  </div>
+
   <button type="submit" class="btn btn-primary">Uložit</button>
   <a href="/revisions" class="btn btn-secondary ms-2">Zpět</a>
 </form>

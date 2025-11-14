@@ -2,25 +2,27 @@
 {% block title %}Revize – seznam{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3">Revize</h1>
-    <a href="/revisions/create" class="btn btn-primary">+ Nová revize</a>
+  <h1 class="h3">Revize</h1>
+  <a href="/revisions/create" class="btn btn-primary">+ Nová revize</a>
 </div>
 
 {% if revisions %}
   <div class="list-group">
     {% for rev in revisions %}
-      <a href="/revisions/{{ rev.id }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+      <a href="/revisions/{{ rev.revision_id }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
         <div>
-          <div class="fw-semibold">{{ rev.title }}</div>
-          {% if rev.location %}
-            <div class="small text-muted">{{ rev.location }}</div>
+          <div class="fw-semibold">{{ rev.revision_name or "(bez názvu)" }}</div>
+          {% if rev.revision_address %}
+            <div class="small text-muted">{{ rev.revision_address }}</div>
           {% endif %}
         </div>
-        <span class="badge bg-secondary">{{ rev.created_at.strftime("%d.%m.%Y") if rev.created_at else "" }}</span>
+        {% if rev.revision_code %}
+          <span class="badge bg-secondary">{{ rev.revision_code }}</span>
+        {% endif %}
       </a>
     {% endfor %}
   </div>
 {% else %}
-  <p>Nemáš zatím žádné revize. Vytvoř první.</p>
+  <p>Zatím žádné revize.</p>
 {% endif %}
 {% endblock %}

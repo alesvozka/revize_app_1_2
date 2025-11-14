@@ -2,10 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Use DATABASE_URL from env (e.g. Railway), fallback to local SQLite
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
-# For SQLite we need check_same_thread=False
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}

@@ -334,16 +334,19 @@ async def switchboard_detail(
         .filter(SwitchboardMeasurement.switchboard_id == switchboard_id)
         .first()
     )
+    if not meas:
+        meas = SwitchboardMeasurement(switchboard_id=switchboard_id)
+        db.add(meas)
+        db.commit()
+        db.refresh(meas)
 
     devices = (
         db.query(SwitchboardDevice)
         .filter(SwitchboardDevice.switchboard_id == switchboard_id)
-        .order_by(SwitchboardDevice.switchboard_device_position.asc().nullslast())
         .all()
-
+    )
 
     devices_tree = build_devices_tree(devices)
-    )
 
     return templates.TemplateResponse(
         "switchboard_detail.html",
@@ -353,8 +356,8 @@ async def switchboard_detail(
             "measurement": meas,
             "devices": devices,
             "revision": sb.revision,
-                  "devices_tree": devices_tree,
-        },,
+            "devices_tree": devices_tree,
+        },
     )
 
 
@@ -782,4 +785,3 @@ async def update_switchboard_devices_order(
 
     db.commit()
     return {"status": "ok"}
-

@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Obvod – detail{% endblock %}
+{% block content %}
+<a href="/switchboards/{{ switchboard.switchboard_id }}" class="btn btn-link mb-2">&larr; Zpět na rozvaděč</a>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">
+      Obvod {{ circuit.circuit_number or "bez čísla" }}
+      {% if circuit.circuit_room %}
+        – {{ circuit.circuit_room }}
+      {% endif %}
+    </h1>
+    <div class="text-muted small">
+      Rozvaděč: {{ switchboard.switchboard_name or ("R"+switchboard.switchboard_id|string) }}
+      {% if switchboard.switchboard_location %}
+        – {{ switchboard.switchboard_location }}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <!-- Údaje obvodu -->
+    <div class="card mb-3">
+      <div class="card-header">
+        Údaje obvodu
+      </div>
+      <div class="card-body">
+        <form action="/circuits/{{ circuit.circuit_id }}/edit" method="post" class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Číslo obvodu</label>
+            <input type="text" name="circuit_number" class="form-control" value="{{ circuit.circuit_number or '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Místnost</label>
+            <input type="text" name="circuit_room" class="form-control" value="{{ circuit.circuit_room or '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Počet zásuvek / ks</label>
+            <input type="number" step="1" name="circuit_number_of_outlets" class="form-control"
+                   value="{{ circuit.circuit_number_of_outlets or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Kabel</label>
+            <input type="text" name="circuit_cable" class="form-control" value="{{ circuit.circuit_cable or '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Popis obvodu</label>
+            <textarea name="circuit_description" class="form-control" rows="2">{{ circuit.circuit_description or '' }}</textarea>
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-primary btn-sm">Uložit údaje obvodu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Měření obvodu -->
+    <div class="card mb-3">
+      <div class="card-header">
+        Měření obvodu
+      </div>
+      <div class="card-body">
+        <form action="/circuits/{{ circuit.circuit_id }}/measurements/save" method="post" class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Riz [MΩ]</label>
+            <input type="number" step="0.01" name="measurements_circuit_insulation_resistance"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_insulation_resistance if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Zs min [Ω]</label>
+            <input type="number" step="0.001" name="measurements_circuit_loop_impedance_min"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_loop_impedance_min if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Zs max [Ω]</label>
+            <input type="number" step="0.001" name="measurements_circuit_loop_impedance_max"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_loop_impedance_max if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">tΔ [ms]</label>
+            <input type="number" step="0.1" name="measurements_circuit_rcd_trip_time_ms"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_rcd_trip_time_ms if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">IΔ [mA]</label>
+            <input type="number" step="0.1" name="measurements_circuit_rcd_test_current_ma"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_rcd_test_current_ma if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Rz [Ω]</label>
+            <input type="number" step="0.1" name="measurements_circuit_earth_resistance"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_earth_resistance if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Kontinuita [Ω]</label>
+            <input type="number" step="0.01" name="measurements_circuit_continuity"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_continuity if circuit.measurements else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Pořadí fází</label>
+            <input type="text" name="measurements_circuit_order_of_phases"
+                   class="form-control"
+                   value="{{ circuit.measurements.measurements_circuit_order_of_phases if circuit.measurements else '' }}">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Uložit měření obvodu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Koncová zařízení -->
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header">
+        Koncová zařízení
+      </div>
+      <div class="card-body">
+        {% if circuit.terminal_devices %}
+          <ul class="list-unstyled">
+            {% for td in circuit.terminal_devices %}
+              <li class="mb-1">
+                <strong>{{ td.terminal_device_type or "Zařízení" }}</strong>
+                {% if td.terminal_device_marking %}
+                  – {{ td.terminal_device_marking }}
+                {% endif %}
+                {% if td.terminal_device_power %}
+                  ({{ td.terminal_device_power }} W)
+                {% endif %}
+                <form action="/terminal-devices/{{ td.terminal_device_id }}/delete"
+                      method="post" class="d-inline"
+                      onsubmit="return confirm('Smazat zařízení?');">
+                  <button type="submit" class="btn btn-link btn-sm text-danger p-0 ms-1">smazat</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="text-muted small mb-2">Žádná koncová zařízení.</div>
+        {% endif %}
+
+        <hr class="my-2">
+
+        <form action="/circuits/{{ circuit.circuit_id }}/terminal-devices/create" method="post" class="row g-2">
+          <div class="col-6">
+            <label class="form-label form-label-sm">Typ zařízení</label>
+            <input type="text" name="terminal_device_type" class="form-control form-control-sm" placeholder="Svítidlo, zásuvka…">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Označení</label>
+            <input type="text" name="terminal_device_marking" class="form-control form-control-sm" placeholder="např. L1, Z1…">
+          </div>
+          <div class="col-4">
+            <label class="form-label form-label-sm">Výkon [W]</label>
+            <input type="number" step="1" name="terminal_device_power" class="form-control form-control-sm">
+          </div>
+          <div class="col-4">
+            <label class="form-label form-label-sm">Výrobce</label>
+            <input type="text" name="terminal_device_manufacturer" class="form-control form-control-sm">
+          </div>
+          <div class="col-4">
+            <label class="form-label form-label-sm">Model</label>
+            <input type="text" name="terminal_device_model" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Krytí IP</label>
+            <input type="text" name="terminal_device_ip_rating" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Třída ochrany</label>
+            <input type="text" name="terminal_device_protection_class" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Číslo výrobku</label>
+            <input type="text" name="terminal_device_serial_number" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Napájení</label>
+            <input type="text" name="terminal_device_supply_type" class="form-control form-control-sm" placeholder="230 V AC…">
+          </div>
+          <div class="col-12">
+            <label class="form-label form-label-sm">Způsob instalace</label>
+            <input type="text" name="terminal_device_installation_method" class="form-control form-control-sm">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Přidat zařízení</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import FastAPI, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -8,6 +8,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
+from pydantic import BaseModel
+import json
 
 from database import engine, Base, get_db
 from models import (
@@ -20,6 +22,81 @@ from models import (
     CircuitMeasurement,
     TerminalDevice,
 )
+
+
+def _get_device_meta(dev: SwitchboardDevice) -> dict:
+    """
+    Load JSON metadata from switchboard_device_sub_devices.
+    Used e.g. for order_index.
+    """
+    if not dev.switchboard_device_sub_devices:
+        return {}
+    try:
+        return json.loads(dev.switchboard_device_sub_devices)
+    except Exception:
+        return {}
+
+
+def build_devices_tree(devices: list[SwitchboardDevice]) -> List[dict]:
+    """
+    Build a tree structure of devices based on parent_device_id.
+    Each item is a dict with children list and order_index from metadata.
+    """
+    by_id: dict[int, dict] = {}
+
+    for dev in devices:
+        meta = _get_device_meta(dev)
+        item = {
+            "device_id": dev.device_id,
+            "switchboard_id": dev.switchboard_id,
+            "parent_device_id": dev.parent_device_id,
+            "switchboard_device_position": dev.switchboard_device_position,
+            "switchboard_device_type": dev.switchboard_device_type,
+            "switchboard_device_manufacturer": dev.switchboard_device_manufacturer,
+            "switchboard_device_model": dev.switchboard_device_model,
+            "switchboard_device_trip_characteristic": dev.switchboard_device_trip_characteristic,
+            "switchboard_device_rated_current": dev.switchboard_device_rated_current,
+            "switchboard_device_residual_current_ma": dev.switchboard_device_residual_current_ma,
+            "switchboard_device_sub_devices": dev.switchboard_device_sub_devices,
+            "switchboard_device_poles": dev.switchboard_device_poles,
+            "switchboard_device_module_width": dev.switchboard_device_module_width,
+            "order_index": int(_get_device_meta(dev).get("order_index", 0)),
+            "children": [],
+        }
+        by_id[dev.device_id] = item
+
+    roots: List[dict] = []
+
+    for dev in devices:
+        item = by_id[dev.device_id]
+        if dev.parent_device_id and dev.parent_device_id in by_id:
+            parent_item = by_id[dev.parent_device_id]
+            parent_item["children"].append(item)
+        else:
+            roots.append(item)
+
+    def sort_children(node: dict):
+        node["children"].sort(
+            key=lambda x: (
+                x.get("order_index", 0),
+                (x.get("switchboard_device_position") or ""),
+            )
+        )
+        for ch in node["children"]:
+            sort_children(ch)
+
+    for r in roots:
+        sort_children(r)
+
+    roots.sort(
+        key=lambda x: (
+            x.get("order_index", 0),
+            (x.get("switchboard_device_position") or ""),
+        )
+    )
+
+    return roots
+
 
 app = FastAPI(title="Revizní app – clean v2")
 
@@ -263,6 +340,9 @@ async def switchboard_detail(
         .filter(SwitchboardDevice.switchboard_id == switchboard_id)
         .order_by(SwitchboardDevice.switchboard_device_position.asc().nullslast())
         .all()
+
+
+    devices_tree = build_devices_tree(devices)
     )
 
     return templates.TemplateResponse(
@@ -273,7 +353,8 @@ async def switchboard_detail(
             "measurement": meas,
             "devices": devices,
             "revision": sb.revision,
-        },
+                  "devices_tree": devices_tree,
+        },,
     )
 
 
@@ -648,3 +729,57 @@ async def terminal_device_delete(
         db.commit()
         return RedirectResponse(url=f"/switchboards/{sb_id}", status_code=303)
     return RedirectResponse(url="/revisions", status_code=303)
+
+
+
+class DeviceOrderItem(BaseModel):
+    device_id: int
+    parent_device_id: Optional[int] = None
+    order_index: int
+
+
+@app.put("/switchboards/{switchboard_id}/devices/order")
+async def update_switchboard_devices_order(
+    switchboard_id: int,
+    items: List[DeviceOrderItem],
+    db: Session = Depends(get_db),
+):
+    user_id = get_current_user_id()
+
+    sb = (
+        db.query(Switchboard)
+        .join(Revision)
+        .filter(
+            Switchboard.switchboard_id == switchboard_id,
+            Revision.user_id == user_id,
+        )
+        .first()
+    )
+    if not sb:
+        return RedirectResponse(url="/revisions", status_code=303)
+
+    ids = [i.device_id for i in items]
+    devs = (
+        db.query(SwitchboardDevice)
+        .filter(
+            SwitchboardDevice.switchboard_id == switchboard_id,
+            SwitchboardDevice.device_id.in_(ids),
+        )
+        .all()
+    )
+    dev_by_id = {d.device_id: d for d in devs}
+
+    for item in items:
+        dev = dev_by_id.get(item.device_id)
+        if not dev:
+            continue
+
+        dev.parent_device_id = item.parent_device_id
+
+        meta = _get_device_meta(dev)
+        meta["order_index"] = item.order_index
+        dev.switchboard_device_sub_devices = json.dumps(meta)
+
+    db.commit()
+    return {"status": "ok"}
+

@@ -394,8 +394,6 @@ async def device_create(
     switchboard_device_residual_current_ma: Optional[float] = Form(None),
     switchboard_device_poles: Optional[int] = Form(None),
     switchboard_device_module_width: Optional[float] = Form(None),
-    device_id: Optional[int] = Form(None),
-    parent_device_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
     user_id = get_current_user_id()
@@ -411,43 +409,8 @@ async def device_create(
     if not sb:
         return RedirectResponse(url="/revisions", status_code=303)
 
-    # pokud je zadán device_id, provádíme editaci existujícího přístroje
-    if device_id is not None:
-        dev = (
-            db.query(SwitchboardDevice)
-            .join(Switchboard)
-            .join(Revision)
-            .filter(
-                SwitchboardDevice.device_id == device_id,
-                Switchboard.switchboard_id == switchboard_id,
-                Revision.user_id == user_id,
-            )
-            .first()
-        )
-        if dev:
-            dev.switchboard_device_position = switchboard_device_position or None
-            dev.switchboard_device_type = switchboard_device_type or None
-            dev.switchboard_device_manufacturer = switchboard_device_manufacturer or None
-            dev.switchboard_device_model = switchboard_device_model or None
-            dev.switchboard_device_trip_characteristic = (
-                switchboard_device_trip_characteristic or None
-            )
-            dev.switchboard_device_rated_current = switchboard_device_rated_current
-            dev.switchboard_device_residual_current_ma = (
-                switchboard_device_residual_current_ma
-            )
-            dev.switchboard_device_poles = switchboard_device_poles
-            dev.switchboard_device_module_width = switchboard_device_module_width
-            dev.parent_device_id = parent_device_id
-            db.commit()
-            return RedirectResponse(
-                url=f"/switchboards/{switchboard_id}", status_code=303
-            )
-
-    # jinak vytvoříme nový přístroj
     dev = SwitchboardDevice(
         switchboard_id=switchboard_id,
-        parent_device_id=parent_device_id,
         switchboard_device_position=switchboard_device_position or None,
         switchboard_device_type=switchboard_device_type or None,
         switchboard_device_manufacturer=switchboard_device_manufacturer or None,
@@ -463,6 +426,35 @@ async def device_create(
     db.commit()
     return RedirectResponse(url=f"/switchboards/{switchboard_id}", status_code=303)
 
+
+
+
+@app.post("/devices/{device_id}/set-parent")
+async def device_set_parent(
+    device_id: int,
+    parent_device_id: Optional[int] = Form(None),
+    db: Session = Depends(get_db),
+):
+    user_id = get_current_user_id()
+    dev = (
+        db.query(SwitchboardDevice)
+        .join(Switchboard)
+        .join(Revision)
+        .filter(
+            SwitchboardDevice.device_id == device_id,
+            Revision.user_id == user_id,
+        )
+        .first()
+    )
+    if not dev:
+        return RedirectResponse(url="/revisions", status_code=303)
+
+    dev.parent_device_id = parent_device_id
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/switchboards/{dev.switchboard_id}", status_code=303
+    )
 
 @app.post("/devices/{device_id}/delete")
 async def device_delete(device_id: int, db: Session = Depends(get_db)):

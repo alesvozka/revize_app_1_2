@@ -5,8 +5,8 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h1 class="h4 mb-0">{{ switchboard.switchboard_name }}</h1>
-    <div class="text-muted">
+    <h1 class="h4 mb-0">{{ switchboard.switchboard_name or "Rozvaděč" }}</h1>
+    <div class="text-muted small">
       {% if switchboard.switchboard_location %}
         <span class="me-2">Místo: {{ switchboard.switchboard_location }}</span>
       {% endif %}
@@ -14,595 +14,399 @@
         <span class="me-2">Typ: {{ switchboard.switchboard_type }}</span>
       {% endif %}
       {% if switchboard.switchboard_serial_number %}
-        <span>Výrobní číslo: {{ switchboard.switchboard_serial_number }}</span>
+        <span class="me-2">Výrobní číslo: {{ switchboard.switchboard_serial_number }}</span>
+      {% endif %}
+      {% if switchboard.switchboard_ip_rating %}
+        <span class="me-2">IP: {{ switchboard.switchboard_ip_rating }}</span>
       {% endif %}
     </div>
   </div>
-  <form action="/switchboards/{{ switchboard.switchboard_id }}/delete" method="post" onsubmit="return confirm('Opravdu smazat rozvaděč?');">
+  <form action="/switchboards/{{ switchboard.switchboard_id }}/delete" method="post"
+        onsubmit="return confirm('Opravdu smazat rozvaděč?');">
     <button type="submit" class="btn btn-outline-danger btn-sm">Smazat</button>
   </form>
 </div>
 
-<div class="card mb-4">
-  <div class="card-header">
-    Údaje o rozvaděči
-  </div>
-  <div class="card-body">
-    <form action="/switchboards/{{ switchboard.switchboard_id }}/edit" method="post" class="row g-2">
-      <div class="col-md-4">
-        <label class="form-label">Název</label>
-        <input type="text" name="switchboard_name" class="form-control" value="{{ switchboard.switchboard_name }}">
+<div class="row">
+  <!-- Levý sloupec: info + měření + seznamy zařízení -->
+  <div class="col-lg-8">
+    <!-- Údaje o rozvaděči -->
+    <div class="card mb-3">
+      <div class="card-header">
+        Údaje o rozvaděči
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Umístění</label>
-        <input type="text" name="switchboard_location" class="form-control" value="{{ switchboard.switchboard_location or '' }}">
+      <div class="card-body">
+        <form action="/switchboards/{{ switchboard.switchboard_id }}/edit" method="post" class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Název</label>
+            <input type="text" name="switchboard_name" class="form-control" value="{{ switchboard.switchboard_name or '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Umístění</label>
+            <input type="text" name="switchboard_location" class="form-control" value="{{ switchboard.switchboard_location or '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Poznámka</label>
+            <input type="text" name="switchboard_note" class="form-control" value="{{ switchboard.switchboard_note or '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Typ rozvaděče</label>
+            <input type="text" name="switchboard_type" class="form-control" value="{{ switchboard.switchboard_type or '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Výrobní číslo</label>
+            <input type="text" name="switchboard_serial_number" class="form-control" value="{{ switchboard.switchboard_serial_number or '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">IP krytí</label>
+            <input type="text" name="switchboard_ip_rating" class="form-control" value="{{ switchboard.switchboard_ip_rating or '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Výrobce</label>
+            <input type="text" name="switchboard_manufacturer" class="form-control" value="{{ switchboard.switchboard_manufacturer or '' }}">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-primary btn-sm">Uložit údaje rozvaděče</button>
+          </div>
+        </form>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Poznámka</label>
-        <input type="text" name="switchboard_note" class="form-control" value="{{ switchboard.switchboard_note or '' }}">
-      </div>
-      <div class="col-12 mt-2">
-        <button type="submit" class="btn btn-primary btn-sm">Uložit údaje rozvaděče</button>
-      </div>
-    </form>
-  </div>
-</div>
+    </div>
 
-<div class="card mb-4">
-  <div class="card-header">
-    Měření rozvaděče
-  </div>
-  <div class="card-body">
-    <form action="/switchboards/{{ switchboard.switchboard_id }}/measurements/save" method="post" class="row g-2">
-      <div class="col-md-4">
-        <label class="form-label">Riz izolace [MΩ]</label>
-        <input type="number" step="0.01" name="measurements_switchboard_insulation_resistance"
-               class="form-control"
-               value="{{ measurement.measurements_switchboard_insulation_resistance if measurement else '' }}">
+    <!-- Měření rozvaděče -->
+    <div class="card mb-3">
+      <div class="card-header">
+        Měření rozvaděče
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Zs min [Ω]</label>
-        <input type="number" step="0.001" name="measurements_switchboard_loop_impedance_min"
-               class="form-control"
-               value="{{ measurement.measurements_switchboard_loop_impedance_min if measurement else '' }}">
+      <div class="card-body">
+        <form action="/switchboards/{{ switchboard.switchboard_id }}/measurements/edit" method="post" class="row g-2">
+          <div class="col-md-3">
+            <label class="form-label">Zs min [Ω]</label>
+            <input type="number" step="0.01" name="measurements_switchboard_zs_min"
+                   class="form-control"
+                   value="{{ measurement.measurements_switchboard_zs_min if measurement else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Zs max [Ω]</label>
+            <input type="number" step="0.01" name="measurements_switchboard_zs_max"
+                   class="form-control"
+                   value="{{ measurement.measurements_switchboard_zs_max if measurement else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">tΔ [ms]</label>
+            <input type="number" step="0.1" name="measurements_switchboard_rcd_trip_time_ms"
+                   class="form-control"
+                   value="{{ measurement.measurements_switchboard_rcd_trip_time_ms if measurement else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">IΔ [mA]</label>
+            <input type="number" step="0.1" name="measurements_switchboard_rcd_test_current_ma"
+                   class="form-control"
+                   value="{{ measurement.measurements_switchboard_rcd_test_current_ma if measurement else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Rz [Ω]</label>
+            <input type="number" step="0.1" name="measurements_switchboard_earth_resistance"
+                   class="form-control"
+                   value="{{ measurement.measurements_switchboard_earth_resistance if measurement else '' }}">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-primary btn-sm">Uložit měření rozvaděče</button>
+          </div>
+        </form>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Zs max [Ω]</label>
-        <input type="number" step="0.001" name="measurements_switchboard_loop_impedance_max"
-               class="form-control"
-               value="{{ measurement.measurements_switchboard_loop_impedance_max if measurement else '' }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">tΔ [ms]</label>
-        <input type="number" step="0.1" name="measurements_switchboard_rcd_trip_time_ms"
-               class="form-control"
-               value="{{ measurement.measurements_switchboard_rcd_trip_time_ms if measurement else '' }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">IΔ [mA]</label>
-        <input type="number" step="0.1" name="measurements_switchboard_rcd_test_current_ma"
-               class="form-control"
-               value="{{ measurement.measurements_switchboard_rcd_test_current_ma if measurement else '' }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Rz [Ω]</label>
-        <input type="number" step="0.1" name="measurements_switchboard_earth_resistance"
-               class="form-control"
-               value="{{ measurement.measurements_switchboard_earth_resistance if measurement else '' }}">
-      </div>
-      <div class="col-12 mt-2">
-        <button type="submit" class="btn btn-primary btn-sm">Uložit měření rozvaděče</button>
-      </div>
-    </form>
-  </div>
-</div>
+    </div>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span>Přístroje v rozvaděči</span>
-    <span class="small text-muted">Jističe, chrániče, kombinované přístroje…</span>
-  </div>
-  <div class="card-body">
-    <form id="device-form" action="/switchboards/{{ switchboard.switchboard_id }}/devices/create" method="post" class="border rounded p-3 mb-3 bg-light">
-      <input type="hidden" name="device_id" id="device-id-field">
-      <input type="hidden" name="parent_device_id" id="parent-device-id-field">
-
-      <div class="row g-2">
-        <div class="col-md-2">
-          <label class="form-label">Pozice</label>
-          <input type="text" name="switchboard_device_position" class="form-control form-control-sm" placeholder="např. 1L">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Typ</label>
-          <input type="text" name="switchboard_device_type" class="form-control form-control-sm" placeholder="MCB/RCD/RCBO">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Výrobce</label>
-          <input type="text" name="switchboard_device_manufacturer" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Model</label>
-          <input type="text" name="switchboard_device_model" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Charakteristika</label>
-          <input type="text" name="switchboard_device_trip_characteristic" class="form-control form-control-sm" placeholder="B/C/D">
-        </div>
+    <!-- Proudové chrániče -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Proudové chrániče (RCD)</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-rcd">Přidat chránič</button>
       </div>
-      <div class="row g-2 mt-1">
-        <div class="col-md-2">
-          <label class="form-label">In [A]</label>
-          <input type="number" step="1" name="switchboard_device_rated_current" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">IΔn [mA]</label>
-          <input type="number" step="1" name="switchboard_device_residual_current_ma" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Póly</label>
-          <input type="number" step="1" name="switchboard_device_poles" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Moduly</label>
-          <input type="number" step="0.5" name="switchboard_device_module_width" class="form-control form-control-sm">
-        </div>
-        <div class="col-md-4 d-flex align-items-end">
-          <button type="submit" class="btn btn-primary btn-sm w-100">Přidat přístroj</button>
-        </div>
-      </div>
-    </form>
-
-    {% if devices %}
-      <div class="table-responsive">
-        
-      <div class="mb-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <h6 class="mb-1">Strom přístrojů v rozvaděči</h6>
-          <small class="text-muted ms-2">Kliknutím na + / ✏️ / 🗑 pracuješ s vybraným přístrojem.</small>
-        </div>
-        <div id="devices-tree-container" class="mt-2" style="max-height: 320px; overflow:auto; border: 1px solid #ddd; border-radius: .25rem; padding: .5rem;">
-          <!-- Strom přístrojů se vykreslí pomocí JavaScriptu -->
-        </div>
-      </div>
-
-<table class="table table-sm align-middle table-bordered bg-white">
-          <thead class="table-light">
-            <tr>
-              <th>Pozice</th>
-              <th>Typ</th>
-              <th>Popis</th>
-              <th>In / IΔn / pólů</th>
-              <th>Obvody</th>
-              <th style="width: 6rem;">Akce</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for dev in devices %}
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
               <tr>
-                <td>{{ dev.switchboard_device_position }}</td>
-                <td>
-                  {{ dev.switchboard_device_type }}
-                  {% if dev.switchboard_device_manufacturer or dev.switchboard_device_model %}
-                    <div class="small text-muted">
-                      {{ dev.switchboard_device_manufacturer }} {{ dev.switchboard_device_model }}
-                    </div>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if dev.switchboard_device_trip_characteristic %}
-                    Char: {{ dev.switchboard_device_trip_characteristic }}
-                  {% endif %}
-                </td>
-                <td>
-                  <div class="small">
-                    In: {{ dev.switchboard_device_rated_current or "-" }} A<br>
-                    IΔn: {{ dev.switchboard_device_residual_current_ma or "-" }} mA<br>
-                    Póly: {{ dev.switchboard_device_poles or "-" }} / Moduly: {{ dev.switchboard_device_module_width or "-" }}
-                  </div>
-                </td>
-                <td>
-                  {% if dev.circuits %}
-                    {% for c in dev.circuits %}
-                      <div class="border rounded p-2 mb-2">
-                        <div class="d-flex justify-content_between">
-                          <div>
-                            <strong>{{ c.circuit_number or "Obvod" }}</strong>
-                            {% if c.circuit_room %}
-                              <span class="small text-muted">({{ c.circuit_room }})</span>
-                            {% endif %}
-                            {% if c.circuit_description %}
-                              <div class="small">{{ c.circuit_description }}</div>
-                            {% endif %}
-                            {% if c.circuit_cable %}
-                              <div class="small text-muted">
-                                Kabel: {{ c.circuit_cable }} ({{ c.circuit_cable_installation_method or "" }})
-                              </div>
-                            {% endif %}
-                          </div>
-                          <form action="/circuits/{{ c.circuit_id }}/delete" method="post" onsubmit="return confirm('Smazat obvod?');">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">×</button>
-                          </form>
-                        </div>
-
-                        <form action="/circuits/{{ c.circuit_id }}/measurements/save" method="post" class="mt-2">
-                          <div class="row g-1">
-                            <div class="col-4">
-                              <input type="number" step="0.01" name="measurements_circuit_insulation_resistance"
-                                     class="form-control form-control-sm"
-                                     placeholder="Riz [MΩ]"
-                                     value="{{ c.measurements.measurements_circuit_insulation_resistance if c.measurements else '' }}">
-                            </div>
-                            <div class="col-4">
-                              <input type="number" step="0.001" name="measurements_circuit_loop_impedance_min"
-                                     class="form-control form-control-sm"
-                                     placeholder="Zs min [Ω]"
-                                     value="{{ c.measurements.measurements_circuit_loop_impedance_min if c.measurements else '' }}">
-                            </div>
-                            <div class="col-4">
-                              <input type="number" step="0.001" name="measurements_circuit_loop_impedance_max"
-                                     class="form-control form-control-sm"
-                                     placeholder="Zs max [Ω]"
-                                     value="{{ c.measurements.measurements_circuit_loop_impedance_max if c.measurements else '' }}">
-                            </div>
-                          </div>
-                          <div class="row g-1 mt-1">
-                            <div class="col-4">
-                              <input type="number" step="0.1" name="measurements_circuit_rcd_trip_time_ms"
-                                     class="form-control form-control-sm"
-                                     placeholder="tΔ [ms]"
-                                     value="{{ c.measurements.measurements_circuit_rcd_trip_time_ms if c.measurements else '' }}">
-                            </div>
-                            <div class="col-4">
-                              <input type="number" step="0.1" name="measurements_circuit_rcd_test_current_ma"
-                                     class="form-control form-control-sm"
-                                     placeholder="IΔ [mA]"
-                                     value="{{ c.measurements.measurements_circuit_rcd_test_current_ma if c.measurements else '' }}">
-                            </div>
-                            <div class="col-4">
-                              <input type="number" step="0.1" name="measurements_circuit_earth_resistance"
-                                     class="form-control form-control-sm"
-                                     placeholder="Rz [Ω]"
-                                     value="{{ c.measurements.measurements_circuit_earth_resistance if c.measurements else '' }}">
-                            </div>
-                          </div>
-                          <div class="row g-1 mt-1">
-                            <div class="col-4">
-                              <input type="number" step="0.1" name="measurements_circuit_continuity"
-                                     class="form-control form-control-sm"
-                                     placeholder="R smyčky [Ω]"
-                                     value="{{ c.measurements.measurements_circuit_continuity if c.measurements else '' }}">
-                            </div>
-                            <div class="col-8">
-                              <input type="text" name="measurements_circuit_order_of_phases"
-                                     class="form-control form-control-sm"
-                                     placeholder="Pořadí fází"
-                                     value="{{ c.measurements.measurements_circuit_order_of_phases if c.measurements else '' }}">
-                            </div>
-                          </div>
-                          <button type="submit" class="btn btn-outline-primary btn-sm mt-1">Uložit měření obvodu</button>
-                        </form>
-
-                        <hr class="my-2">
-
-                        <div class="small fw-semibold mb-1">Koncová zařízení</div>
-                        {% if c.terminal_devices %}
-                          <ul class="small mb-2">
-                            {% for td in c.terminal_devices %}
-                              <li>
-                                {{ td.terminal_device_type or "Zařízení" }}
-                                {% if td.terminal_device_marking %}
-                                  – {{ td.terminal_device_marking }}
-                                {% endif %}
-                                {% if td.terminal_device_power %}
-                                  ({{ td.terminal_device_power }} W)
-                                {% endif %}
-                                <form action="/terminal-devices/{{ td.terminal_device_id }}/delete"
-                                      method="post" class="d-inline"
-                                      onsubmit="return confirm('Smazat zařízení?');">
-                                  <button type="submit" class="btn btn-link btn-sm text-danger p-0 ms-1">smazat</button>
-                                </form>
-                              </li>
-                            {% endfor %}
-                          </ul>
-                        {% else %}
-                          <div class="small text-muted">Žádná koncová zařízení.</div>
-                        {% endif %}
-
-                        <form action="/circuits/{{ c.circuit_id }}/terminal-devices/create" method="post" class="mt-1">
-                          <div class="row g-1">
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_type" class="form-control form-control-sm" placeholder="Typ">
-                            </div>
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_marking" class="form-control form-control-sm" placeholder="Označení">
-                            </div>
-                            <div class="col-4">
-                              <input type="number" step="1" name="terminal_device_power" class="form-control form-control-sm" placeholder="Výkon [W]">
-                            </div>
-                          </div>
-                          <div class="row g-1 mt-1">
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_manufacturer" class="form-control form-control-sm" placeholder="Výrobce">
-                            </div>
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_model" class="form-control form-control-sm" placeholder="Model">
-                            </div>
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_ip_rating" class="form-control form-control-sm" placeholder="IP">
-                            </div>
-                          </div>
-                          <div class="row g-1 mt-1">
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_protection_class" class="form-control form-control-sm" placeholder="Třída ochr.">
-                            </div>
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_supply_type" class="form-control form-control-sm" placeholder="Napájení">
-                            </div>
-                            <div class="col-4">
-                              <input type="text" name="terminal_device_installation_method" class="form-control form-control-sm" placeholder="Instalace">
-                            </div>
-                          </div>
-                          <button type="submit" class="btn btn-outline-primary btn-sm mt-1">+ Zařízení</button>
-                        </form>
-
-                      </div>
-                    {% endfor %}
-                  {% else %}
-                    <div class="small text-muted mb-1">Žádné obvody.</div>
-                  {% endif %}
-
-                  <form action="/devices/{{ dev.device_id }}/circuits/create" method="post" class="mt-1">
-                    <div class="row g-1">
-                      <div class="col-3">
-                        <input type="text" name="circuit_number" class="form-control form-control-sm" placeholder="Č. obvodu">
-                      </div>
-                      <div class="col-3">
-                        <input type="text" name="circuit_room" class="form-control form-control-sm" placeholder="Místnost">
-                      </div>
-                      <div class="col-3">
-                        <input type="text" name="circuit_cable" class="form-control form-control-sm" placeholder="Kabel (např. CYKY)">
-                      </div>
-                      <div class="col-3">
-                        <input type="number" step="1" name="circuit_number_of_outlets" class="form-control form-control-sm" placeholder="Zásuvky/ks">
-                      </div>
-                    </div>
-                    <div class="row g-1 mt-1">
-                      <div class="col-9">
-                        <input type="text" name="circuit_description" class="form-control form-control-sm" placeholder="Popis obvodu">
-                      </div>
-                      <div class="col-3">
-                        <button type="submit" class="btn btn-outline-primary btn-sm w-100">+ Obvod</button>
-                      </div>
-                    </div>
-                  </form>
-                </td>
-                <td>
-                  <form action="/devices/{{ dev.device_id }}/delete" method="post" onsubmit="return confirm('Smazat přístroj a všechny obvody?');">
-                    <button type="submit" class="btn btn-sm btn-danger">Smazat</button>
-                  </form>
-                </td>
+                <th>Pozice</th>
+                <th>Popis</th>
+                <th>Parametry</th>
+                <th>Akce</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for dev in devices %}
+                {% if dev.switchboard_device_residual_current_ma is not none
+                      or (dev.switchboard_device_type and 'RCD' in dev.switchboard_device_type) %}
+                  <tr class="device-row" data-device-id="{{ dev.device_id }}"
+                      data-device-position="{{ dev.switchboard_device_position or '' }}"
+                      data-device-type="{{ dev.switchboard_device_type or '' }}"
+                      data-device-manufacturer="{{ dev.switchboard_device_manufacturer or '' }}"
+                      data-device-model="{{ dev.switchboard_device_model or '' }}"
+                      data-device-trip="{{ dev.switchboard_device_trip_characteristic or '' }}"
+                      data-device-rated-current="{{ dev.switchboard_device_rated_current or '' }}"
+                      data-device-residual-current="{{ dev.switchboard_device_residual_current_ma or '' }}"
+                      data-device-poles="{{ dev.switchboard_device_poles or '' }}"
+                      data-device-module-width="{{ dev.switchboard_device_module_width or '' }}">
+                    <td><strong>{{ dev.switchboard_device_position or '-' }}</strong></td>
+                    <td>
+                      {% if dev.switchboard_device_manufacturer or dev.switchboard_device_model %}
+                        <div>{{ dev.switchboard_device_manufacturer }} {{ dev.switchboard_device_model }}</div>
+                      {% endif %}
+                    </td>
+                    <td class="small">
+                      In: {{ dev.switchboard_device_rated_current or "-" }} A<br>
+                      IΔn: {{ dev.switchboard_device_residual_current_ma or "-" }} mA<br>
+                      Póly: {{ dev.switchboard_device_poles or "-" }}
+                    </td>
+                    <td class="text-nowrap">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1 btn-device-edit">Upravit</button>
+                      <form action="/devices/{{ dev.device_id }}/delete" method="post" class="d-inline"
+                            onsubmit="return confirm('Smazat tento chránič?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Smazat</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
-    {% else %}
-      <div class="text-muted">Zatím žádné přístroje.</div>
-    {% endif %}
+    </div>
+
+    <!-- Jističe a ostatní přístroje -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Jističe a ostatní přístroje</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-device">Přidat přístroj</button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Pozice</th>
+                <th>Popis</th>
+                <th>Parametry</th>
+                <th>Akce</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for dev in devices %}
+                {% set is_rcd = dev.switchboard_device_residual_current_ma is not none
+                                or (dev.switchboard_device_type and 'RCD' in dev.switchboard_device_type) %}
+                {% if not is_rcd %}
+                  <tr class="device-row" data-device-id="{{ dev.device_id }}"
+                      data-device-position="{{ dev.switchboard_device_position or '' }}"
+                      data-device-type="{{ dev.switchboard_device_type or '' }}"
+                      data-device-manufacturer="{{ dev.switchboard_device_manufacturer or '' }}"
+                      data-device-model="{{ dev.switchboard_device_model or '' }}"
+                      data-device-trip="{{ dev.switchboard_device_trip_characteristic or '' }}"
+                      data-device-rated-current="{{ dev.switchboard_device_rated_current or '' }}"
+                      data-device-residual-current="{{ dev.switchboard_device_residual_current_ma or '' }}"
+                      data-device-poles="{{ dev.switchboard_device_poles or '' }}"
+                      data-device-module-width="{{ dev.switchboard_device_module_width or '' }}">
+                    <td><strong>{{ dev.switchboard_device_position or '-' }}</strong></td>
+                    <td>
+                      <div>{{ dev.switchboard_device_type or '' }}</div>
+                      {% if dev.switchboard_device_manufacturer or dev.switchboard_device_model %}
+                        <div class="small text-muted">{{ dev.switchboard_device_manufacturer }} {{ dev.switchboard_device_model }}</div>
+                      {% endif %}
+                    </td>
+                    <td class="small">
+                      {% if dev.switchboard_device_trip_characteristic %}
+                        Char.: {{ dev.switchboard_device_trip_characteristic }}<br>
+                      {% endif %}
+                      In: {{ dev.switchboard_device_rated_current or "-" }} A<br>
+                      {% if dev.switchboard_device_residual_current_ma %}
+                        IΔn: {{ dev.switchboard_device_residual_current_ma }} mA<br>
+                      {% endif %}
+                      Póly: {{ dev.switchboard_device_poles or "-" }} / Moduly: {{ dev.switchboard_device_module_width or "-" }}
+                    </td>
+                    <td class="text-nowrap">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1 btn-device-edit">Upravit</button>
+                      <form action="/devices/{{ dev.device_id }}/delete" method="post" class="d-inline"
+                            onsubmit="return confirm('Smazat tento přístroj?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Smazat</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pravý sloupec: detail přístroje / create/edit -->
+  <div class="col-lg-4">
+    <div class="card mb-3" id="device-detail-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span id="device-form-title">Přidat / upravit přístroj</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-clear-device-form">Nový</button>
+      </div>
+      <div class="card-body">
+        <form id="device-form" action="/switchboards/{{ switchboard.switchboard_id }}/devices/create" method="post" class="row g-2">
+          <input type="hidden" name="device_id" id="device-id-field">
+          <input type="hidden" name="parent_device_id" id="parent-device-id-field">
+          <div class="col-4">
+            <label class="form-label form-label-sm">Pozice</label>
+            <input type="text" name="switchboard_device_position" class="form-control form-control-sm">
+          </div>
+          <div class="col-8">
+            <label class="form-label form-label-sm">Typ</label>
+            <input type="text" name="switchboard_device_type" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Výrobce</label>
+            <input type="text" name="switchboard_device_manufacturer" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Model</label>
+            <input type="text" name="switchboard_device_model" class="form-control form-control-sm">
+          </div>
+          <div class="col-4">
+            <label class="form-label form-label-sm">Charakter.</label>
+            <input type="text" name="switchboard_device_trip_characteristic" class="form-control form-control-sm">
+          </div>
+          <div class="col-4">
+            <label class="form-label form-label-sm">In [A]</label>
+            <input type="number" step="0.1" name="switchboard_device_rated_current" class="form-control form-control-sm">
+          </div>
+          <div class="col-4">
+            <label class="form-label form-label-sm">IΔn [mA]</label>
+            <input type="number" step="0.1" name="switchboard_device_residual_current_ma" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Póly</label>
+            <input type="number" step="1" name="switchboard_device_poles" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Moduly</label>
+            <input type="number" step="0.5" name="switchboard_device_module_width" class="form-control form-control-sm">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Uložit přístroj</button>
+          </div>
+          <div class="col-12">
+            <small class="text-muted">Kliknutím na přístroj v seznamu vlevo se formulář automaticky vyplní.</small>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
-
 
 <script>
-  (function() {
-    if (typeof window === 'undefined') return;
+(function() {
+  if (typeof window === 'undefined') return;
 
-    const SWITCHBOARD_ID = {{ switchboard.switchboard_id }};
-    const devicesData = [
-      {% for dev in devices %}
-      {
-        device_id: {{ dev.device_id }},
-        parent_device_id: {{ dev.parent_device_id or 'null' }},
-        position: {{ dev.switchboard_device_position|tojson }},
-        type: {{ dev.switchboard_device_type|tojson }},
-        manufacturer: {{ dev.switchboard_device_manufacturer|tojson }},
-        model: {{ dev.switchboard_device_model|tojson }},
-        trip: {{ dev.switchboard_device_trip_characteristic|tojson }},
-        rated_current: {{ dev.switchboard_device_rated_current or 'null' }},
-        residual_current_ma: {{ dev.switchboard_device_residual_current_ma or 'null' }},
-        poles: {{ dev.switchboard_device_poles or 'null' }},
-        module_width: {{ dev.switchboard_device_module_width or 'null' }},
-      }{% if not loop.last %},{% endif %}
-      {% endfor %}
-    ];
+  function clearDeviceForm() {
+    const form = document.getElementById('device-form');
+    if (!form) return;
+    form.reset();
+    const idField = document.getElementById('device-id-field');
+    const parentField = document.getElementById('parent-device-id-field');
+    if (idField) idField.value = '';
+    if (parentField) parentField.value = '';
+    const title = document.getElementById('device-form-title');
+    if (title) title.textContent = 'Přidat přístroj';
+  }
 
-    function buildTree(devices) {
-      const byId = {};
-      devices.forEach(d => {
-        byId[d.device_id] = Object.assign({}, d, { children: [] });
+  function fillDeviceFormFromRow(row) {
+    const form = document.getElementById('device-form');
+    if (!form) return;
+    const idField = document.getElementById('device-id-field');
+    const parentField = document.getElementById('parent-device-id-field');
+    if (idField) idField.value = row.getAttribute('data-device-id') || '';
+    if (parentField) parentField.value = '';  // parent řešíme zatím ručně
+
+    const setField = (name, value) => {
+      const input = form.querySelector('[name="' + name + '"]');
+      if (input) input.value = value || '';
+    };
+
+    setField('switchboard_device_position', row.getAttribute('data-device-position'));
+    setField('switchboard_device_type', row.getAttribute('data-device-type'));
+    setField('switchboard_device_manufacturer', row.getAttribute('data-device-manufacturer'));
+    setField('switchboard_device_model', row.getAttribute('data-device-model'));
+    setField('switchboard_device_trip_characteristic', row.getAttribute('data-device-trip'));
+    setField('switchboard_device_rated_current', row.getAttribute('data-device-rated-current'));
+    setField('switchboard_device_residual_current_ma', row.getAttribute('data-device-residual-current'));
+    setField('switchboard_device_poles', row.getAttribute('data-device-poles'));
+    setField('switchboard_device_module_width', row.getAttribute('data-device-module-width'));
+
+    const title = document.getElementById('device-form-title');
+    if (title) title.textContent = 'Upravit přístroj ' + (row.getAttribute('data-device-position') || '');
+    const card = document.getElementById('device-detail-card');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.device-row');
+    rows.forEach(row => {
+      row.addEventListener('click', function(e) {
+        // neklikat, pokud šlo o kliknutí na tlačítko
+        if (e.target.closest('button') || e.target.closest('form')) {
+          return;
+        }
+        fillDeviceFormFromRow(row);
       });
-      const roots = [];
-      devices.forEach(d => {
-        const item = byId[d.device_id];
-        if (d.parent_device_id && byId[d.parent_device_id]) {
-          byId[d.parent_device_id].children.push(item);
-        } else {
-          roots.push(item);
+    });
+
+    const editButtons = document.querySelectorAll('.btn-device-edit');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const row = btn.closest('tr');
+        if (row) fillDeviceFormFromRow(row);
+      });
+    });
+
+    const btnClear = document.getElementById('btn-clear-device-form');
+    if (btnClear) {
+      btnClear.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearDeviceForm();
+      });
+    }
+
+    const btnAddDevice = document.getElementById('btn-add-device');
+    if (btnAddDevice) {
+      btnAddDevice.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearDeviceForm();
+        const card = document.getElementById('device-detail-card');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
-      const sortChildren = (node) => {
-        if (!node.children) return;
-        node.children.sort((a, b) => {
-          const pa = a.position || '';
-          const pb = b.position || '';
-          return pa.localeCompare(pb, 'cs', { numeric: true });
-        });
-        node.children.forEach(sortChildren);
-      };
-      roots.forEach(sortChildren);
-      roots.sort((a, b) => {
-        const pa = a.position || '';
-        const pb = b.position || '';
-        return pa.localeCompare(pb, 'cs', { numeric: true });
-      });
-      return roots;
     }
 
-    const treeData = buildTree(devicesData);
-
-    function buildNodeLabel(node) {
-      const pos = node.position || '';
-      const t = node.type || '';
-      const In = node.rated_current;
-      const Idn = node.residual_current_ma;
-      const trip = node.trip || '';
-      if (t === 'RCD') {
-        return `${pos} – RCD ${In || ''}A / ${Idn || ''}mA`.trim();
-      } else if (t === 'MCB') {
-        return `${pos} – MCB ${In || ''}A ${trip}`.trim();
-      } else if (t) {
-        return `${pos} – ${t}`.trim();
-      } else {
-        return pos || `ID ${node.device_id}`;
-      }
-    }
-
-    function renderTree() {
-      const container = document.getElementById('devices-tree-container');
-      if (!container) return;
-      container.innerHTML = '';
-      if (!treeData || treeData.length === 0) {
-        container.innerHTML = '<div class="text-muted small">Zatím žádné přístroje.</div>';
-        return;
-      }
-      const ul = document.createElement('ul');
-      ul.className = 'list-unstyled mb-0';
-      renderNodes(treeData, ul);
-      container.appendChild(ul);
-    }
-
-    function renderNodes(nodes, parentEl) {
-      nodes.forEach(node => {
-        const li = document.createElement('li');
-        li.className = 'mb-1';
-
-        const row = document.createElement('div');
-        row.className = 'd-flex align-items-center gap-1';
-
-        const labelSpan = document.createElement('span');
-        labelSpan.textContent = buildNodeLabel(node);
-        labelSpan.className = 'flex-grow-1';
-        row.appendChild(labelSpan);
-
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'btn btn-sm btn-outline-success';
-        addBtn.textContent = '+';
-        addBtn.title = 'Přidat podřízený přístroj';
-        addBtn.onclick = (e) => {
-          e.preventDefault();
-          startAddChild(node);
-        };
-        row.appendChild(addBtn);
-
-        const editBtn = document.createElement('button');
-        editBtn.type = 'button';
-        editBtn.className = 'btn btn-sm btn-outline-primary';
-        editBtn.textContent = '✏️';
-        editBtn.title = 'Upravit přístroj';
-        editBtn.onclick = (e) => {
-          e.preventDefault();
-          startEditDevice(node);
-        };
-        row.appendChild(editBtn);
-
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'btn btn-sm btn-outline-danger';
-        delBtn.textContent = '🗑';
-        delBtn.title = 'Smazat přístroj';
-        delBtn.onclick = (e) => {
-          e.preventDefault();
-          deleteDevice(node);
-        };
-        row.appendChild(delBtn);
-
-        li.appendChild(row);
-
-        if (node.children && node.children.length > 0) {
-          const childUl = document.createElement('ul');
-          childUl.className = 'list-unstyled ms-4 mt-1 mb-0';
-          renderNodes(node.children, childUl);
-          li.appendChild(childUl);
+    const btnAddRcd = document.getElementById('btn-add-rcd');
+    if (btnAddRcd) {
+      btnAddRcd.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearDeviceForm();
+        const form = document.getElementById('device-form');
+        if (!form) return;
+        const typeField = form.querySelector('[name="switchboard_device_type"]');
+        const polesField = form.querySelector('[name="switchboard_device_poles"]');
+        if (typeField) typeField.value = 'RCD';
+        if (polesField) polesField.value = '4';
+        const card = document.getElementById('device-detail-card');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-
-        parentEl.appendChild(li);
       });
     }
-
-    function fillDeviceForm(node) {
-      const form = document.getElementById('device-form');
-      if (!form) return;
-      const deviceIdField = document.getElementById('device-id-field');
-      const parentIdField = document.getElementById('parent-device-id-field');
-
-      if (deviceIdField) deviceIdField.value = node.device_id || '';
-      if (parentIdField) parentIdField.value = node.parent_device_id || '';
-
-      const setVal = (name, value) => {
-        const input = form.querySelector(`[name="${name}"]`);
-        if (input) input.value = (value !== null && value !== undefined) ? value : '';
-      };
-
-      setVal('switchboard_device_position', node.position);
-      setVal('switchboard_device_type', node.type);
-      setVal('switchboard_device_manufacturer', node.manufacturer);
-      setVal('switchboard_device_model', node.model);
-      setVal('switchboard_device_trip_characteristic', node.trip);
-      setVal('switchboard_device_rated_current', node.rated_current);
-      setVal('switchboard_device_residual_current_ma', node.residual_current_ma);
-      setVal('switchboard_device_poles', node.poles);
-      setVal('switchboard_device_module_width', node.module_width);
-
-      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    function clearDeviceForm() {
-      const form = document.getElementById('device-form');
-      if (!form) return;
-      form.reset();
-      const deviceIdField = document.getElementById('device-id-field');
-      const parentIdField = document.getElementById('parent-device-id-field');
-      if (deviceIdField) deviceIdField.value = '';
-      if (parentIdField) parentIdField.value = '';
-    }
-
-    function startAddChild(node) {
-      clearDeviceForm();
-      const parentIdField = document.getElementById('parent-device-id-field');
-      if (parentIdField) parentIdField.value = node.device_id;
-      const form = document.getElementById('device-form');
-      if (form) {
-        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-
-    function startEditDevice(node) {
-      fillDeviceForm(node);
-    }
-
-    function deleteDevice(node) {
-      if (!confirm('Opravdu smazat tento přístroj?')) return;
-      const form = document.createElement('form');
-      form.method = 'post';
-      form.action = `/devices/${node.device_id}/delete`;
-      document.body.appendChild(form);
-      form.submit();
-    }
-
-    document.addEventListener('DOMContentLoaded', renderTree);
-  })();
+  });
+})();
 </script>
-
 
 {% endblock %}

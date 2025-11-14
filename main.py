@@ -265,6 +265,14 @@ async def switchboard_detail(
         .all()
     )
 
+    circuits = (
+        db.query(Circuit)
+        .join(SwitchboardDevice, Circuit.device_id == SwitchboardDevice.device_id)
+        .filter(SwitchboardDevice.switchboard_id == switchboard_id)
+        .order_by(Circuit.circuit_number.asc().nullslast())
+        .all()
+    )
+
     return templates.TemplateResponse(
         "switchboard_detail.html",
         {
@@ -272,6 +280,7 @@ async def switchboard_detail(
             "switchboard": sb,
             "measurement": meas,
             "devices": devices,
+            "circuits": circuits,
             "revision": sb.revision,
         },
     )
@@ -426,35 +435,6 @@ async def device_create(
     db.commit()
     return RedirectResponse(url=f"/switchboards/{switchboard_id}", status_code=303)
 
-
-
-
-@app.post("/devices/{device_id}/set-parent")
-async def device_set_parent(
-    device_id: int,
-    parent_device_id: Optional[int] = Form(None),
-    db: Session = Depends(get_db),
-):
-    user_id = get_current_user_id()
-    dev = (
-        db.query(SwitchboardDevice)
-        .join(Switchboard)
-        .join(Revision)
-        .filter(
-            SwitchboardDevice.device_id == device_id,
-            Revision.user_id == user_id,
-        )
-        .first()
-    )
-    if not dev:
-        return RedirectResponse(url="/revisions", status_code=303)
-
-    dev.parent_device_id = parent_device_id
-    db.commit()
-
-    return RedirectResponse(
-        url=f"/switchboards/{dev.switchboard_id}", status_code=303
-    )
 
 @app.post("/devices/{device_id}/delete")
 async def device_delete(device_id: int, db: Session = Depends(get_db)):
@@ -677,3 +657,85 @@ async def terminal_device_delete(
         db.commit()
         return RedirectResponse(url=f"/switchboards/{sb_id}", status_code=303)
     return RedirectResponse(url="/revisions", status_code=303)
+
+
+@app.get("/circuits/{circuit_id}", response_class=HTMLResponse)
+async def circuit_detail(circuit_id: int, request: Request, db: Session = Depends(get_db)):
+    """
+    Detail obvodu – základní údaje, měření a koncová zařízení.
+    """
+    user_id = get_current_user_id()
+    circ = (
+        db.query(Circuit)
+        .join(SwitchboardDevice)
+        .join(Switchboard)
+        .join(Revision)
+        .filter(
+            Circuit.circuit_id == circuit_id,
+            Revision.user_id == user_id,
+        )
+        .first()
+    )
+    if not circ:
+        return RedirectResponse(url="/revisions", status_code=303)
+
+    # nacteme merici radek, pokud existuje
+    meas = (
+        db.query(CircuitMeasurement)
+        .filter(CircuitMeasurement.circuit_id == circuit_id)
+        .first()
+    )
+
+    return templates.TemplateResponse(
+        "circuit_detail.html",
+        {
+            "request": request,
+            "circuit": circ,
+            "measurement": meas,
+            "switchboard": circ.device.switchboard,
+            "revision": circ.device.switchboard.revision,
+        },
+    )
+
+
+@app.post("/circuits/{circuit_id}/edit")
+async def circuit_edit(
+    circuit_id: int,
+    circuit_number: str = Form(""),
+    circuit_room: str = Form(""),
+    circuit_description: str = Form(""),
+    circuit_number_of_outlets: Optional[int] = Form(None),
+    circuit_cable: str = Form(""),
+    circuit_cable_termination: str = Form(""),
+    circuit_cable_installation_method: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """
+    Ulozeni zakladnich udaju obvodu.
+    """
+    user_id = get_current_user_id()
+    circ = (
+        db.query(Circuit)
+        .join(SwitchboardDevice)
+        .join(Switchboard)
+        .join(Revision)
+        .filter(
+            Circuit.circuit_id == circuit_id,
+            Revision.user_id == user_id,
+        )
+        .first()
+    )
+    if not circ:
+        return RedirectResponse(url="/revisions", status_code=303)
+
+    circ.circuit_number = circuit_number or None
+    circ.circuit_room = circuit_room or None
+    circ.circuit_description = circuit_description or None
+    circ.circuit_number_of_outlets = circuit_number_of_outlets
+    circ.circuit_cable = circuit_cable or None
+    circ.circuit_cable_termination = circuit_cable_termination or None
+    circ.circuit_cable_installation_method = circuit_cable_installation_method or None
+
+    db.commit()
+    return RedirectResponse(url=f"/circuits/{circ.circuit_id}", status_code=303)
+

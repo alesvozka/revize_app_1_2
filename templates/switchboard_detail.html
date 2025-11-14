@@ -103,18 +103,10 @@
     <span class="small text-muted">Jističe, chrániče, kombinované přístroje…</span>
   </div>
   <div class="card-body">
+    <form id="device-form" action="/switchboards/{{ switchboard.switchboard_id }}/devices/create" method="post" class="border rounded p-3 mb-3 bg-light">
+      <input type="hidden" name="device_id" id="device-id-field">
+      <input type="hidden" name="parent_device_id" id="parent-device-id-field">
 
-    <div class="mb-3">
-      <div class="d-flex justify-content-between align-items-center">
-        <h6 class="mb-1">Strom přístrojů v rozvaděči</h6>
-        <button type="button" class="btn btn-sm btn-outline-primary" onclick="saveDevicesOrder()">Uložit pořadí</button>
-      </div>
-      <div id="devices-tree-container" class="mt-2" style="max-height: 320px; overflow:auto; border: 1px solid #ddd; border-radius: .25rem; padding: .5rem;">
-        <!-- Strom přístrojů bude vykreslen pomocí JavaScriptu -->
-      </div>
-      <small class="text-muted">Pořadí v rámci jedné větve lze měnit pomocí šipek ↑/↓. Po úpravě nezapomeň uložit.</small>
-    </div>
-    <form action="/switchboards/{{ switchboard.switchboard_id }}/devices/create" method="post" class="border rounded p-3 mb-3 bg-light">
       <div class="row g-2">
         <div class="col-md-2">
           <label class="form-label">Pozice</label>
@@ -162,7 +154,18 @@
 
     {% if devices %}
       <div class="table-responsive">
-        <table class="table table-sm align-middle table-bordered bg-white">
+        
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6 class="mb-1">Strom přístrojů v rozvaděči</h6>
+          <small class="text-muted ms-2">Kliknutím na + / ✏️ / 🗑 pracuješ s vybraným přístrojem.</small>
+        </div>
+        <div id="devices-tree-container" class="mt-2" style="max-height: 320px; overflow:auto; border: 1px solid #ddd; border-radius: .25rem; padding: .5rem;">
+          <!-- Strom přístrojů se vykreslí pomocí JavaScriptu -->
+        </div>
+      </div>
+
+<table class="table table-sm align-middle table-bordered bg-white">
           <thead class="table-light">
             <tr>
               <th>Pozice</th>
@@ -395,16 +398,64 @@
     if (typeof window === 'undefined') return;
 
     const SWITCHBOARD_ID = {{ switchboard.switchboard_id }};
-    const DEVICES_TREE_DATA = {{ devices_tree | tojson | safe }};
-    let treeData = Array.isArray(DEVICES_TREE_DATA) ? structuredClone(DEVICES_TREE_DATA) : [];
+    const devicesData = [
+      {% for dev in devices %}
+      {
+        device_id: {{ dev.device_id }},
+        parent_device_id: {{ dev.parent_device_id or 'null' }},
+        position: {{ dev.switchboard_device_position|tojson }},
+        type: {{ dev.switchboard_device_type|tojson }},
+        manufacturer: {{ dev.switchboard_device_manufacturer|tojson }},
+        model: {{ dev.switchboard_device_model|tojson }},
+        trip: {{ dev.switchboard_device_trip_characteristic|tojson }},
+        rated_current: {{ dev.switchboard_device_rated_current or 'null' }},
+        residual_current_ma: {{ dev.switchboard_device_residual_current_ma or 'null' }},
+        poles: {{ dev.switchboard_device_poles or 'null' }},
+        module_width: {{ dev.switchboard_device_module_width or 'null' }},
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    function buildTree(devices) {
+      const byId = {};
+      devices.forEach(d => {
+        byId[d.device_id] = Object.assign({}, d, { children: [] });
+      });
+      const roots = [];
+      devices.forEach(d => {
+        const item = byId[d.device_id];
+        if (d.parent_device_id && byId[d.parent_device_id]) {
+          byId[d.parent_device_id].children.push(item);
+        } else {
+          roots.push(item);
+        }
+      });
+      const sortChildren = (node) => {
+        if (!node.children) return;
+        node.children.sort((a, b) => {
+          const pa = a.position || '';
+          const pb = b.position || '';
+          return pa.localeCompare(pb, 'cs', { numeric: true });
+        });
+        node.children.forEach(sortChildren);
+      };
+      roots.forEach(sortChildren);
+      roots.sort((a, b) => {
+        const pa = a.position || '';
+        const pb = b.position || '';
+        return pa.localeCompare(pb, 'cs', { numeric: true });
+      });
+      return roots;
+    }
+
+    const treeData = buildTree(devicesData);
 
     function buildNodeLabel(node) {
-      const pos = node.switchboard_device_position || '';
-      const t = node.switchboard_device_type || '';
-      const In = node.switchboard_device_rated_current;
-      const Idn = node.switchboard_device_residual_current_ma;
-      const trip = node.switchboard_device_trip_characteristic || '';
-
+      const pos = node.position || '';
+      const t = node.type || '';
+      const In = node.rated_current;
+      const Idn = node.residual_current_ma;
+      const trip = node.trip || '';
       if (t === 'RCD') {
         return `${pos} – RCD ${In || ''}A / ${Idn || ''}mA`.trim();
       } else if (t === 'MCB') {
@@ -420,6 +471,10 @@
       const container = document.getElementById('devices-tree-container');
       if (!container) return;
       container.innerHTML = '';
+      if (!treeData || treeData.length === 0) {
+        container.innerHTML = '<div class="text-muted small">Zatím žádné přístroje.</div>';
+        return;
+      }
       const ul = document.createElement('ul');
       ul.className = 'list-unstyled mb-0';
       renderNodes(treeData, ul);
@@ -427,7 +482,7 @@
     }
 
     function renderNodes(nodes, parentEl) {
-      nodes.forEach((node, idx) => {
+      nodes.forEach(node => {
         const li = document.createElement('li');
         li.className = 'mb-1';
 
@@ -436,31 +491,41 @@
 
         const labelSpan = document.createElement('span');
         labelSpan.textContent = buildNodeLabel(node);
-        labelSpan.style.cursor = 'pointer';
         labelSpan.className = 'flex-grow-1';
         row.appendChild(labelSpan);
 
-        const upBtn = document.createElement('button');
-        upBtn.type = 'button';
-        upBtn.className = 'btn btn-sm btn-outline-secondary';
-        upBtn.textContent = '↑';
-        upBtn.title = 'Posunout výše';
-        upBtn.onclick = (e) => {
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-success';
+        addBtn.textContent = '+';
+        addBtn.title = 'Přidat podřízený přístroj';
+        addBtn.onclick = (e) => {
           e.preventDefault();
-          moveNode(nodes, idx, -1);
+          startAddChild(node);
         };
-        row.appendChild(upBtn);
+        row.appendChild(addBtn);
 
-        const downBtn = document.createElement('button');
-        downBtn.type = 'button';
-        downBtn.className = 'btn btn-sm btn-outline-secondary';
-        downBtn.textContent = '↓';
-        downBtn.title = 'Posunout níže';
-        downBtn.onclick = (e) => {
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn btn-sm btn-outline-primary';
+        editBtn.textContent = '✏️';
+        editBtn.title = 'Upravit přístroj';
+        editBtn.onclick = (e) => {
           e.preventDefault();
-          moveNode(nodes, idx, 1);
+          startEditDevice(node);
         };
-        row.appendChild(downBtn);
+        row.appendChild(editBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn btn-sm btn-outline-danger';
+        delBtn.textContent = '🗑';
+        delBtn.title = 'Smazat přístroj';
+        delBtn.onclick = (e) => {
+          e.preventDefault();
+          deleteDevice(node);
+        };
+        row.appendChild(delBtn);
 
         li.appendChild(row);
 
@@ -475,52 +540,65 @@
       });
     }
 
-    function moveNode(siblings, idx, delta) {
-      const newIdx = idx + delta;
-      if (newIdx < 0 || newIdx >= siblings.length) return;
-      const [item] = siblings.splice(idx, 1);
-      siblings.splice(newIdx, 0, item);
-      renderTree();
+    function fillDeviceForm(node) {
+      const form = document.getElementById('device-form');
+      if (!form) return;
+      const deviceIdField = document.getElementById('device-id-field');
+      const parentIdField = document.getElementById('parent-device-id-field');
+
+      if (deviceIdField) deviceIdField.value = node.device_id || '';
+      if (parentIdField) parentIdField.value = node.parent_device_id || '';
+
+      const setVal = (name, value) => {
+        const input = form.querySelector(`[name="${name}"]`);
+        if (input) input.value = (value !== null && value !== undefined) ? value : '';
+      };
+
+      setVal('switchboard_device_position', node.position);
+      setVal('switchboard_device_type', node.type);
+      setVal('switchboard_device_manufacturer', node.manufacturer);
+      setVal('switchboard_device_model', node.model);
+      setVal('switchboard_device_trip_characteristic', node.trip);
+      setVal('switchboard_device_rated_current', node.rated_current);
+      setVal('switchboard_device_residual_current_ma', node.residual_current_ma);
+      setVal('switchboard_device_poles', node.poles);
+      setVal('switchboard_device_module_width', node.module_width);
+
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    function collectOrder(nodes, parentId, outArr) {
-      nodes.forEach((n, index) => {
-        outArr.push({
-          device_id: n.device_id,
-          parent_device_id: parentId,
-          order_index: index
-        });
-        if (n.children && n.children.length > 0) {
-          collectOrder(n.children, n.device_id, outArr);
-        }
-      });
+    function clearDeviceForm() {
+      const form = document.getElementById('device-form');
+      if (!form) return;
+      form.reset();
+      const deviceIdField = document.getElementById('device-id-field');
+      const parentIdField = document.getElementById('parent-device-id-field');
+      if (deviceIdField) deviceIdField.value = '';
+      if (parentIdField) parentIdField.value = '';
     }
 
-    async function saveDevicesOrder() {
-      if (!treeData || treeData.length === 0) return;
-      const payload = [];
-      collectOrder(treeData, null, payload);
-      try {
-        const res = await fetch(`/switchboards/${SWITCHBOARD_ID}/devices/order`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          console.error('Chyba při ukládání pořadí', await res.text());
-          alert('Nepodařilo se uložit pořadí přístrojů.');
-          return;
-        }
-        alert('Pořadí přístrojů bylo uloženo.');
-      } catch (err) {
-        console.error(err);
-        alert('Chyba při komunikaci se serverem.');
+    function startAddChild(node) {
+      clearDeviceForm();
+      const parentIdField = document.getElementById('parent-device-id-field');
+      if (parentIdField) parentIdField.value = node.device_id;
+      const form = document.getElementById('device-form');
+      if (form) {
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
-    window.saveDevicesOrder = saveDevicesOrder;
+    function startEditDevice(node) {
+      fillDeviceForm(node);
+    }
+
+    function deleteDevice(node) {
+      if (!confirm('Opravdu smazat tento přístroj?')) return;
+      const form = document.createElement('form');
+      form.method = 'post';
+      form.action = `/devices/${node.device_id}/delete`;
+      document.body.appendChild(form);
+      form.submit();
+    }
 
     document.addEventListener('DOMContentLoaded', renderTree);
   })();

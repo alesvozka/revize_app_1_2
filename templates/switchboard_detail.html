@@ -136,7 +136,9 @@
               {% for dev in devices %}
                 {% if dev.switchboard_device_residual_current_ma is not none
                       or (dev.switchboard_device_type and 'RCD' in dev.switchboard_device_type) %}
-                  <tr class="device-row" data-device-id="{{ dev.device_id }}"
+                  <tr class="device-row"
+                      data-device-id="{{ dev.device_id }}"
+                      data-parent-id="{{ dev.parent_device_id or '' }}"
                       data-device-position="{{ dev.switchboard_device_position or '' }}"
                       data-device-type="{{ dev.switchboard_device_type or '' }}"
                       data-device-manufacturer="{{ dev.switchboard_device_manufacturer or '' }}"
@@ -193,6 +195,7 @@
                 <th>Pozice</th>
                 <th>Popis</th>
                 <th>Parametry</th>
+                <th>Obvody</th>
                 <th>RCD</th>
                 <th class="text-nowrap">Akce</th>
               </tr>
@@ -202,7 +205,9 @@
                 {% set is_rcd = dev.switchboard_device_residual_current_ma is not none
                                 or (dev.switchboard_device_type and 'RCD' in dev.switchboard_device_type) %}
                 {% if not is_rcd %}
-                  <tr class="device-row" data-device-id="{{ dev.device_id }}"
+                  <tr class="device-row"
+                      data-device-id="{{ dev.device_id }}"
+                      data-parent-id="{{ dev.parent_device_id or '' }}"
                       data-device-position="{{ dev.switchboard_device_position or '' }}"
                       data-device-type="{{ dev.switchboard_device_type or '' }}"
                       data-device-manufacturer="{{ dev.switchboard_device_manufacturer or '' }}"
@@ -228,6 +233,23 @@
                         IΔn: {{ dev.switchboard_device_residual_current_ma }} mA<br>
                       {% endif %}
                       Póly: {{ dev.switchboard_device_poles or "-" }} / Moduly: {{ dev.switchboard_device_module_width or "-" }}
+                    </td>
+                    <td>
+                      {% set has_circuits = false %}
+                      {% for circ in circuits if circ.device_id == dev.device_id %}
+                        {% set has_circuits = true %}
+                        <div class="small">
+                          <a href="/circuits/{{ circ.circuit_id }}">
+                            Obvod {{ circ.circuit_number or "-" }}
+                          </a>
+                          {% if circ.circuit_room %}
+                            <span class="text-muted"> – {{ circ.circuit_room }}</span>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                      {% if not has_circuits %}
+                        <span class="text-muted small">Žádný obvod</span>
+                      {% endif %}
                     </td>
                     <td>
                       <form action="/devices/{{ dev.device_id }}/set-parent" method="post" class="mb-0">

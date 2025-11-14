@@ -28,8 +28,7 @@
 </div>
 
 <div class="row">
-  <!-- Levý sloupec: info + měření + seznamy zařízení -->
-  <div class="col-lg-8">
+  <div class="col-12">
     <!-- Údaje o rozvaděči -->
     <div class="card mb-3">
       <div class="card-header">
@@ -240,69 +239,76 @@
     </div>
 
   </div>
+</div>
 
-  <!-- Pravý sloupec: detail přístroje / create/edit -->
-  <div class="col-lg-4">
-    <div class="card mb-3" id="device-detail-card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span id="device-form-title">Přidat / upravit přístroj</span>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-clear-device-form">Nový</button>
+<!-- Offcanvas drawer pro přístroj -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="deviceDrawer" aria-labelledby="deviceDrawerLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="deviceDrawerLabel">Přidat / upravit přístroj</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Zavřít"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form id="device-form" action="/switchboards/{{ switchboard.switchboard_id }}/devices/create" method="post" class="row g-2">
+      <input type="hidden" name="device_id" id="device-id-field">
+      <input type="hidden" name="parent_device_id" id="parent-device-id-field">
+      <div class="col-4">
+        <label class="form-label form-label-sm">Pozice</label>
+        <input type="text" name="switchboard_device_position" class="form-control form-control-sm">
       </div>
-      <div class="card-body">
-        <form id="device-form" action="/switchboards/{{ switchboard.switchboard_id }}/devices/create" method="post" class="row g-2">
-          <input type="hidden" name="device_id" id="device-id-field">
-          <input type="hidden" name="parent_device_id" id="parent-device-id-field">
-          <div class="col-4">
-            <label class="form-label form-label-sm">Pozice</label>
-            <input type="text" name="switchboard_device_position" class="form-control form-control-sm">
-          </div>
-          <div class="col-8">
-            <label class="form-label form-label-sm">Typ</label>
-            <input type="text" name="switchboard_device_type" class="form-control form-control-sm">
-          </div>
-          <div class="col-6">
-            <label class="form-label form-label-sm">Výrobce</label>
-            <input type="text" name="switchboard_device_manufacturer" class="form-control form-control-sm">
-          </div>
-          <div class="col-6">
-            <label class="form-label form-label-sm">Model</label>
-            <input type="text" name="switchboard_device_model" class="form-control form-control-sm">
-          </div>
-          <div class="col-4">
-            <label class="form-label form-label-sm">Charakter.</label>
-            <input type="text" name="switchboard_device_trip_characteristic" class="form-control form-control-sm">
-          </div>
-          <div class="col-4">
-            <label class="form-label form-label-sm">In [A]</label>
-            <input type="number" step="0.1" name="switchboard_device_rated_current" class="form-control form-control-sm">
-          </div>
-          <div class="col-4">
-            <label class="form-label form-label-sm">IΔn [mA]</label>
-            <input type="number" step="0.1" name="switchboard_device_residual_current_ma" class="form-control form-control-sm">
-          </div>
-          <div class="col-6">
-            <label class="form-label form-label-sm">Póly</label>
-            <input type="number" step="1" name="switchboard_device_poles" class="form-control form-control-sm">
-          </div>
-          <div class="col-6">
-            <label class="form-label form-label-sm">Moduly</label>
-            <input type="number" step="0.5" name="switchboard_device_module_width" class="form-control form-control-sm">
-          </div>
-          <div class="col-12 mt-2">
-            <button type="submit" class="btn btn-primary btn-sm w-100">Uložit přístroj</button>
-          </div>
-          <div class="col-12">
-            <small class="text-muted">Kliknutím na přístroj v seznamu vlevo se formulář automaticky vyplní.</small>
-          </div>
-        </form>
+      <div class="col-8">
+        <label class="form-label form-label-sm">Typ</label>
+        <input type="text" name="switchboard_device_type" class="form-control form-control-sm">
       </div>
-    </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Výrobce</label>
+        <input type="text" name="switchboard_device_manufacturer" class="form-control form-control-sm">
+      </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Model</label>
+        <input type="text" name="switchboard_device_model" class="form-control form-control-sm">
+      </div>
+      <div class="col-4">
+        <label class="form-label form-label-sm">Charakter.</label>
+        <input type="text" name="switchboard_device_trip_characteristic" class="form-control form-control-sm">
+      </div>
+      <div class="col-4">
+        <label class="form-label form-label-sm">In [A]</label>
+        <input type="number" step="0.1" name="switchboard_device_rated_current" class="form-control form-control-sm">
+      </div>
+      <div class="col-4">
+        <label class="form-label form-label-sm">IΔn [mA]</label>
+        <input type="number" step="0.1" name="switchboard_device_residual_current_ma" class="form-control form-control-sm">
+      </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Póly</label>
+        <input type="number" step="1" name="switchboard_device_poles" class="form-control form-control-sm">
+      </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Moduly</label>
+        <input type="number" step="0.5" name="switchboard_device_module_width" class="form-control form-control-sm">
+      </div>
+      <div class="col-12 mt-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Uložit přístroj</button>
+      </div>
+      <div class="col-12">
+        <small class="text-muted">Kliknutím na přístroj v seznamu se formulář automaticky vyplní.</small>
+      </div>
+    </form>
   </div>
 </div>
 
 <script>
 (function() {
   if (typeof window === 'undefined') return;
+
+  function getDrawer() {
+    const el = document.getElementById('deviceDrawer');
+    if (!el) return null;
+    if (window.bootstrap && bootstrap.Offcanvas) {
+      return bootstrap.Offcanvas.getOrCreateInstance(el);
+    }
+    return null;
+  }
 
   function clearDeviceForm() {
     const form = document.getElementById('device-form');
@@ -312,7 +318,7 @@
     const parentField = document.getElementById('parent-device-id-field');
     if (idField) idField.value = '';
     if (parentField) parentField.value = '';
-    const title = document.getElementById('device-form-title');
+    const title = document.getElementById('deviceDrawerLabel');
     if (title) title.textContent = 'Přidat přístroj';
   }
 
@@ -339,11 +345,10 @@
     setField('switchboard_device_poles', row.getAttribute('data-device-poles'));
     setField('switchboard_device_module_width', row.getAttribute('data-device-module-width'));
 
-    const title = document.getElementById('device-form-title');
-    if (title) title.textContent = 'Upravit přístroj ' + (row.getAttribute('data-device-position') || '');
-    const card = document.getElementById('device-detail-card');
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const title = document.getElementById('deviceDrawerLabel');
+    if (title) {
+      const pos = row.getAttribute('data-device-position') || '';
+      title.textContent = pos ? ('Upravit přístroj ' + pos) : 'Upravit přístroj';
     }
   }
 
@@ -355,7 +360,10 @@
         if (e.target.closest('button') || e.target.closest('form')) {
           return;
         }
+        clearDeviceForm();
         fillDeviceFormFromRow(row);
+        const drawer = getDrawer();
+        if (drawer) drawer.show();
       });
     });
 
@@ -364,27 +372,22 @@
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         const row = btn.closest('tr');
-        if (row) fillDeviceFormFromRow(row);
+        if (row) {
+          clearDeviceForm();
+          fillDeviceFormFromRow(row);
+          const drawer = getDrawer();
+          if (drawer) drawer.show();
+        }
       });
     });
-
-    const btnClear = document.getElementById('btn-clear-device-form');
-    if (btnClear) {
-      btnClear.addEventListener('click', function(e) {
-        e.preventDefault();
-        clearDeviceForm();
-      });
-    }
 
     const btnAddDevice = document.getElementById('btn-add-device');
     if (btnAddDevice) {
       btnAddDevice.addEventListener('click', function(e) {
         e.preventDefault();
         clearDeviceForm();
-        const card = document.getElementById('device-detail-card');
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        const drawer = getDrawer();
+        if (drawer) drawer.show();
       });
     }
 
@@ -399,10 +402,8 @@
         const polesField = form.querySelector('[name="switchboard_device_poles"]');
         if (typeField) typeField.value = 'RCD';
         if (polesField) polesField.value = '4';
-        const card = document.getElementById('device-detail-card');
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        const drawer = getDrawer();
+        if (drawer) drawer.show();
       });
     }
   });

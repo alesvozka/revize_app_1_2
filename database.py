@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Základní URL databáze: Railway / Postgres přes env, jinak lokální SQLite.
+# Základní URL databáze: Railway / Postgres z env, jinak lokální SQLite.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
 # Některé platformy používají starý prefix postgres:// -> upravíme na postgresql:// pro SQLAlchemy

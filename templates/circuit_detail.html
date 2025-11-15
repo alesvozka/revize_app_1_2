@@ -234,59 +234,62 @@
   </div>
 </div>
 
-<!-- Modal pro měření koncových zařízení -->
-<div class="modal fade" id="terminalMeasurementModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Měření koncového zařízení</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+<!-- Offcanvas drawer pro měření koncových zařízení -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="terminalMeasurementDrawer" aria-labelledby="terminalMeasurementDrawerLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="terminalMeasurementDrawerLabel">Měření koncového zařízení</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Zavřít"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form id="terminal-measurement-form" method="post" class="row g-2">
+      <p class="small text-muted mb-2" id="terminal-measurement-label"></p>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Riso [MΩ]</label>
+        <input type="number" step="0.01" name="measurements_circuit_insulation_resistance"
+               class="form-control form-control-sm">
       </div>
-      <form id="terminal-measurement-form" method="post">
-        <div class="modal-body">
-          <p class="small text-muted mb-2" id="terminal-measurement-label"></p>
-          <div class="row g-2">
-            <div class="col-6">
-              <label class="form-label form-label-sm">Riso [MΩ]</label>
-              <input type="number" step="0.01" name="measurements_circuit_insulation_resistance"
-                     class="form-control form-control-sm">
-            </div>
-            <div class="col-6">
-              <label class="form-label form-label-sm">Zs min [Ω]</label>
-              <input type="number" step="0.001" name="measurements_circuit_loop_impedance_min"
-                     class="form-control form-control-sm">
-            </div>
-            <div class="col-6">
-              <label class="form-label form-label-sm">Zs max [Ω]</label>
-              <input type="number" step="0.001" name="measurements_circuit_loop_impedance_max"
-                     class="form-control form-control-sm">
-            </div>
-            <div class="col-6">
-              <label class="form-label form-label-sm">tΔ [ms]</label>
-              <input type="number" step="0.1" name="measurements_circuit_rcd_trip_time_ms"
-                     class="form-control form-control-sm">
-            </div>
-            <div class="col-6">
-              <label class="form-label form-label-sm">IΔ [mA]</label>
-              <input type="number" step="0.1" name="measurements_circuit_rcd_test_current_ma"
-                     class="form-control form-control-sm">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Zrušit</button>
-          <button type="submit" class="btn btn-primary btn-sm">Uložit měření</button>
-        </div>
-      </form>
-    </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Zs min [Ω]</label>
+        <input type="number" step="0.001" name="measurements_circuit_loop_impedance_min"
+               class="form-control form-control-sm">
+      </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">Zs max [Ω]</label>
+        <input type="number" step="0.001" name="measurements_circuit_loop_impedance_max"
+               class="form-control form-control-sm">
+      </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">tΔ [ms]</label>
+        <input type="number" step="0.1" name="measurements_circuit_rcd_trip_time_ms"
+               class="form-control form-control-sm">
+      </div>
+      <div class="col-6">
+        <label class="form-label form-label-sm">IΔ [mA]</label>
+        <input type="number" step="0.1" name="measurements_circuit_rcd_test_current_ma"
+               class="form-control form-control-sm">
+      </div>
+      <div class="col-12 mt-2 d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="offcanvas">Zrušit</button>
+        <button type="submit" class="btn btn-primary btn-sm">Uložit měření</button>
+      </div>
+    </form>
   </div>
 </div>
 
+<style>
+  @media (min-width: 768px) {
+    #terminalMeasurementDrawer.offcanvas-end {
+      width: 40vw;
+      max-width: 520px;
+    }
+  }
+</style>
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    var modalEl = document.getElementById('terminalMeasurementModal');
-    if (!modalEl) return;
-    var modal = new bootstrap.Modal(modalEl);
+    var drawerEl = document.getElementById('terminalMeasurementDrawer');
+    if (!drawerEl) return;
+    var drawer = bootstrap.Offcanvas.getOrCreateInstance(drawerEl);
     var form = document.getElementById('terminal-measurement-form');
     var labelEl = document.getElementById('terminal-measurement-label');
 
@@ -294,7 +297,9 @@
       if (!form) return;
       var input = form.querySelector('[name="' + name + '"]');
       if (input) {
-        input.value = value !== null && value !== undefined ? value : '';
+        input.value = (value !== null && value !== undefined && value !== 'null')
+          ? value
+          : '';
       }
     }
 
@@ -320,7 +325,7 @@
         setField('measurements_circuit_rcd_trip_time_ms', row.getAttribute('data-meas-rcd-t'));
         setField('measurements_circuit_rcd_test_current_ma', row.getAttribute('data-meas-rcd-ir'));
 
-        modal.show();
+        drawer.show();
       });
     });
   });

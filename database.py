@@ -2,8 +2,18 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+# Základní URL databáze: Railway / Postgres přes env, jinak lokální SQLite.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
+# Některé platformy používají starý prefix postgres:// -> upravíme na postgresql:// pro SQLAlchemy
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Pro Postgres vynutíme psycopg3 driver (psycopg[binary])
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
+# Speciální connect_args jen pro SQLite
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}

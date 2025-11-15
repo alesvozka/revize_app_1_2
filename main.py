@@ -19,6 +19,7 @@ from models import (
     Circuit,
     CircuitMeasurement,
     TerminalDevice,
+    TerminalMeasurement,
 )
 
 app = FastAPI(title="Revizní app – clean v2")
@@ -583,6 +584,62 @@ async def circuit_measurements_save(
         url=f"/switchboards/{circ.device.switchboard_id}", status_code=303
     )
 
+def recompute_circuit_measurement(db: Session, circuit_id: int) -> None:
+    """Agregace měření z koncových zařízení do měření obvodu.
+
+    Vezme všechna TerminalMeasurement u daného obvodu a spočítá:
+    - Zs min / max
+    - max. vypínací čas RCD
+    - max. zkušební proud RCD
+    a tyto hodnoty uloží do CircuitMeasurement.
+    """
+    # najdeme všechna měření koncových zařízení na daném obvodu
+    tms = (
+        db.query(TerminalMeasurement)
+        .join(TerminalDevice)
+        .filter(TerminalDevice.circuit_id == circuit_id)
+        .all()
+    )
+
+    if not tms:
+        return
+
+    def collect(attr: str):
+        vals = [getattr(m, attr) for m in tms if getattr(m, attr) is not None]
+        return vals or None
+
+    zs_min_vals = collect("measurements_circuit_loop_impedance_min")
+    zs_max_vals = collect("measurements_circuit_loop_impedance_max")
+    t_vals = collect("measurements_circuit_rcd_trip_time_ms")
+    ir_vals = collect("measurements_circuit_rcd_test_current_ma")
+    riso_vals = collect("measurements_circuit_insulation_resistance")
+
+    meas = (
+        db.query(CircuitMeasurement)
+        .filter(CircuitMeasurement.circuit_id == circuit_id)
+        .first()
+    )
+    if not meas:
+        meas = CircuitMeasurement(circuit_id=circuit_id)
+        db.add(meas)
+
+    if zs_min_vals:
+        meas.measurements_circuit_loop_impedance_min = min(zs_min_vals)
+    if zs_max_vals:
+        meas.measurements_circuit_loop_impedance_max = max(zs_max_vals)
+    if t_vals:
+        meas.measurements_circuit_rcd_trip_time_ms = max(t_vals)
+    if ir_vals:
+        meas.measurements_circuit_rcd_test_current_ma = max(ir_vals)
+    if riso_vals:
+        # u izolace dává smysl nejnižší naměřená hodnota
+        meas.measurements_circuit_insulation_resistance = min(riso_vals)
+
+    db.commit()
+
+
+
+
 
 @app.post("/circuits/{circuit_id}/terminal-devices/create")
 async def terminal_device_create(
@@ -657,6 +714,59 @@ async def terminal_device_delete(
         db.commit()
         return RedirectResponse(url=f"/switchboards/{sb_id}", status_code=303)
     return RedirectResponse(url="/revisions", status_code=303)
+
+@app.post("/terminal-devices/{terminal_device_id}/measurements/save")
+async def terminal_device_measurements_save(
+    terminal_device_id: int,
+    measurements_circuit_insulation_resistance: Optional[float] = Form(None),
+    measurements_circuit_loop_impedance_min: Optional[float] = Form(None),
+    measurements_circuit_loop_impedance_max: Optional[float] = Form(None),
+    measurements_circuit_rcd_trip_time_ms: Optional[float] = Form(None),
+    measurements_circuit_rcd_test_current_ma: Optional[float] = Form(None),
+    db: Session = Depends(get_db),
+):
+    """Uložení měření pro konkrétní koncové zařízení a přepočet měření obvodu."""
+    user_id = get_current_user_id()
+    td = (
+        db.query(TerminalDevice)
+        .join(Circuit)
+        .join(SwitchboardDevice)
+        .join(Switchboard)
+        .join(Revision)
+        .filter(
+            TerminalDevice.terminal_device_id == terminal_device_id,
+            Revision.user_id == user_id,
+        )
+        .first()
+    )
+    if not td:
+        return RedirectResponse(url="/revisions", status_code=303)
+
+    meas = (
+        db.query(TerminalMeasurement)
+        .filter(TerminalMeasurement.terminal_device_id == terminal_device_id)
+        .first()
+    )
+    if not meas:
+        meas = TerminalMeasurement(terminal_device_id=terminal_device_id)
+        db.add(meas)
+
+    meas.measurements_circuit_insulation_resistance = measurements_circuit_insulation_resistance
+    meas.measurements_circuit_loop_impedance_min = measurements_circuit_loop_impedance_min
+    meas.measurements_circuit_loop_impedance_max = measurements_circuit_loop_impedance_max
+    meas.measurements_circuit_rcd_trip_time_ms = measurements_circuit_rcd_trip_time_ms
+    meas.measurements_circuit_rcd_test_current_ma = measurements_circuit_rcd_test_current_ma
+
+    # nejdřív commitneme měření koncového zařízení
+    db.commit()
+
+    # následně přepočítáme agregované hodnoty obvodu
+    recompute_circuit_measurement(db, td.circuit_id)
+
+    return RedirectResponse(url=f"/circuits/{td.circuit_id}", status_code=303)
+
+
+
 
 
 @app.get("/circuits/{circuit_id}", response_class=HTMLResponse)

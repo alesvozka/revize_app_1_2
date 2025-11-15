@@ -208,6 +208,24 @@ class TerminalDevice(Base):
 
     # Relationships
     circuit = relationship("Circuit", back_populates="terminal_devices")
+    measurements = relationship("TerminalMeasurement", back_populates="terminal_device", uselist=False, cascade="all, delete-orphan")
+
+
+class TerminalMeasurement(Base):
+    __tablename__ = "terminal_measurements"
+
+    measurement_id = Column(Integer, primary_key=True, index=True)
+    terminal_device_id = Column(Integer, ForeignKey("terminal_devices.terminal_device_id"), unique=True, nullable=False)
+
+    # Měření na úrovni koncového zařízení / skupiny zařízení
+    measurements_circuit_insulation_resistance = Column(Float)
+    measurements_circuit_loop_impedance_min = Column(Float)
+    measurements_circuit_loop_impedance_max = Column(Float)
+    measurements_circuit_rcd_trip_time_ms = Column(Float)
+    measurements_circuit_rcd_test_current_ma = Column(Float)
+
+    # Relationships
+    terminal_device = relationship("TerminalDevice", back_populates="measurements")
 
 
 # 9. DROPDOWN_SOURCES

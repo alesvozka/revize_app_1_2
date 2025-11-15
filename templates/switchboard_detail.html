@@ -238,8 +238,15 @@
                       {% set has_circuits = false %}
                       {% for circ in circuits if circ.device_id == dev.device_id %}
                         {% set has_circuits = true %}
-                        <div class="small">
-                          <a href="/circuits/{{ circ.circuit_id }}">
+                        <div class="small circuit-item"
+                             data-circuit-id="{{ circ.circuit_id }}"
+                             data-device-id="{{ dev.device_id }}"
+                             data-circuit-number="{{ circ.circuit_number or '' }}"
+                             data-circuit-room="{{ circ.circuit_room or '' }}"
+                             data-circuit-number-of-outlets="{{ circ.circuit_number_of_outlets or '' }}"
+                             data-circuit-cable="{{ circ.circuit_cable or '' }}"
+                             data-circuit-description="{{ circ.circuit_description or '' }}">
+                          <a href="/circuits/{{ circ.circuit_id }}" class="circuit-link">
                             Obvod {{ circ.circuit_number or "-" }}
                           </a>
                           {% if circ.circuit_room %}
@@ -249,17 +256,14 @@
                       {% endfor %}
                       {% if not has_circuits %}
                         <span class="text-muted small d-block mb-1">Žádný obvod</span>
-                      {% endif %}
-
-                      <form action="/devices/{{ dev.device_id }}/circuits/create" method="post" class="mt-1 d-flex gap-1 align-items-center">
-                        <input type="text"
-                               name="circuit_number"
-                               class="form-control form-control-sm"
-                               placeholder="č. obvodu">
-                        <button type="submit" class="btn btn-sm btn-outline-primary">
-                          +
+                      {% endif %}                <div class="mt-1">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary btn-circuit-add"
+                                data-device-id="{{ dev.device_id }}"
+                                data-device-label="{{ dev.switchboard_device_position or '' }}">
+                          + obvod
                         </button>
-                      </form>
+                      </div>
                     </td>
                     <td>
                       <form action="/devices/{{ dev.device_id }}/set-parent" method="post" class="mb-0">
@@ -358,9 +362,55 @@
   </div>
 </div>
 
+
+<!-- Offcanvas drawer pro obvod -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="circuitDrawer" aria-labelledby="circuitDrawerLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="circuitDrawerLabel">Přidat obvod</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Zavřít"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form id="circuit-form" method="post" class="row g-2">
+      <div class="col-12 d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted small mb-0">Rychlá editace obvodu</small>
+        <a href="#" id="circuit-full-link" class="small text-decoration-none" target="_blank" rel="noopener">
+          Otevřít plný formulář
+        </a>
+      </div>
+      <input type="hidden" id="circuit-id-field">
+      <input type="hidden" id="circuit-device-id-field">
+      <div class="col-md-4">
+        <label class="form-label form-label-sm">Číslo obvodu</label>
+        <input type="text" name="circuit_number" class="form-control form-control-sm" placeholder="např. 1, 2, 3…">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label form-label-sm">Místnost / název</label>
+        <input type="text" name="circuit_room" class="form-control form-control-sm" placeholder="např. Kuchyně, Koupelna…">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label form-label-sm">Počet zásuvek / ks</label>
+        <input type="number" step="1" name="circuit_number_of_outlets" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label form-label-sm">Kabel</label>
+        <input type="text" name="circuit_cable" class="form-control form-control-sm" placeholder="např. CYKY-J 3×2,5">
+      </div>
+      <div class="col-12">
+        <label class="form-label form-label-sm">Popis obvodu</label>
+        <textarea name="circuit_description" class="form-control form-control-sm" rows="2" placeholder="Např. zásuvky kuchyně, světla pokoje…"></textarea>
+      </div>
+      <div class="col-12 mt-2 d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="offcanvas">Zrušit</button>
+        <button type="submit" class="btn btn-sm btn-primary">Uložit obvod</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <style>
   @media (min-width: 768px) {
-    #deviceDrawer.offcanvas-end {
+    #deviceDrawer.offcanvas-end,
+    #circuitDrawer.offcanvas-end {
       width: 40vw;
       max-width: 640px;
     }
@@ -378,6 +428,79 @@
       return bootstrap.Offcanvas.getOrCreateInstance(el);
     }
     return null;
+  }
+
+  function getCircuitDrawer() {
+    const el = document.getElementById('circuitDrawer');
+    if (!el) return null;
+    if (window.bootstrap && bootstrap.Offcanvas) {
+      return bootstrap.Offcanvas.getOrCreateInstance(el);
+    }
+    return null;
+  }
+
+  function clearCircuitForm() {
+    const form = document.getElementById('circuit-form');
+    if (!form) return;
+    form.reset();
+    const hiddenDevice = document.getElementById('circuit-device-id-field');
+    if (hiddenDevice) hiddenDevice.value = '';
+    const hiddenId = document.getElementById('circuit-id-field');
+    if (hiddenId) hiddenId.value = '';
+    const fullLink = document.getElementById('circuit-full-link');
+    if (fullLink) {
+      fullLink.style.visibility = 'hidden';
+      fullLink.href = '#';
+    }
+    const title = document.getElementById('circuitDrawerLabel');
+    if (title) title.textContent = 'Přidat obvod';
+  }
+
+  function fillCircuitFormFromItem(item) {
+    const form = document.getElementById('circuit-form');
+    if (!form || !item) return;
+
+    const circuitId = item.getAttribute('data-circuit-id');
+    const deviceId = item.getAttribute('data-device-id');
+    const num = item.getAttribute('data-circuit-number') || '';
+    const room = item.getAttribute('data-circuit-room') || '';
+    const outlets = item.getAttribute('data-circuit-number-of-outlets') || '';
+    const cable = item.getAttribute('data-circuit-cable') || '';
+    const descr = item.getAttribute('data-circuit-description') || '';
+
+    const hiddenDevice = document.getElementById('circuit-device-id-field');
+    if (hiddenDevice) hiddenDevice.value = deviceId || '';
+
+    const hiddenId = document.getElementById('circuit-id-field');
+    if (hiddenId) hiddenId.value = circuitId || '';
+
+    const setField = (name, value) => {
+      const input = form.querySelector('[name="' + name + '"]');
+      if (input) input.value = value || '';
+    };
+
+    setField('circuit_number', num);
+    setField('circuit_room', room);
+    setField('circuit_number_of_outlets', outlets);
+    setField('circuit_cable', cable);
+    setField('circuit_description', descr);
+
+    // update form action for edit
+    if (circuitId) {
+      form.action = '/circuits/' + circuitId + '/edit';
+    }
+
+    const fullLink = document.getElementById('circuit-full-link');
+    if (fullLink && circuitId) {
+      fullLink.href = '/circuits/' + circuitId;
+      fullLink.style.visibility = 'visible';
+    }
+
+    const title = document.getElementById('circuitDrawerLabel');
+    if (title) {
+      const label = num || '';
+      title.textContent = label ? ('Upravit obvod ' + label) : 'Upravit obvod';
+    }
   }
 
   function clearDeviceForm() {
@@ -473,7 +596,50 @@
       });
     });
 
-    const btnAddDevice = document.getElementById('btn-add-device');
+    
+    const circuitButtons = document.querySelectorAll('.btn-circuit-add');
+    circuitButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const deviceId = btn.getAttribute('data-device-id');
+        const deviceLabel = btn.getAttribute('data-device-label') || '';
+        const form = document.getElementById('circuit-form');
+        if (!form || !deviceId) return;
+        clearCircuitForm();
+        form.action = '/devices/' + deviceId + '/circuits/create';
+        const hiddenDevice = document.getElementById('circuit-device-id-field');
+        if (hiddenDevice) hiddenDevice.value = deviceId;
+
+        const title = document.getElementById('circuitDrawerLabel');
+        if (title) {
+          title.textContent = deviceLabel
+            ? ('Přidat obvod za ' + deviceLabel)
+            : 'Přidat obvod';
+        }
+
+        const drawer = getCircuitDrawer();
+        if (drawer) drawer.show();
+      });
+    })
+
+    // klik na existující obvod -> otevřít v postranním panelu
+    const circuitLinks = document.querySelectorAll('.circuit-link');
+    circuitLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        // pouze levé tlačítko myši, aby prostřední klik mohl otevřít nový tab
+        if (e.button === 0) {
+          e.preventDefault();
+          const item = link.closest('.circuit-item');
+          clearCircuitForm();
+          fillCircuitFormFromItem(item);
+          const drawer = getCircuitDrawer();
+          if (drawer) drawer.show();
+        }
+      });
+    });
+;
+
+const btnAddDevice = document.getElementById('btn-add-device');
     if (btnAddDevice) {
       btnAddDevice.addEventListener('click', function(e) {
         e.preventDefault();

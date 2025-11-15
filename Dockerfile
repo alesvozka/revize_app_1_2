@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1
 
@@ -14,8 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV SESSION_SECRET="change_me_to_random_string"
+# Default jen pro lokální/dev prostředí – v produkci přepiš env proměnnou SECRET_KEY
+ENV SECRET_KEY="change_me_to_random_string"
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Na Railway / PaaS vezme port z env PORT, lokálně běží na 8000
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

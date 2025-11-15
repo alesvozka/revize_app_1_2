@@ -128,21 +128,54 @@
       </div>
       <div class="card-body">
         {% if circuit.terminal_devices %}
-          <ul class="list-unstyled">
+          <ul class="list-unstyled mb-2">
             {% for td in circuit.terminal_devices %}
-              <li class="mb-1">
-                <strong>{{ td.terminal_device_type or "Zařízení" }}</strong>
-                {% if td.terminal_device_marking %}
-                  – {{ td.terminal_device_marking }}
-                {% endif %}
-                {% if td.terminal_device_power %}
-                  ({{ td.terminal_device_power }} W)
-                {% endif %}
-                <form action="/terminal-devices/{{ td.terminal_device_id }}/delete"
-                      method="post" class="d-inline"
-                      onsubmit="return confirm('Smazat zařízení?');">
-                  <button type="submit" class="btn btn-link btn-sm text-danger p-0 ms-1">smazat</button>
-                </form>
+              <li class="mb-2 d-flex justify-content-between align-items-start terminal-device-row"
+                  data-terminal-id="{{ td.terminal_device_id }}"
+                  data-meas-insulation="{{ td.measurements.measurements_circuit_insulation_resistance if td.measurements else '' }}"
+                  data-meas-loop-min="{{ td.measurements.measurements_circuit_loop_impedance_min if td.measurements else '' }}"
+                  data-meas-loop-max="{{ td.measurements.measurements_circuit_loop_impedance_max if td.measurements else '' }}"
+                  data-meas-rcd-t="{{ td.measurements.measurements_circuit_rcd_trip_time_ms if td.measurements else '' }}"
+                  data-meas-rcd-ir="{{ td.measurements.measurements_circuit_rcd_test_current_ma if td.measurements else '' }}">
+                <div>
+                  <strong>{{ td.terminal_device_type or "Zařízení" }}</strong>
+                  {% if td.terminal_device_marking %}
+                    – {{ td.terminal_device_marking }}
+                  {% endif %}
+                  {% if td.terminal_device_power %}
+                    ({{ td.terminal_device_power }} W)
+                  {% endif %}
+                  {% if td.measurements %}
+                    <div class="small text-muted mt-1">
+                      {% if td.measurements.measurements_circuit_loop_impedance_min is not none %}
+                        Zs min: {{ td.measurements.measurements_circuit_loop_impedance_min }} Ω
+                      {% endif %}
+                      {% if td.measurements.measurements_circuit_loop_impedance_max is not none %}
+                        , Zs max: {{ td.measurements.measurements_circuit_loop_impedance_max }} Ω
+                      {% endif %}
+                      {% if td.measurements.measurements_circuit_rcd_trip_time_ms is not none %}
+                        , tΔ: {{ td.measurements.measurements_circuit_rcd_trip_time_ms }} ms
+                      {% endif %}
+                      {% if td.measurements.measurements_circuit_rcd_test_current_ma is not none %}
+                        , IΔ: {{ td.measurements.measurements_circuit_rcd_test_current_ma }} mA
+                      {% endif %}
+                      {% if td.measurements.measurements_circuit_insulation_resistance is not none %}
+                        , Riso: {{ td.measurements.measurements_circuit_insulation_resistance }} MΩ
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="ms-2 text-nowrap">
+                  <button type="button"
+                          class="btn btn-outline-secondary btn-sm btn-terminal-measure">
+                    Měření
+                  </button>
+                  <form action="/terminal-devices/{{ td.terminal_device_id }}/delete"
+                        method="post" class="d-inline ms-1"
+                        onsubmit="return confirm('Smazat zařízení?');">
+                    <button type="submit" class="btn btn-link btn-sm text-danger p-0">smazat</button>
+                  </form>
+                </div>
               </li>
             {% endfor %}
           </ul>
@@ -151,7 +184,6 @@
         {% endif %}
 
         <hr class="my-2">
-
         <form action="/circuits/{{ circuit.circuit_id }}/terminal-devices/create" method="post" class="row g-2">
           <div class="col-6">
             <label class="form-label form-label-sm">Typ zařízení</label>
@@ -201,4 +233,96 @@
     </div>
   </div>
 </div>
+
+<!-- Modal pro měření koncových zařízení -->
+<div class="modal fade" id="terminalMeasurementModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Měření koncového zařízení</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+      </div>
+      <form id="terminal-measurement-form" method="post">
+        <div class="modal-body">
+          <p class="small text-muted mb-2" id="terminal-measurement-label"></p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label form-label-sm">Riso [MΩ]</label>
+              <input type="number" step="0.01" name="measurements_circuit_insulation_resistance"
+                     class="form-control form-control-sm">
+            </div>
+            <div class="col-6">
+              <label class="form-label form-label-sm">Zs min [Ω]</label>
+              <input type="number" step="0.001" name="measurements_circuit_loop_impedance_min"
+                     class="form-control form-control-sm">
+            </div>
+            <div class="col-6">
+              <label class="form-label form-label-sm">Zs max [Ω]</label>
+              <input type="number" step="0.001" name="measurements_circuit_loop_impedance_max"
+                     class="form-control form-control-sm">
+            </div>
+            <div class="col-6">
+              <label class="form-label form-label-sm">tΔ [ms]</label>
+              <input type="number" step="0.1" name="measurements_circuit_rcd_trip_time_ms"
+                     class="form-control form-control-sm">
+            </div>
+            <div class="col-6">
+              <label class="form-label form-label-sm">IΔ [mA]</label>
+              <input type="number" step="0.1" name="measurements_circuit_rcd_test_current_ma"
+                     class="form-control form-control-sm">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Zrušit</button>
+          <button type="submit" class="btn btn-primary btn-sm">Uložit měření</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('terminalMeasurementModal');
+    if (!modalEl) return;
+    var modal = new bootstrap.Modal(modalEl);
+    var form = document.getElementById('terminal-measurement-form');
+    var labelEl = document.getElementById('terminal-measurement-label');
+
+    function setField(name, value) {
+      if (!form) return;
+      var input = form.querySelector('[name="' + name + '"]');
+      if (input) {
+        input.value = value !== null && value !== undefined ? value : '';
+      }
+    }
+
+    document.querySelectorAll('.btn-terminal-measure').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var row = btn.closest('.terminal-device-row');
+        if (!row || !form) return;
+        var terminalId = row.getAttribute('data-terminal-id');
+
+        // Nastavení action na správný endpoint
+        form.action = '/terminal-devices/' + terminalId + '/measurements/save';
+
+        // Popisek (typ + označení)
+        if (labelEl) {
+          var titleEl = row.querySelector('strong');
+          labelEl.textContent = titleEl ? titleEl.textContent.trim() : '';
+        }
+
+        // Naplnit hodnoty z data-* atributů
+        setField('measurements_circuit_insulation_resistance', row.getAttribute('data-meas-insulation'));
+        setField('measurements_circuit_loop_impedance_min', row.getAttribute('data-meas-loop-min'));
+        setField('measurements_circuit_loop_impedance_max', row.getAttribute('data-meas-loop-max'));
+        setField('measurements_circuit_rcd_trip_time_ms', row.getAttribute('data-meas-rcd-t'));
+        setField('measurements_circuit_rcd_test_current_ma', row.getAttribute('data-meas-rcd-ir'));
+
+        modal.show();
+      });
+    });
+  });
+</script>
 {% endblock %}

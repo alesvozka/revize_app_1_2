@@ -208,14 +208,24 @@ class TerminalDevice(Base):
 
     # Relationships
     circuit = relationship("Circuit", back_populates="terminal_devices")
-    measurements = relationship("TerminalMeasurement", back_populates="terminal_device", uselist=False, cascade="all, delete-orphan")
+    measurements = relationship(
+        "TerminalMeasurement",
+        back_populates="terminal_device",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
 
 class TerminalMeasurement(Base):
     __tablename__ = "terminal_measurements"
 
     measurement_id = Column(Integer, primary_key=True, index=True)
-    terminal_device_id = Column(Integer, ForeignKey("terminal_devices.terminal_device_id"), unique=True, nullable=False)
+    terminal_device_id = Column(
+        Integer,
+        ForeignKey("terminal_devices.terminal_device_id"),
+        unique=True,
+        nullable=False,
+    )
 
     # Měření na úrovni koncového zařízení / skupiny zařízení
     measurements_circuit_insulation_resistance = Column(Float)

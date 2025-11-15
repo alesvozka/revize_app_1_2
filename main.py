@@ -593,7 +593,6 @@ def recompute_circuit_measurement(db: Session, circuit_id: int) -> None:
     - max. zkušební proud RCD
     a tyto hodnoty uloží do CircuitMeasurement.
     """
-    # najdeme všechna měření koncových zařízení na daném obvodu
     tms = (
         db.query(TerminalMeasurement)
         .join(TerminalDevice)
@@ -632,7 +631,6 @@ def recompute_circuit_measurement(db: Session, circuit_id: int) -> None:
     if ir_vals:
         meas.measurements_circuit_rcd_test_current_ma = max(ir_vals)
     if riso_vals:
-        # u izolace dává smysl nejnižší naměřená hodnota
         meas.measurements_circuit_insulation_resistance = min(riso_vals)
 
     db.commit()
@@ -751,13 +749,22 @@ async def terminal_device_measurements_save(
         meas = TerminalMeasurement(terminal_device_id=terminal_device_id)
         db.add(meas)
 
-    meas.measurements_circuit_insulation_resistance = measurements_circuit_insulation_resistance
-    meas.measurements_circuit_loop_impedance_min = measurements_circuit_loop_impedance_min
-    meas.measurements_circuit_loop_impedance_max = measurements_circuit_loop_impedance_max
-    meas.measurements_circuit_rcd_trip_time_ms = measurements_circuit_rcd_trip_time_ms
-    meas.measurements_circuit_rcd_test_current_ma = measurements_circuit_rcd_test_current_ma
+    meas.measurements_circuit_insulation_resistance = (
+        measurements_circuit_insulation_resistance
+    )
+    meas.measurements_circuit_loop_impedance_min = (
+        measurements_circuit_loop_impedance_min
+    )
+    meas.measurements_circuit_loop_impedance_max = (
+        measurements_circuit_loop_impedance_max
+    )
+    meas.measurements_circuit_rcd_trip_time_ms = (
+        measurements_circuit_rcd_trip_time_ms
+    )
+    meas.measurements_circuit_rcd_test_current_ma = (
+        measurements_circuit_rcd_test_current_ma
+    )
 
-    # nejdřív commitneme měření koncového zařízení
     db.commit()
 
     # následně přepočítáme agregované hodnoty obvodu

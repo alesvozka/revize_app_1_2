@@ -145,6 +145,19 @@
                   {% if td.terminal_device_power %}
                     ({{ td.terminal_device_power }} W)
                   {% endif %}
+                  {% if td.terminal_device_cable or td.terminal_device_cable_installation_method or td.terminal_device_installation_method %}
+                    <div class="small text-muted">
+                      {% if td.terminal_device_cable %}
+                        Kabel: {{ td.terminal_device_cable }}
+                      {% endif %}
+                      {% if td.terminal_device_cable_installation_method %}
+                        {% if td.terminal_device_cable %}, {% endif %}uložení: {{ td.terminal_device_cable_installation_method }}
+                      {% endif %}
+                      {% if td.terminal_device_installation_method %}
+                        {% if td.terminal_device_cable or td.terminal_device_cable_installation_method %} – {% endif %}provedení zařízení: {{ td.terminal_device_installation_method }}
+                      {% endif %}
+                    </div>
+                  {% endif %}
                   {% if td.measurements %}
                     <div class="small text-muted mt-1">
                       {% if td.measurements.measurements_circuit_loop_impedance_min is not none %}
@@ -183,7 +196,29 @@
           <div class="text-muted small mb-2">Žádná koncová zařízení.</div>
         {% endif %}
 
-        <hr class="my-2">
+        {% if cable_summary %}
+          <hr class="my-2">
+          <div class="small">
+            <strong>Kabely a uložení v obvodu:</strong>
+            <ul class="small mb-0">
+              {% for item in cable_summary %}
+                <li>
+                  {% if item.cable %}
+                    {{ item.cable }}
+                  {% else %}
+                    (bez uvedení typu kabelu)
+                  {% endif %}
+                  {% if item.installation %}
+                    – {{ item.installation }}
+                  {% endif %}
+                  ({{ item.count }}× skupina zařízení)
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+          <hr class="my-2">
+        {% endif %}
         <form action="/circuits/{{ circuit.circuit_id }}/terminal-devices/create" method="post" class="row g-2">
           <div class="col-6">
             <label class="form-label form-label-sm">Typ zařízení</label>
@@ -222,8 +257,16 @@
             <input type="text" name="terminal_device_supply_type" class="form-control form-control-sm" placeholder="230 V AC…">
           </div>
           <div class="col-12">
-            <label class="form-label form-label-sm">Způsob instalace</label>
-            <input type="text" name="terminal_device_installation_method" class="form-control form-control-sm">
+            <label class="form-label form-label-sm">Způsob instalace zařízení</label>
+            <input type="text" name="terminal_device_installation_method" class="form-control form-control-sm" placeholder="např. na omítku, pod omítku…">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Typ kabelu</label>
+            <input type="text" name="terminal_device_cable" class="form-control form-control-sm" placeholder="např. CYKY-J 3×1,5">
+          </div>
+          <div class="col-6">
+            <label class="form-label form-label-sm">Uložení kabelu</label>
+            <input type="text" name="terminal_device_cable_installation_method" class="form-control form-control-sm" placeholder="např. v omítce, v liště…">
           </div>
           <div class="col-12 mt-2">
             <button type="submit" class="btn btn-outline-primary btn-sm">Přidat zařízení</button>

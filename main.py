@@ -652,6 +652,8 @@ async def terminal_device_create(
     terminal_device_serial_number: str = Form(""),
     terminal_device_supply_type: str = Form(""),
     terminal_device_installation_method: str = Form(""),
+    terminal_device_cable: str = Form(""),
+    terminal_device_cable_installation_method: str = Form(""),
     db: Session = Depends(get_db),
 ):
     user_id = get_current_user_id()
@@ -681,6 +683,8 @@ async def terminal_device_create(
         terminal_device_serial_number=terminal_device_serial_number or None,
         terminal_device_supply_type=terminal_device_supply_type or None,
         terminal_device_installation_method=terminal_device_installation_method or None,
+        terminal_device_cable=terminal_device_cable or None,
+        terminal_device_cable_installation_method=terminal_device_cable_installation_method or None,
     )
     db.add(td)
     db.commit()
@@ -803,6 +807,22 @@ async def circuit_detail(circuit_id: int, request: Request, db: Session = Depend
         .first()
     )
 
+    # souhrn kabelu podle koncovych zarizeni
+    cable_summary = []
+    if circ and circ.terminal_devices:
+        agg = {}
+        for td in circ.terminal_devices:
+            cable = getattr(td, "terminal_device_cable", None)
+            installation = getattr(td, "terminal_device_cable_installation_method", None)
+            if not cable and not installation:
+                continue
+            key = (cable or "", installation or "")
+            agg[key] = agg.get(key, 0) + 1
+        cable_summary = [
+            {"cable": k[0], "installation": k[1], "count": v}
+            for k, v in agg.items()
+        ]
+
     return templates.TemplateResponse(
         "circuit_detail.html",
         {
@@ -811,6 +831,7 @@ async def circuit_detail(circuit_id: int, request: Request, db: Session = Depend
             "measurement": meas,
             "switchboard": circ.device.switchboard,
             "revision": circ.device.switchboard.revision,
+            "cable_summary": cable_summary,
         },
     )
 

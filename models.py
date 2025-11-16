@@ -205,6 +205,9 @@ class TerminalDevice(Base):
     terminal_device_serial_number = Column(String(100))
     terminal_device_supply_type = Column(String(100))
     terminal_device_installation_method = Column(String(255))
+    terminal_device_cable = Column(String(255))
+    terminal_device_cable_installation_method = Column(String(255))
+
 
     # Relationships
     circuit = relationship("Circuit", back_populates="terminal_devices")

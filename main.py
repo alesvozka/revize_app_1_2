@@ -826,7 +826,7 @@ def recompute_circuit_measurement(db: Session, circuit_id: int):
     db.commit()
 
 
-@app.post("/circuits/{circuit_id}/terminal-devices/create"))
+@app.post("/circuits/{circuit_id}/terminal-devices/create")
 async def terminal_device_create(
     circuit_id: int,
     terminal_device_type: str = Form(""),

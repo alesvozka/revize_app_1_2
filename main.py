@@ -42,6 +42,11 @@ def auto_migrate():
             "ALTER TABLE terminal_devices "
             "ADD COLUMN IF NOT EXISTS terminal_device_cable_installation_method VARCHAR(255);"
         ))
+        # Add quantity column to terminal_devices if it does not exist
+        db.execute(text(
+            "ALTER TABLE terminal_devices "
+            "ADD COLUMN IF NOT EXISTS terminal_device_quantity INTEGER;"
+        ))
         db.commit()
         print("Auto-migration completed.")
     except Exception as e:
@@ -52,6 +57,7 @@ def auto_migrate():
 
 
 auto_migrate()
+
 
 
 templates = Jinja2Templates(directory="templates")
@@ -749,23 +755,35 @@ async def circuit_measurements_save(
     return RedirectResponse(url=f"/circuits/{circuit_id}", status_code=303)
 
 
+
 def recompute_circuit_measurement(db: Session, circuit_id: int):
     """
-    Přepočet souhrnných hodnot měření obvodu na základě měření koncových zařízení (TerminalMeasurement).
+    Přepočet souhrnných hodnot měření obvodu na základě měření koncových zařízení (TerminalMeasurement)
+    a aktualizace počtu zásuvek / ks podle koncových zařízení.
     """
     circ = db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
     if not circ:
         return
 
+    # Přepočet počtu zásuvek / ks z koncových zařízení
+    terminal_devices = (
+        db.query(TerminalDevice)
+        .filter(TerminalDevice.circuit_id == circuit_id)
+        .all()
+    )
+    total_qty = 0
+    for td in terminal_devices:
+        if getattr(td, "terminal_device_quantity", None) is not None:
+            total_qty += td.terminal_device_quantity or 0
+    circ.circuit_number_of_outlets = total_qty or None
+
+    # Přepočet měření z TerminalMeasurement
     terminal_measurements = (
         db.query(TerminalMeasurement)
         .join(TerminalDevice)
         .filter(TerminalDevice.circuit_id == circuit_id)
         .all()
     )
-
-    if not terminal_measurements:
-        return
 
     zs_min_vals = []
     zs_max_vals = []
@@ -808,13 +826,14 @@ def recompute_circuit_measurement(db: Session, circuit_id: int):
     db.commit()
 
 
-@app.post("/circuits/{circuit_id}/terminal-devices/create")
+@app.post("/circuits/{circuit_id}/terminal-devices/create"))
 async def terminal_device_create(
     circuit_id: int,
     terminal_device_type: str = Form(""),
     terminal_device_manufacturer: str = Form(""),
     terminal_device_model: str = Form(""),
     terminal_device_marking: str = Form(""),
+    terminal_device_quantity: Optional[int] = Form(None),
     terminal_device_power: Optional[float] = Form(None),
     terminal_device_ip_rating: str = Form(""),
     terminal_device_protection_class: str = Form(""),
@@ -849,6 +868,7 @@ async def terminal_device_create(
         terminal_device_manufacturer=terminal_device_manufacturer or None,
         terminal_device_model=terminal_device_model or None,
         terminal_device_marking=terminal_device_marking or None,
+        terminal_device_quantity=terminal_device_quantity,
         terminal_device_power=terminal_device_power,
         terminal_device_ip_rating=terminal_device_ip_rating or None,
         terminal_device_protection_class=terminal_device_protection_class or None,

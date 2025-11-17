@@ -199,6 +199,8 @@ class TerminalDevice(Base):
     terminal_device_manufacturer = Column(String(255))
     terminal_device_model = Column(String(100))
     terminal_device_marking = Column(String(100))
+    terminal_device_quantity = Column(Integer)
+
     terminal_device_power = Column(Float)
     terminal_device_ip_rating = Column(String(50))
     terminal_device_protection_class = Column(String(50))

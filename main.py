@@ -108,7 +108,7 @@ async def revisions_list(request: Request, db: Session = Depends(get_db)):
     revisions = (
         db.query(Revision)
         .filter(Revision.user_id == user_id)
-        .order_by(Revision.revision_created_at.desc())
+        .order_by(Revision.revision_id.desc())
         .all()
     )
     return templates.TemplateResponse(

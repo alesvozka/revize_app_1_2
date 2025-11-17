@@ -142,6 +142,9 @@
                   {% if td.terminal_device_marking %}
                     – {{ td.terminal_device_marking }}
                   {% endif %}
+                  {% if td.terminal_device_quantity %}
+                    – {{ td.terminal_device_quantity }}&nbsp;ks
+                  {% endif %}
                   {% if td.terminal_device_power %}
                     ({{ td.terminal_device_power }} W)
                   {% endif %}
@@ -228,7 +231,11 @@
             <label class="form-label form-label-sm">Označení</label>
             <input type="text" name="terminal_device_marking" class="form-control form-control-sm" placeholder="např. L1, Z1…">
           </div>
-          <div class="col-4">
+          <div class="col-3">
+            <label class="form-label form-label-sm">Počet ks</label>
+            <input type="number" step="1" min="0" name="terminal_device_quantity" class="form-control form-control-sm">
+          </div>
+          <div class="col-3">
             <label class="form-label form-label-sm">Výkon [W]</label>
             <input type="number" step="1" name="terminal_device_power" class="form-control form-control-sm">
           </div>
